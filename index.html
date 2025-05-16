@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App TDAH</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="main.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Mi Aliada TDAH</h1>
+    </header>
+
+    <section id="pomodoro">
+      <h2>Temporizador Pomodoro</h2>
+      <div id="timer">25:00</div>
+      <div class="pomodoro-buttons">
+        <button onclick="startTimer()">Iniciar</button>
+        <button onclick="pausarPomodoro()">Pausar</button>
+        <button onclick="resetTimer()">Resetear</button>
+
+        
+      </div>
+    </section>
+
+    <section id="tareas">
+      <h2>Tareas importantes</h2>
+      <input type="text" id="taskInput" placeholder="Nueva tarea" />
+      <button onclick="addTask()">Agregar</button>
+      <ul id="taskList"></ul>
+    </section>
+
+    <section id="checklist">
+      <h2>Checklist rápido</h2>
+      <input type="text" id="checkItem" placeholder="Nuevo ítem" />
+      <button onclick="addCheckItem()">Agregar</button>
+      <ul id="checkList"></ul>
+    </section>
+
+    <section id="notas">
+      <h2>Notas de blog</h2>
+      <textarea id="notaInput" placeholder="Escribe tu nota..." rows="4"></textarea>
+      <button onclick="addNota()">Guardar</button>
+      <ul id="notaList"></ul>
+    </section>
+
+    <section id="recetas">
+      <h2>Recetas</h2>
+      <div class="receta">
+        <h3>Desayuno Energético</h3>
+        <p>Avena, frutas y nueces para comenzar el día con enfoque.</p>
+      </div>
+    </section>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
