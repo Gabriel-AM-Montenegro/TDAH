@@ -23,4 +23,4 @@ Aplicación web diseñada para ayudar a personas adultas diagnosticadas con TDAH
 1. Clonar el repositorio:
 
    ```bash
-   git clone https://github.com/Gabriel-AM-Montenegro/tdah-app.git
+   git clone https://github.com/Gabriel-AM-Montenegro/TDAH/
