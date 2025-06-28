@@ -1,0 +1,602 @@
+/* ========== ESTILOS GENERALES Y VARIABLES ========== */
+
+:root {
+  /* Colores */
+  --primary-color: #4F46E5; /* Indigo */
+  --secondary-color: #7C3AED; /* Violet */
+  --bg-gradient-start: #667eea; /* Azul claro */
+  --bg-gradient-end: #764ba2; /* Morado */
+  --text-dark: #374151; /* Gris oscuro */
+  --text-medium: #6b7280; /* Gris medio */
+  --text-light: #9ca3af; /* Gris claro */
+  --white: white;
+  --light-bg: #f8fafc; /* Fondo claro para cards/list items */
+  --border-color: #e5e7eb;
+  --success-light: #ecfdf5; /* Verde claro */
+  --success-dark: #10b981; /* Verde oscuro */
+  --error-light: #fef2f2; /* Rojo claro */
+  --error-dark: #dc2626; /* Rojo oscuro */
+  --warning-light: #fffbeb; /* Amarillo claro */
+  --warning-dark: #f59e0b; /* Amarillo oscuro */
+  --info-light: #e0f2fe; /* Azul info claro */
+  --info-dark: #0ea5e9; /* Azul info oscuro */
+
+  /* Espaciado */
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+
+  /* Bordes y Sombras */
+  --border-radius-sm: 8px;
+  --border-radius-md: 15px;
+  --button-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box; /* Asegura que padding y border se incluyan en el ancho/alto */
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+  min-height: 100vh;
+  color: var(--text-dark); /* Color de texto por defecto */
+  display: flex; /* Para centrar el contenedor verticalmente si es necesario */
+  align-items: center; /* Centrado vertical */
+  justify-content: center; /* Centrado horizontal */
+}
+
+.container {
+  max-width: 800px;
+  width: 95%; /* Ajuste para pantallas pequeñas */
+  margin: var(--spacing-lg) auto; /* Ajuste margen */
+  padding: var(--spacing-lg);
+}
+
+/* ========== HEADER ========== */
+header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: var(--white);
+  padding: 1.5em;
+  text-align: center;
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--glass-shadow);
+}
+
+header h1 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 2.5em;
+}
+
+header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1.1em;
+}
+
+/* ========== NAVEGACIÓN ========== */
+.nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+}
+
+.nav-tabs button {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--white);
+  border: none;
+  border-radius: 25px; /* Más redondeado */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
+  flex-shrink: 0; /* Evita que los botones se encojan */
+}
+
+.nav-tabs button.active,
+.nav-tabs button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== SECCIONES ========== */
+.seccion {
+  display: none;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2em;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.seccion.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+h2 {
+  color: var(--primary-color);
+  margin-bottom: 1.5em;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.8em;
+}
+
+h3 {
+  color: var(--text-dark);
+  margin-bottom: 1em;
+}
+
+/* ========== TIMER POMODORO ========== */
+#timer {
+  font-size: 3em;
+  font-weight: bold;
+  text-align: center;
+  margin: 1em 0;
+  /* Degradado para el texto */
+  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pomodoro-buttons {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+/* ========== CONFIGURACIÓN TRELLO ========== */
+.config-card {
+  background: var(--light-bg);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  transition: all 0.3s ease;
+}
+
+.config-card.connected {
+  border-color: var(--success-dark);
+  background: var(--success-light);
+}
+
+.config-step {
+  margin-bottom: var(--spacing-md);
+}
+
+.config-step label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-dark);
+}
+
+/* ========== INDICADORES DE ESTADO ========== */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.status-disconnected {
+  background: var(--error-light);
+  color: var(--error-dark);
+}
+
+.status-connected {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+/* ========== BOTONES ========== */
+button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--button-shadow);
+}
+
+button:disabled {
+  background: var(--text-light);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.button-danger {
+  background: #ef4444 !important; /* Rojo fuerte para eliminar */
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); /* Sombra acorde al color */
+}
+
+.button-danger:hover {
+  background: #dc2626 !important;
+}
+
+/* ========== INPUTS Y TEXTAREA ========== */
+input[type="text"], textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  margin-bottom: var(--spacing-sm);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  font-family: inherit;
+}
+
+input[type="text"]:focus, textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Estilo para el grupo input + botón en checklist */
+.input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.input-group input {
+    flex-grow: 1;
+    margin-bottom: 0; /* Eliminar margen inferior si es parte de un grupo */
+}
+
+/* ========== LISTAS ========== */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  background: var(--light-bg);
+  margin: var(--spacing-sm) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  border-left: 4px solid var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all 0.3s ease;
+  word-wrap: break-word; /* Asegura que el texto largo se rompa */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra sutil para los ítems */
+}
+
+li:hover {
+  background: #f1f5f9; /* Un gris aún más claro al hover */
+  transform: translateX(5px);
+}
+
+li span {
+  flex-grow: 1;
+  word-break: break-word; /* Para asegurar que el texto se rompe dentro del span */
+}
+
+li button {
+  padding: 5px 10px;
+  font-size: 12px;
+  margin-left: auto;
+  min-width: unset; /* Reiniciar el min-width de los botones generales */
+}
+
+/* ========== ESTADOS DE TAREAS ========== */
+.task-urgent {
+  border-left-color: var(--error-dark);
+  background: var(--error-light);
+}
+
+.task-completed {
+  opacity: 0.7; /* Ligeramente más opaco que antes para mejor legibilidad */
+  /* La decoración se maneja en el span para evitar que el botón también se raye */
+}
+
+.task-completed span {
+  text-decoration: line-through;
+  color: var(--text-medium);
+}
+
+/* ========== CHECKBOXES ========== */
+input[type="checkbox"] {
+  min-width: 18px; /* Asegura un tamaño mínimo consistente */
+  min-height: 18px;
+  margin-right: var(--spacing-sm);
+  cursor: pointer;
+  accent-color: var(--primary-color); /* Personaliza el color del checkmark */
+}
+
+/* ========== HELPERS Y MENSAJES ========== */
+.help-text {
+  font-size: 12px;
+  color: var(--text-medium);
+  margin-top: var(--spacing-xs);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.help-text a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.help-text a:hover {
+  text-decoration: underline;
+}
+
+.success-message { /* Usado por trello-success-message */
+  background: var(--success-light);
+  color: var(--success-dark);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  margin: var(--spacing-sm) 0;
+  display: none;
+  border: 1px solid #d1fae5;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Contenedor para mensajes temporales flotantes */
+#temp-message-container {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    z-index: 1000;
+    pointer-events: none; /* Permite clics a través del contenedor */
+    width: 90%; /* Ancho máximo */
+    max-width: 400px;
+}
+
+.temp-message {
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--white);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    opacity: 0; /* Empezar oculto */
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    transform: translateY(20px); /* Empezar un poco abajo */
+}
+
+.temp-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.temp-message.hide {
+    opacity: 0;
+    transform: translateY(-20px); /* Desaparecer hacia arriba */
+}
+
+/* Colores para tipos de mensajes */
+.temp-message.success { background: var(--success-dark); }
+.temp-message.error { background: var(--error-dark); }
+.temp-message.warning { background: var(--warning-dark); }
+.temp-message.info { background: var(--info-dark); }
+
+/* ========== SECCIONES DE CONTENIDO DINÁMICO (Blog, Nutrición) ========== */
+#blog-content, #nutricion-content {
+  max-height: 400px; /* Limita la altura para evitar scroll infinito */
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: var(--light-bg); /* Fondo para la caja de contenido */
+}
+
+.blog-article-card, .nutricion-card {
+  background: var(--white); /* Fondo blanco para las tarjetas internas */
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  margin: var(--spacing-sm) 0;
+  border-left: 4px solid var(--primary-color);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra para las tarjetas */
+}
+
+.blog-article-card h4, .nutricion-card h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-dark);
+}
+
+.blog-article-card p, .nutricion-card p {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-medium);
+  line-height: 1.5;
+  font-size: 0.95em;
+}
+
+.blog-article-card small, .nutricion-card small {
+  color: var(--text-light);
+  font-style: italic;
+  display: block; /* Para que la fuente de la noticia se separe */
+  margin-bottom: var(--spacing-xs);
+}
+
+.article-link, .trello-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    display: inline-block; /* Para el icono de flecha */
+    margin-top: var(--spacing-xs);
+}
+
+.article-link:hover, .trello-link:hover {
+    text-decoration: underline;
+}
+
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-sm);
+    margin: var(--spacing-md) auto;
+  }
+  
+  header h1 {
+    font-size: 2em;
+  }
+  
+  .nav-tabs {
+    flex-direction: column;
+    align-items: stretch; /* Estirar botones a ancho completo */
+  }
+  
+  .nav-tabs button {
+    margin: 2px 0;
+  }
+  
+  .pomodoro-buttons {
+    flex-direction: column;
+  }
+  
+  #timer {
+    font-size: 2em;
+  }
+  
+  .seccion {
+    padding: 1.5em 1em;
+  }
+  
+  h2 {
+    font-size: 1.5em;
+  }
+  
+  li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  li button {
+    align-self: flex-end; /* Alinear el botón a la derecha en la columna */
+  }
+
+  .input-group {
+      flex-direction: column;
+  }
+
+  .input-group input {
+      margin-bottom: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    padding: 1em;
+  }
+  
+  header h1 {
+    font-size: 1.8em;
+  }
+  
+  header p {
+    font-size: 1em;
+  }
+  
+  .nav-tabs button {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  #timer {
+    font-size: 1.8em;
+  }
+  
+  button {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .temp-message {
+      font-size: 0.9em;
+  }
+}
+
+/* ========== ANIMACIONES ADICIONALES ========== */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.timer-active #timer {
+  animation: pulse 2s infinite;
+}
+
+/* ========== SCROLLBAR PERSONALIZADA ========== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

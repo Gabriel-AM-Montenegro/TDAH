@@ -4,56 +4,132 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js"></script>
+  <link rel="stylesheet" href="css/style1">
 </head>
 <body>
   <div class="container">
+
     <header>
-      <h1 style="font-family: 'Segoe UI'; color: #4F46E5;">🧠 TDAH App</h1>
+      <h1>🧠 TDAH Helper App</h1>
+      <p>Tu asistente personal para organización y productividad</p>
     </header>
 
-    <section id="pomodoro">
-      <h2>Temporizador Pomodoro</h2>
+    <div class="nav-tabs">
+      <button id="btn-pomodoro" onclick="mostrarSeccion('pomodoro')" class="active">⏱️ Pomodoro</button>
+      <button id="btn-tareas" onclick="mostrarSeccion('tareas')">📋 Tareas Importantes</button>
+      <button id="btn-checklist" onclick="mostrarSeccion('checklist')">✅ Checklist Rápido</button>
+      <button id="btn-notas" onclick="mostrarSeccion('notas')">📝 Notas Blog</button>
+      <button id="btn-config" onclick="mostrarSeccion('config')">⚙️ Configuración</button>
+    </div>
+
+    <section id="pomodoro" class="seccion active">
+      <h2>⏱️ Temporizador Pomodoro</h2>
       <div id="timer">25:00</div>
       <div class="pomodoro-buttons">
-        <button onclick="startTimer()">Iniciar</button>
-        <button onclick="pausarPomodoro()">Pausar</button>
-        <button onclick="resetTimer()">Resetear</button>
-
-        
+        <button onclick="startTimer()">▶️ Iniciar</button>
+        <button onclick="pausarPomodoro()">⏸️ Pausar</button>
+        <button onclick="resetTimer()">🔄 Resetear</button>
+      </div>
+      <div class="help-text">
+        💡 25 min de trabajo concentrado + 5 min de descanso. ¡Perfecto para TDAH!
       </div>
     </section>
 
-    <section id="tareas">
-      <h2>Tareas importantes</h2>
-      <input type="text" id="taskInput" placeholder="Nueva tarea" />
-      <button onclick="addTask()">Agregar</button>
-      <ul id="taskList"></ul>
+    <section id="tareas" class="seccion">
+      <h2>📋 Tareas Importantes (Trello)</h2>
+      <div id="trello-status" class="status-indicator status-disconnected">
+        ❌ Trello no conectado
+      </div>
+      <div id="tareas-content">
+        <p>Configura tu conexión a Trello para ver las tareas que vencen hoy.</p>
+        <button onclick="mostrarSeccion('config')">⚙️ Configurar Trello</button>
+      </div>
+      <ul id="listaTareas"></ul>
     </section>
 
-    <section id="checklist">
-      <h2>Checklist rápido</h2>
-      <input type="text" id="checkItem" placeholder="Nuevo ítem" />
-      <button onclick="addCheckItem()">Agregar</button>
+    <section id="checklist" class="seccion">
+      <h2>✅ Checklist Rápido</h2>
+      <div class="input-group">
+        <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
+        <button onclick="addCheckItem()">➕ Agregar</button>
+      </div>
       <ul id="checkList"></ul>
+      <div class="help-text">
+        💡 Para tareas pequeñas y recordatorios rápidos del día
+      </div>
     </section>
 
-    <section id="notas">
-      <h2>Notas de blog</h2>
-      <textarea id="notaInput" placeholder="Escribe tu nota..." rows="4"></textarea>
-      <button onclick="addNota()">Guardar</button>
-      <ul id="notaList"></ul>
+    <section id="notas" class="seccion">
+      <h2>📝 Notas de Blog TDAH</h2>
+      <div id="blog-content">
+        <p>Cargando artículos sobre TDAH...</p>
+        </div>
+      <button onclick="cargarNotasBlog()">🔄 Actualizar Artículos</button>
     </section>
 
-    <section id="recetas">
-      <h2>Recetas</h2>
-      <div class="receta">
-        <h3>Desayuno Energético</h3>
-        <p>Avena, frutas y nueces para comenzar el día con enfoque.</p>
+    <section id="nutricion" class="seccion">
+        <h2>🍎 Nutrición y Recetas</h2>
+        <div id="nutricion-content">
+            <p>Cargando recomendaciones nutricionales y recetas...</p>
+            </div>
+        <button onclick="cargarNutricion()">🔄 Actualizar Contenido</button>
+    </section>
+
+    <section id="config" class="seccion">
+      <h2>⚙️ Configuración</h2>
+      
+      <div class="config-card" id="config-card">
+        <h3>🔗 Conectar con Trello</h3>
+        
+        <div class="config-step">
+          <label for="api-key">API Key de Trello:</label>
+          <input type="text" id="api-key" placeholder="Pega aquí tu API Key...">
+          <div class="help-text">
+            📝 Obtén tu API Key en: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a>
+          </div>
+        </div>
+
+        <div class="config-step">
+          <label for="token">Token de Trello:</label>
+          <input type="text" id="token" placeholder="Pega aquí tu Token...">
+          <div class="help-text">
+            📝 Genera tu Token clickeando en el link que aparece junto a tu API Key
+          </div>
+        </div>
+
+        <div class="config-step">
+          <label for="board-id">ID del Board:</label>
+          <input type="text" id="board-id" placeholder="ID de tu board de Trello...">
+          <div class="help-text">
+            📝 Encuentra el ID en la URL de tu board: trello.com/b/<strong>ID_AQUI</strong>/nombre-board
+          </div>
+        </div>
+
+        <button onclick="probarConexionTrello()">🔍 Probar Conexión</button>
+        <button onclick="guardarConfigTrello()">💾 Guardar Configuración</button>
+        
+        <div class="success-message" id="trello-success-message">
+          ✅ ¡Conexión exitosa! Ya puedes ver tus tareas de Trello.
+        </div>
+      </div>
+
+      <div class="config-card">
+        <h3>📊 Estado de la App</h3>
+        <p><strong>Tareas guardadas:</strong> <span id="tasks-count">0</span></p>
+        <p><strong>Checklist items:</strong> <span id="checklist-count">0</span></p>
+        <p><strong>Última sincronización Trello:</strong> <span id="last-sync">Nunca</span></p>
+        
+        <button onclick="limpiarDatos()" style="background: #ef4444;">🗑️ Limpiar Todos los Datos</button>
       </div>
     </section>
   </div>
-  <script src="main.js"></script>
+
+  <div id="temp-message-container"></div>
+  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
+  <audio id="sound-break" src="sounds/break.mp3" preload="auto"></audio>
+  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
+
+
+  <script src="/js/main.js"></script>
 </body>
 </html>
