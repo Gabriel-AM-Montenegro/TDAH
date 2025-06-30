@@ -5,7 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
-  <!-- Firebase SDKs (Ahora importados directamente en main.js que es un módulo) -->
+
+  <!-- Firebase SDKs: Cargados como scripts tradicionales para asegurar que 'firebase' esté disponible globalmente -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"></script>
+  <!-- Analytics SDK (si lo necesitas, pero no es esencial para el funcionamiento principal) -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js"></script> -->
+
+  <!-- Script de inicialización de Firebase y autenticación -->
+  <!-- MOVIDO AQUÍ para asegurar que los SDK de Firebase estén cargados antes de ser usados -->
+  <script>
+    // Configuración de Firebase proporcionada por el usuario
+    const firebaseConfig = {
+        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw",
+        authDomain: "tdah-app-efca9.firebaseapp.com",
+        projectId: "tdah-app-efca9",
+        storageBucket: "tdah-app-efca9.firebasestorage.app",
+        messagingSenderId: "765424031369",
+        appId: "1:765424031369:web:838eca686f68f21daa5858",
+        measurementId: "G-QY7X98XZZV"
+    };
+
+    // Inicializar Firebase y exponer a window para main.js
+    // Usamos las funciones modulares directamente de Firebase SDK v9
+    window.firebaseApp = firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore(); // Usar firebase.firestore() para la compatibilidad global
+    window.auth = firebase.auth();   // Usar firebase.auth() para la compatibilidad global
+
+    // Asegurarse de usar el appId de la configuración de Firebase
+    window.appId = firebaseConfig.appId;
+    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // Mantener para el entorno Canvas
+
+    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
+    // Definirlas aquí para asegurar que estén disponibles cuando DOMContentLoaded se dispare.
+    window.mostrarSeccion = function(idSeccion) {
+        console.log(`Intentando mostrar sección: ${idSeccion}`);
+        document.querySelectorAll('.seccion').forEach(seccion => {
+            seccion.classList.remove('active');
+        });
+        document.querySelectorAll('.nav-tabs button').forEach(button => {
+            button.classList.remove('active');
+        });
+
+        const seccionActiva = document.getElementById(idSeccion);
+        if (seccionActiva) {
+            seccionActiva.classList.add('active');
+            console.log(`Sección ${idSeccion} activada.`);
+        } else {
+            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
+        }
+        const botonActivo = document.getElementById(`btn-${idSeccion}`);
+        if (botonActivo) {
+            botonActivo.classList.add('active');
+            console.log(`Botón ${idSeccion} activado.`);
+        } else {
+            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
+        }
+    };
+
+    window.showTempMessage = function(message, type = 'info', duration = 3000) {
+        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
+        const tempMessageContainer = document.getElementById('temp-message-container');
+        if (!tempMessageContainer) {
+            console.error("Contenedor de mensajes temporales no encontrado.");
+            return;
+        }
+        const msgElement = document.createElement('div');
+        msgElement.className = `temp-message ${type}`;
+        msgElement.textContent = message;
+        tempMessageContainer.appendChild(msgElement);
+
+        msgElement.offsetHeight;
+        msgElement.classList.add('show');
+
+        setTimeout(() => {
+            msgElement.classList.remove('show');
+            msgElement.classList.add('hide');
+            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
+        }, duration);
+    };
+
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log("DOMContentLoaded: DOM completamente cargado. Iniciando autenticación Firebase...");
+
+        // Adjuntar event listeners a los botones de navegación
+        document.getElementById('btn-pomodoro').addEventListener('click', () => window.mostrarSeccion('pomodoro'));
+        document.getElementById('btn-tareas').addEventListener('click', () => window.mostrarSeccion('tareas'));
+        document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
+        document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
+        document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
+        document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
+        console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
+
+        // Manejar la autenticación
+        window.auth.onAuthStateChanged(async (user) => {
+            console.log("onAuthStateChanged: Estado de autenticación cambiado.");
+            if (user) {
+                window.currentUserId = user.uid;
+                console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
+                // Una vez autenticado, cargar todos los datos
+                // Asegurarse de que loadAllUserData esté disponible globalmente
+                if (typeof window.loadAllUserData === 'function') {
+                    window.loadAllUserData();
+                } else {
+                    console.error("loadAllUserData no está definida globalmente.");
+                }
+            } else {
+                console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
+                try {
+                    if (window.initialAuthToken) {
+                        console.log("onAuthStateChanged: Usando initialAuthToken.");
+                        await window.auth.signInWithCustomToken(window.initialAuthToken);
+                    } else {
+                        console.log("onAuthStateChanged: Usando signInAnonymously.");
+                        await window.auth.signInAnonymously();
+                    }
+                    console.log("onAuthStateChanged: signInAnonymously/CustomToken exitoso.");
+                } catch (error) {
+                    console.error("onAuthStateChanged: Error al iniciar sesión en Firebase:", error);
+                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Inicializar la primera sección visible al cargar la página
+        window.mostrarSeccion('pomodoro');
+        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
+
+    });
+  </script>
+
 </head>
 <body>
   <div class="container">
@@ -17,7 +148,6 @@
     </header>
 
     <div class="nav-tabs">
-      <!-- Los onclick se manejarán ahora desde main.js -->
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
       <button id="btn-tareas">📋 Tareas Importantes</button>
       <button id="btn-checklist">✅ Checklist Rápido</button>
@@ -30,7 +160,6 @@
       <h2>⏱️ Temporizador Pomodoro</h2>
       <div id="timer">25:00</div>
       <div class="pomodoro-buttons">
-        <!-- Los onclick se manejarán ahora desde main.js -->
         <button id="start-timer-btn">▶️ Iniciar</button>
         <button id="pause-pomodoro-btn">⏸️ Pausar</button>
         <button id="reset-timer-btn">🔄 Resetear</button>
@@ -47,7 +176,6 @@
       </div>
       <div id="tareas-content">
         <p>Configura tu conexión a Trello para ver las tareas que vencen hoy.</p>
-        <!-- El onclick se manejará ahora desde main.js -->
         <button id="config-trello-btn">⚙️ Configurar Trello</button>
       </div>
       <ul id="listaTareas"></ul>
@@ -57,7 +185,6 @@
       <h2>✅ Checklist Rápido</h2>
       <div class="input-group">
         <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
-        <!-- El onclick se manejará ahora desde main.js -->
         <button id="add-check-item-btn">➕ Agregar</button>
       </div>
       <ul id="checkList"></ul>
@@ -70,7 +197,6 @@
         <h2>📝 Journal</h2>
         <p class="subtitle">Un espacio reflexivo para documentar emociones, actividades y situaciones significativas de tu jornada, fomentando el autoconocimiento y el bienestar.</p>
         <textarea id="journalEntry" rows="10" placeholder="Escribe aquí tu entrada del diario..."></textarea>
-        <!-- El onclick se manejará ahora desde main.js -->
         <button id="save-journal-entry-btn">Guardar Entrada</button>
 
         <h3>Entradas Anteriores:</h3>
@@ -84,7 +210,6 @@
       <div id="blog-content">
         <p>Cargando artículos sobre TDAH...</p>
         </div>
-      <!-- El onclick se manejará ahora desde main.js -->
       <button id="refresh-blog-btn">🔄 Actualizar Artículos</button>
     </section>
 
@@ -93,7 +218,6 @@
         <div id="nutricion-content">
             <p>Cargando recomendaciones nutricionales y recetas...</p>
             </div>
-        <!-- El onclick se manejará ahora desde main.js -->
         <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
     </section>
 
@@ -127,7 +251,6 @@
           </div>
         </div>
 
-        <!-- Los onclick se manejarán ahora desde main.js -->
         <button id="test-trello-btn">🔍 Probar Conexión</button>
         <button id="save-trello-config-btn">💾 Guardar Configuración</button>
         
@@ -142,7 +265,6 @@
         <p><strong>Checklist items:</strong> <span id="checklist-count">0</span></p>
         <p><strong>Última sincronización Trello:</strong> <span id="last-sync">Nunca</span></p>
         
-        <!-- El onclick se manejará ahora desde main.js -->
         <button id="clear-data-btn" style="background: #ef4444;">🗑️ Limpiar Todos los Datos</button>
       </div>
     </section>
@@ -150,10 +272,10 @@
 
   <div id="temp-message-container"></div>
   <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
-  <audio id="sound-break" src="sounds/break.mp3" preload="auto"></audio>
+  <audio id="sound-break" src="sounds/break.mpod3" preload="auto"></audio>
   <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
 
 
-  <script type="module" src="js/main.js"></script> <!-- main.js ahora es un módulo -->
+  <script src="js/main.js"></script> <!-- main.js ahora es un script tradicional -->
 </body>
 </html>
