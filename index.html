@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script> -->
 
 </head>
 <body>
@@ -21,8 +21,32 @@
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
-      <div id="user-id-display" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px;">Cargando usuario...</div>
+      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+        <span id="user-display-name" style="margin-right: 10px;">Cargando usuario...</span>
+        <button id="google-signin-btn" class="button-primary" style="display: none; margin-right: 10px; margin-bottom: 5px;">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
+          Iniciar con Google
+        </button>
+        <button id="apple-signin-btn" class="button-primary" style="display: none; background-color: #000; color: #fff; margin-right: 10px; margin-bottom: 5px;">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/apple.svg" alt="Apple logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
+          Iniciar con Apple
+        </button>
+        <button id="email-signin-toggle-btn" class="button-secondary" style="display: none; margin-bottom: 5px;">
+          Iniciar con Email
+        </button>
+        <button id="logout-btn" class="button-secondary" style="display: none; margin-left: 10px; margin-bottom: 5px;">Cerrar Sesión</button>
+      </div>
     </header>
+
+    <!-- Formulario de inicio de sesión/registro con Email -->
+    <div id="email-auth-form" class="auth-form-card" style="display: none; margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3>Iniciar Sesión / Registrarse con Email</h3>
+      <input type="email" id="email-input" placeholder="Correo electrónico" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+      <input type="password" id="password-input" placeholder="Contraseña" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+      <button id="email-signup-btn" class="button-primary" style="margin-right: 10px;">Registrarse</button>
+      <button id="email-login-btn" class="button-secondary">Iniciar Sesión</button>
+      <button id="email-form-close-btn" class="button-danger" style="float: right;">X</button>
+    </div>
 
     <div class="nav-tabs">
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
@@ -235,6 +259,20 @@
     document.addEventListener('DOMContentLoaded', async () => {
         console.log("DOMContentLoaded: DOM completamente cargado. Iniciando autenticación Firebase...");
 
+        // Referencias a elementos de la UI de autenticación
+        const userDisplayName = document.getElementById('user-display-name');
+        const googleSigninBtn = document.getElementById('google-signin-btn');
+        const appleSigninBtn = document.getElementById('apple-signin-btn');
+        const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn'); // Nuevo botón para mostrar/ocultar formulario de email
+        const logoutBtn = document.getElementById('logout-btn');
+        const emailAuthForm = document.getElementById('email-auth-form');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const emailSignupBtn = document.getElementById('email-signup-btn');
+        const emailLoginBtn = document.getElementById('email-login-btn');
+        const emailFormCloseBtn = document.getElementById('email-form-close-btn');
+
+
         // Adjuntar event listeners a los botones de navegación
         document.getElementById('btn-pomodoro').addEventListener('click', () => window.mostrarSeccion('pomodoro'));
         document.getElementById('btn-tareas').addEventListener('click', () => window.mostrarSeccion('tareas'));
@@ -250,8 +288,20 @@
             if (user) {
                 window.currentUserId = user.uid;
                 console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
+
+                // Mostrar información del usuario y botones de sesión
+                userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+                googleSigninBtn.style.display = 'none';
+                appleSigninBtn.style.display = 'none';
+                emailSigninToggleBtn.style.display = 'none'; // Ocultar si ya está logueado
+                logoutBtn.style.display = 'inline-block';
+                emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
+
+                // Si el usuario era anónimo y ahora se autenticó con Google/Apple/Email,
+                // podrías considerar migrar sus datos anónimos a su nueva cuenta aquí.
+                // Esto es complejo y no está implementado en este ejemplo.
+
                 // Una vez autenticado, cargar todos los datos
-                // Asegurarse de que loadAllUserData esté disponible globalmente
                 if (typeof window.loadAllUserData === 'function') {
                     window.loadAllUserData();
                 } else {
@@ -259,6 +309,13 @@
                 }
             } else {
                 console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
+                userDisplayName.textContent = 'No autenticado.';
+                googleSigninBtn.style.display = 'inline-block';
+                appleSigninBtn.style.display = 'inline-block';
+                emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón para email
+                logoutBtn.style.display = 'none';
+                emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
+
                 try {
                     if (window.initialAuthToken) {
                         console.log("onAuthStateChanged: Usando initialAuthToken.");
@@ -274,6 +331,120 @@
                 }
             }
         });
+
+        // Adjuntar event listeners para Google Sign-In y Sign-Out
+        document.getElementById('google-signin-btn').addEventListener('click', async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await window.auth.signInWithPopup(provider);
+                window.showTempMessage('Inicio de sesión con Google exitoso!', 'success');
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+                window.showTempMessage(`Error al iniciar sesión con Google: ${error.message}`, 'error');
+            }
+        });
+
+        // Event listener para Apple Sign-In
+        document.getElementById('apple-signin-btn').addEventListener('click', async () => {
+            const provider = new firebase.auth.OAuthProvider('apple.com');
+            // Opcional: Solicitar información adicional (como el nombre completo)
+            // provider.addScope('email');
+            // provider.addScope('name');
+
+            try {
+                await window.auth.signInWithPopup(provider);
+                window.showTempMessage('Inicio de sesión con Apple exitoso!', 'success');
+            } catch (error) {
+                console.error("Error al iniciar sesión con Apple:", error);
+                // Manejo de errores específicos de Apple
+                if (error.code === 'auth/account-exists-with-different-credential') {
+                    window.showTempMessage('Ya existe una cuenta con este correo electrónico usando otro método de inicio de sesión.', 'error');
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    window.showTempMessage('Inicio de sesión con Apple cancelado.', 'info');
+                } else {
+                    window.showTempMessage(`Error al iniciar sesión con Apple: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Lógica para mostrar/ocultar el formulario de email
+        emailSigninToggleBtn.addEventListener('click', () => {
+            emailAuthForm.style.display = emailAuthForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        emailFormCloseBtn.addEventListener('click', () => {
+            emailAuthForm.style.display = 'none';
+            emailInput.value = '';
+            passwordInput.value = '';
+        });
+
+        // Lógica para registrarse con Email y Contraseña
+        emailSignupBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
+                return;
+            }
+            if (password.length < 6) {
+                window.showTempMessage('La contraseña debe tener al menos 6 caracteres.', 'warning');
+                return;
+            }
+
+            try {
+                await window.auth.createUserWithEmailAndPassword(email, password);
+                window.showTempMessage('Registro exitoso! Has iniciado sesión.', 'success');
+                emailAuthForm.style.display = 'none'; // Ocultar formulario al registrarse
+            } catch (error) {
+                console.error("Error al registrarse con Email:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    window.showTempMessage('Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.', 'error');
+                } else {
+                    window.showTempMessage(`Error de registro: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Lógica para iniciar sesión con Email y Contraseña
+        emailLoginBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
+                return;
+            }
+
+            try {
+                await window.auth.signInWithEmailAndPassword(email, password);
+                window.showTempMessage('Inicio de sesión exitoso!', 'success');
+                emailAuthForm.style.display = 'none'; // Ocultar formulario al iniciar sesión
+            } catch (error) {
+                console.error("Error al iniciar sesión con Email:", error);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    window.showTempMessage('Correo o contraseña incorrectos.', 'error');
+                } else if (error.code === 'auth/invalid-email') {
+                    window.showTempMessage('Formato de correo electrónico inválido.', 'error');
+                } else {
+                    window.showTempMessage(`Error de inicio de sesión: ${error.message}`, 'error');
+                }
+            }
+        });
+
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await window.auth.signOut();
+                window.showTempMessage('Sesión cerrada.', 'info');
+                // Recargar para limpiar el estado y volver a la autenticación anónima
+                location.reload(); 
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+            }
+        });
+
 
         // Inicializar la primera sección visible al cargar la página
         window.mostrarSeccion('pomodoro');
