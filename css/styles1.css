@@ -1,4 +1,5 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
+/* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 
 :root {
   /* Colores */
@@ -113,7 +114,7 @@ header p {
 /* ========== SECCIONES ========== */
 .seccion {
   display: none;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95); /* Fondo blanco translúcido para todas las secciones */
   padding: 2em;
   border-radius: var(--border-radius-md);
   box-shadow: var(--glass-shadow);
@@ -143,6 +144,15 @@ h2 {
   align-items: center;
   gap: var(--spacing-sm);
   font-size: 1.8em;
+}
+
+/* Estilo para el nuevo subtítulo */
+.subtitle {
+    color: var(--text-medium);
+    font-size: 0.95em;
+    margin-top: -1em; /* Ajusta el margen superior para que esté cerca del título */
+    margin-bottom: 1.5em;
+    line-height: 1.5;
 }
 
 h3 {
@@ -478,6 +488,60 @@ input[type="checkbox"] {
 
 .article-link:hover, .trello-link:hover {
     text-decoration: underline;
+}
+
+
+/* Estilos para el Journal */
+/* La sección del journal ahora usa los estilos generales de .seccion */
+#journalEntry {
+    width: 100%; /* Asegura que ocupe todo el ancho disponible */
+    padding: 12px;
+    margin-bottom: var(--spacing-sm);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    resize: vertical; /* Permite redimensionar verticalmente */
+    font-family: inherit; /* Hereda la fuente de la app */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#journalEntry:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+#saveJournalEntry {
+    /* Usa los estilos de botón generales definidos arriba */
+    margin-bottom: var(--spacing-lg); /* Espacio después del botón */
+}
+
+#journalEntriesList {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--spacing-md);
+}
+
+#journalEntriesList li {
+    background-color: var(--white); /* Fondo blanco para las entradas individuales */
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Mantiene los saltos de línea y espacios en blanco del textarea */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Sombra sutil */
+    border-left: 4px solid var(--secondary-color); /* Un borde lateral distintivo */
+    display: block; /* Para que ocupe su propio bloque */
+}
+
+#journalEntriesList li .journal-date {
+    font-size: 0.8rem;
+    color: var(--text-medium);
+    margin-bottom: var(--spacing-xs);
+    display: block;
+    font-style: italic;
 }
 
 

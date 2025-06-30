@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
+  <!-- Firebase SDKs (Ahora importados directamente en main.js que es un módulo) -->
 </head>
 <body>
   <div class="container">
@@ -12,23 +13,27 @@
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
+      <div id="user-id-display" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px;">Cargando usuario...</div>
     </header>
 
     <div class="nav-tabs">
-      <button id="btn-pomodoro" onclick="mostrarSeccion('pomodoro')" class="active">⏱️ Pomodoro</button>
-      <button id="btn-tareas" onclick="mostrarSeccion('tareas')">📋 Tareas Importantes</button>
-      <button id="btn-checklist" onclick="mostrarSeccion('checklist')">✅ Checklist Rápido</button>
-      <button id="btn-notas" onclick="mostrarSeccion('notas')">📝 Notas Blog</button>
-      <button id="btn-config" onclick="mostrarSeccion('config')">⚙️ Configuración</button>
+      <!-- Los onclick se manejarán ahora desde main.js -->
+      <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
+      <button id="btn-tareas">📋 Tareas Importantes</button>
+      <button id="btn-checklist">✅ Checklist Rápido</button>
+      <button id="btn-journal">📝 Journal</button>
+      <button id="btn-notas">📝 Notas Blog</button>
+      <button id="btn-config">⚙️ Configuración</button>
     </div>
 
     <section id="pomodoro" class="seccion active">
       <h2>⏱️ Temporizador Pomodoro</h2>
       <div id="timer">25:00</div>
       <div class="pomodoro-buttons">
-        <button onclick="startTimer()">▶️ Iniciar</button>
-        <button onclick="pausarPomodoro()">⏸️ Pausar</button>
-        <button onclick="resetTimer()">🔄 Resetear</button>
+        <!-- Los onclick se manejarán ahora desde main.js -->
+        <button id="start-timer-btn">▶️ Iniciar</button>
+        <button id="pause-pomodoro-btn">⏸️ Pausar</button>
+        <button id="reset-timer-btn">🔄 Resetear</button>
       </div>
       <div class="help-text">
         💡 25 min de trabajo concentrado + 5 min de descanso. ¡Perfecto para TDAH!
@@ -42,7 +47,8 @@
       </div>
       <div id="tareas-content">
         <p>Configura tu conexión a Trello para ver las tareas que vencen hoy.</p>
-        <button onclick="mostrarSeccion('config')">⚙️ Configurar Trello</button>
+        <!-- El onclick se manejará ahora desde main.js -->
+        <button id="config-trello-btn">⚙️ Configurar Trello</button>
       </div>
       <ul id="listaTareas"></ul>
     </section>
@@ -51,7 +57,8 @@
       <h2>✅ Checklist Rápido</h2>
       <div class="input-group">
         <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
-        <button onclick="addCheckItem()">➕ Agregar</button>
+        <!-- El onclick se manejará ahora desde main.js -->
+        <button id="add-check-item-btn">➕ Agregar</button>
       </div>
       <ul id="checkList"></ul>
       <div class="help-text">
@@ -59,12 +66,26 @@
       </div>
     </section>
 
+    <section id="journal" class="seccion">
+        <h2>📝 Journal</h2>
+        <p class="subtitle">Un espacio reflexivo para documentar emociones, actividades y situaciones significativas de tu jornada, fomentando el autoconocimiento y el bienestar.</p>
+        <textarea id="journalEntry" rows="10" placeholder="Escribe aquí tu entrada del diario..."></textarea>
+        <!-- El onclick se manejará ahora desde main.js -->
+        <button id="save-journal-entry-btn">Guardar Entrada</button>
+
+        <h3>Entradas Anteriores:</h3>
+        <ul id="journalEntriesList">
+            <!-- Las entradas del diario se cargarán aquí dinámicamente -->
+        </ul>
+    </section>
+
     <section id="notas" class="seccion">
       <h2>📝 Notas de Blog TDAH</h2>
       <div id="blog-content">
         <p>Cargando artículos sobre TDAH...</p>
         </div>
-      <button onclick="cargarNotasBlog()">🔄 Actualizar Artículos</button>
+      <!-- El onclick se manejará ahora desde main.js -->
+      <button id="refresh-blog-btn">🔄 Actualizar Artículos</button>
     </section>
 
     <section id="nutricion" class="seccion">
@@ -72,7 +93,8 @@
         <div id="nutricion-content">
             <p>Cargando recomendaciones nutricionales y recetas...</p>
             </div>
-        <button onclick="cargarNutricion()">🔄 Actualizar Contenido</button>
+        <!-- El onclick se manejará ahora desde main.js -->
+        <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
     </section>
 
     <section id="config" class="seccion">
@@ -105,8 +127,9 @@
           </div>
         </div>
 
-        <button onclick="probarConexionTrello()">🔍 Probar Conexión</button>
-        <button onclick="guardarConfigTrello()">💾 Guardar Configuración</button>
+        <!-- Los onclick se manejarán ahora desde main.js -->
+        <button id="test-trello-btn">🔍 Probar Conexión</button>
+        <button id="save-trello-config-btn">💾 Guardar Configuración</button>
         
         <div class="success-message" id="trello-success-message">
           ✅ ¡Conexión exitosa! Ya puedes ver tus tareas de Trello.
@@ -119,7 +142,8 @@
         <p><strong>Checklist items:</strong> <span id="checklist-count">0</span></p>
         <p><strong>Última sincronización Trello:</strong> <span id="last-sync">Nunca</span></p>
         
-        <button onclick="limpiarDatos()" style="background: #ef4444;">🗑️ Limpiar Todos los Datos</button>
+        <!-- El onclick se manejará ahora desde main.js -->
+        <button id="clear-data-btn" style="background: #ef4444;">🗑️ Limpiar Todos los Datos</button>
       </div>
     </section>
   </div>
@@ -130,6 +154,6 @@
   <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
 
 
-  <script src="/js/main.js"></script>
+  <script type="module" src="js/main.js"></script> <!-- main.js ahora es un módulo -->
 </body>
 </html>
