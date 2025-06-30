@@ -27,10 +27,7 @@
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
           Iniciar con Google
         </button>
-        <button id="apple-signin-btn" class="button-primary" style="display: none; background-color: #000; color: #fff; margin-right: 10px; margin-bottom: 5px;">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/apple.svg" alt="Apple logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
-          Iniciar con Apple
-        </button>
+        <!-- Botón de Apple Sign-In eliminado -->
         <button id="email-signin-toggle-btn" class="button-secondary" style="display: none; margin-bottom: 5px;">
           Iniciar con Email
         </button>
@@ -262,7 +259,7 @@
         // Referencias a elementos de la UI de autenticación
         const userDisplayName = document.getElementById('user-display-name');
         const googleSigninBtn = document.getElementById('google-signin-btn');
-        const appleSigninBtn = document.getElementById('apple-signin-btn');
+        // const appleSigninBtn = document.getElementById('apple-signin-btn'); // Eliminado
         const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn'); // Nuevo botón para mostrar/ocultar formulario de email
         const logoutBtn = document.getElementById('logout-btn');
         const emailAuthForm = document.getElementById('email-auth-form');
@@ -292,7 +289,7 @@
                 // Mostrar información del usuario y botones de sesión
                 userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
                 googleSigninBtn.style.display = 'none';
-                appleSigninBtn.style.display = 'none';
+                // appleSigninBtn.style.display = 'none'; // Eliminado
                 emailSigninToggleBtn.style.display = 'none'; // Ocultar si ya está logueado
                 logoutBtn.style.display = 'inline-block';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
@@ -311,7 +308,7 @@
                 console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
                 userDisplayName.textContent = 'No autenticado.';
                 googleSigninBtn.style.display = 'inline-block';
-                appleSigninBtn.style.display = 'inline-block';
+                // appleSigninBtn.style.display = 'inline-block'; // Eliminado
                 emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón para email
                 logoutBtn.style.display = 'none';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
@@ -344,28 +341,8 @@
             }
         });
 
-        // Event listener para Apple Sign-In
-        document.getElementById('apple-signin-btn').addEventListener('click', async () => {
-            const provider = new firebase.auth.OAuthProvider('apple.com');
-            // Opcional: Solicitar información adicional (como el nombre completo)
-            // provider.addScope('email');
-            // provider.addScope('name');
-
-            try {
-                await window.auth.signInWithPopup(provider);
-                window.showTempMessage('Inicio de sesión con Apple exitoso!', 'success');
-            } catch (error) {
-                console.error("Error al iniciar sesión con Apple:", error);
-                // Manejo de errores específicos de Apple
-                if (error.code === 'auth/account-exists-with-different-credential') {
-                    window.showTempMessage('Ya existe una cuenta con este correo electrónico usando otro método de inicio de sesión.', 'error');
-                } else if (error.code === 'auth/cancelled-popup-request') {
-                    window.showTempMessage('Inicio de sesión con Apple cancelado.', 'info');
-                } else {
-                    window.showTempMessage(`Error al iniciar sesión con Apple: ${error.message}`, 'error');
-                }
-            }
-        });
+        // Event listener para Apple Sign-In eliminado
+        // document.getElementById('apple-signin-btn').addEventListener('click', async () => { ... });
 
         // Lógica para mostrar/ocultar el formulario de email
         emailSigninToggleBtn.addEventListener('click', () => {
