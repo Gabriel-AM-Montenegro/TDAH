@@ -6,12 +6,13 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados tradicionalmente en el head para asegurar disponibilidad global temprana -->
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
+  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js"></script> -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
 </head>
 <body>
@@ -152,14 +153,17 @@
   <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
 
   <!-- Script de inicialización de Firebase y autenticación -->
-  <!-- MOVIDO AQUÍ (al final del body) para asegurar que los SDK de Firebase estén cargados antes de ser usados -->
+  <!-- Este script se ejecuta después de que los SDK de Firebase se han cargado (en el head) -->
+  <!-- y antes de main.js, asegurando que 'firebase' esté definido. -->
   <script>
     console.log("Script inline en body: Iniciando configuración de Firebase.");
     // Configuración de Firebase proporcionada por el usuario
+    // ¡IMPORTANTE! Reemplaza estos valores con los de TU proyecto de Firebase
+    // Encuéntralos en la Consola de Firebase > Configuración del proyecto > Tus apps (aplicación web)
     const firebaseConfig = {
-        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw",
-        authDomain: "tdah-app-efca9.firebaseapp.com",
-        projectId: "tdah-app-efca9",
+        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw", // <--- VERIFICA ESTE VALOR
+        authDomain: "tdah-app-efca9.firebaseapp.com",    // <--- VERIFICA ESTE VALOR
+        projectId: "tdah-app-efca9",                     // <--- VERIFICA ESTE VALOR
         storageBucket: "tdah-app-efca9.firebasestorage.app",
         messagingSenderId: "765424031369",
         appId: "1:765424031369:web:838eca686f68f21daa5858",
@@ -167,7 +171,7 @@
     };
 
     // Inicializar Firebase y exponer a window para main.js
-    // Usamos las funciones modulares directamente de Firebase SDK v9
+    // Usamos las funciones de la API global de Firebase (v8 compat)
     window.firebaseApp = firebase.initializeApp(firebaseConfig);
     window.db = firebase.firestore(); // Acceder a Firestore
     window.auth = firebase.auth();   // Acceder a Auth
