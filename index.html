@@ -177,6 +177,7 @@
     </section>
   </div>
 
+  <div id="confetti-container"></div> <!-- Contenedor para el confeti -->
   <div id="temp-message-container"></div>
   <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
   <audio id="sound-break" src="sounds/break.mp3" preload="auto"></audio>
@@ -574,31 +575,30 @@
 
                     // Event listener para el checkbox de MIT
                     listItem.querySelector('.mit-checkbox').addEventListener('change', async (e) => {
-                        const isCheckingMIT = e.target.checked; // True if user is trying to mark as MIT, false if unmarking
-                        const allMitCheckboxes = document.querySelectorAll('.mit-checkbox');
-                        let mitCount = 0;
-                        for (const cb of allMitCheckboxes) {
-                            if (cb.checked) {
-                                mitCount++;
+                        const newIsMIT = e.target.checked; // The intended state (true if checking, false if unchecking)
+                        const itemId = e.target.id.replace('mit-', ''); // Get the item ID
+
+                        console.log(`MIT checkbox clicked for item ${itemId}. Intended state: ${newIsMIT}`);
+
+                        if (newIsMIT) {
+                            // If the user is trying to mark it as MIT
+                            const currentMitCount = document.querySelectorAll('.mit-task').length;
+                            console.log(`Current MIT count from DOM: ${currentMitCount}`);
+
+                            if (currentMitCount >= 3) {
+                                e.target.checked = false; // Revert UI immediately
+                                window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                                console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}.`);
+                                return; // Stop the function here
                             }
-                        }
-
-                        console.log(`MIT checkbox clicked for item ${itemId}. Is checking MIT: ${isCheckingMIT}. Current MIT count (from DOM): ${mitCount}`);
-
-                        // If user is trying to check this MIT, and the total count (including this one) would exceed 3
-                        if (isCheckingMIT && mitCount > 3) {
-                            e.target.checked = false; // Revert UI immediately
-                            window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
-                            console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}. Current count: ${mitCount}.`);
-                            return; // Stop further processing
                         }
 
                         try {
                             await checklistCollectionRef.doc(itemId).update({
-                                isMIT: isCheckingMIT
+                                isMIT: newIsMIT
                             });
                             // The onSnapshot listener will handle adding/removing 'mit-task' class based on the database state
-                            console.log(`Checklist: Ítem ${itemId} MIT actualizado a ${isCheckingMIT}.`);
+                            console.log(`Checklist: Ítem ${itemId} MIT actualizado a ${newIsMIT} en Firestore.`);
                         } catch (error) {
                             console.error("Checklist: Error al actualizar MIT:", error);
                             window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
