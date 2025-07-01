@@ -27,9 +27,11 @@
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
           Iniciar con Google
         </button>
-        <!-- Botón de Apple Sign-In eliminado -->
-        <button id="email-signin-toggle-btn" class="button-secondary" style="display: none; margin-bottom: 5px;">
+        <button id="email-signin-toggle-btn" class="button-secondary" style="display: none; margin-right: 10px; margin-bottom: 5px;">
           Iniciar con Email
+        </button>
+        <button id="anonymous-signin-btn" class="button-secondary" style="display: none; margin-bottom: 5px;">
+          Continuar como Anónimo
         </button>
         <button id="logout-btn" class="button-secondary" style="display: none; margin-left: 10px; margin-bottom: 5px;">Cerrar Sesión</button>
       </div>
@@ -259,8 +261,8 @@
         // Referencias a elementos de la UI de autenticación
         const userDisplayName = document.getElementById('user-display-name');
         const googleSigninBtn = document.getElementById('google-signin-btn');
-        // const appleSigninBtn = document.getElementById('apple-signin-btn'); // Eliminado
-        const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn'); // Nuevo botón para mostrar/ocultar formulario de email
+        const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
+        const anonymousSigninBtn = document.getElementById('anonymous-signin-btn'); // Nuevo botón para anónimo
         const logoutBtn = document.getElementById('logout-btn');
         const emailAuthForm = document.getElementById('email-auth-form');
         const emailInput = document.getElementById('email-input');
@@ -286,17 +288,13 @@
                 window.currentUserId = user.uid;
                 console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
 
-                // Mostrar información del usuario y botones de sesión
+                // Mostrar información del usuario y botón de cerrar sesión
                 userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
                 googleSigninBtn.style.display = 'none';
-                // appleSigninBtn.style.display = 'none'; // Eliminado
-                emailSigninToggleBtn.style.display = 'none'; // Ocultar si ya está logueado
+                emailSigninToggleBtn.style.display = 'none';
+                anonymousSigninBtn.style.display = 'none'; // Ocultar si ya está logueado
                 logoutBtn.style.display = 'inline-block';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
-
-                // Si el usuario era anónimo y ahora se autenticó con Google/Apple/Email,
-                // podrías considerar migrar sus datos anónimos a su nueva cuenta aquí.
-                // Esto es complejo y no está implementado en este ejemplo.
 
                 // Una vez autenticado, cargar todos los datos
                 if (typeof window.loadAllUserData === 'function') {
@@ -305,27 +303,16 @@
                     console.error("loadAllUserData no está definida globalmente.");
                 }
             } else {
-                console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
-                userDisplayName.textContent = 'No autenticado.';
+                console.log("onAuthStateChanged: Usuario no autenticado. Mostrando opciones de inicio de sesión.");
+                userDisplayName.textContent = 'Por favor, inicia sesión:';
                 googleSigninBtn.style.display = 'inline-block';
-                // appleSigninBtn.style.display = 'inline-block'; // Eliminado
-                emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón para email
+                emailSigninToggleBtn.style.display = 'inline-block';
+                anonymousSigninBtn.style.display = 'inline-block'; // Mostrar botón para anónimo
                 logoutBtn.style.display = 'none';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
 
-                try {
-                    if (window.initialAuthToken) {
-                        console.log("onAuthStateChanged: Usando initialAuthToken.");
-                        await window.auth.signInWithCustomToken(window.initialAuthToken);
-                    } else {
-                        console.log("onAuthStateChanged: Usando signInAnonymously.");
-                        await window.auth.signInAnonymously();
-                    }
-                    console.log("onAuthStateChanged: signInAnonymously/CustomToken exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged: Error al iniciar sesión en Firebase:", error);
-                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
-                }
+                // Si el usuario no está autenticado, no intentar signInAnonymously automáticamente
+                // El usuario debe hacer clic en "Continuar como Anónimo"
             }
         });
 
@@ -340,9 +327,6 @@
                 window.showTempMessage(`Error al iniciar sesión con Google: ${error.message}`, 'error');
             }
         });
-
-        // Event listener para Apple Sign-In eliminado
-        // document.getElementById('apple-signin-btn').addEventListener('click', async () => { ... });
 
         // Lógica para mostrar/ocultar el formulario de email
         emailSigninToggleBtn.addEventListener('click', () => {
@@ -409,12 +393,31 @@
             }
         });
 
+        // Lógica para iniciar sesión como anónimo
+        anonymousSigninBtn.addEventListener('click', async () => {
+            try {
+                // Si hay un token inicial (del entorno Canvas), usarlo.
+                // De lo contrario, iniciar sesión anónimamente.
+                if (window.initialAuthToken) {
+                    console.log("anonymousSigninBtn: Usando initialAuthToken.");
+                    await window.auth.signInWithCustomToken(window.initialAuthToken);
+                } else {
+                    console.log("anonymousSigninBtn: Usando signInAnonymously.");
+                    await window.auth.signInAnonymously();
+                }
+                window.showTempMessage('Has iniciado sesión como usuario anónimo.', 'info');
+            } catch (error) {
+                console.error("Error al iniciar sesión como anónimo:", error);
+                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+            }
+        });
+
 
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await window.auth.signOut();
                 window.showTempMessage('Sesión cerrada.', 'info');
-                // Recargar para limpiar el estado y volver a la autenticación anónima
+                // Recargar para limpiar el estado y volver a mostrar las opciones de inicio de sesión
                 location.reload(); 
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
