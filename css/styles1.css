@@ -706,3 +706,42 @@ input[type="checkbox"] {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* ========== ESTILOS DE CONFETI ========== */
+#confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Permite clics a través del contenedor */
+  overflow: hidden; /* Oculta el confeti fuera del viewport */
+  z-index: 9999; /* Asegura que esté en la parte superior */
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(--primary-color); /* Color por defecto */
+  border-radius: 50%; /* Hacerlos redondos */
+  opacity: 0;
+  animation: fall linear forwards;
+}
+
+/* Diferentes colores para el confeti */
+.confetti-piece:nth-child(2n) { background-color: var(--secondary-color); }
+.confetti-piece:nth-child(3n) { background-color: #FFD700; } /* Oro */
+.confetti-piece:nth-child(4n) { background-color: #FF69B4; } /* Rosa fuerte */
+.confetti-piece:nth-child(5n) { background-color: #00FFFF; } /* Cian */
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotateZ(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotateZ(720deg);
+    opacity: 0;
+  }
+}
