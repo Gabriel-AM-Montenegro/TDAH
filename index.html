@@ -521,9 +521,93 @@
         const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
 
         if (checkItemInput && addCheckItemBtn && checkListUl) {
+            // Event delegation for checklist items
+            checkListUl.addEventListener('change', async (e) => {
+                const target = e.target;
+                const listItem = target.closest('li'); // Get the parent <li> element
+                if (!listItem) return; // Not a list item
+
+                const itemId = target.dataset.itemId; // Get the item ID from the target element's dataset
+
+                if (target.classList.contains('completion-checkbox')) {
+                    // Handle completion checkbox
+                    try {
+                        await checklistCollectionRef.doc(itemId).update({
+                            completed: target.checked
+                        });
+                        if (target.checked) {
+                            listItem.querySelector('span').classList.add('task-completed');
+                            document.getElementById('sound-task-done').play();
+                            window.showTempMessage('¡Tarea completada!', 'success');
+                        } else {
+                            listItem.querySelector('span').classList.remove('task-completed');
+                        }
+                        console.log(`Checklist: Ítem ${itemId} actualizado.`);
+                    } catch (error) {
+                        console.error("Checklist: Error al actualizar ítem:", error);
+                        window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
+                    }
+                } else if (target.classList.contains('mit-checkbox')) {
+                    // Handle MIT checkbox
+                    const newIsMIT = target.checked;
+                    console.log(`MIT checkbox clicked for item ${itemId}. Intended state: ${newIsMIT}`);
+
+                    if (newIsMIT) {
+                        try {
+                            const mitSnapshot = await checklistCollectionRef.where('isMIT', '==', true).get();
+                            const currentMitCount = mitSnapshot.size;
+                            console.log(`Current MIT count from Firestore: ${currentMitCount}`);
+
+                            if (currentMitCount >= 3) {
+                                target.checked = false; // Revert UI
+                                window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                                console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}. Current Firestore MITs: ${currentMitCount}`);
+                                return;
+                            }
+                        } catch (error) {
+                            console.error("Error al contar MITs desde Firestore:", error);
+                            window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
+                            target.checked = false; // Revert checkbox on error
+                            return;
+                        }
+                    }
+
+                    try {
+                        await checklistCollectionRef.doc(itemId).update({
+                            isMIT: newIsMIT
+                        });
+                        console.log(`Checklist: Ítem ${itemId} MIT actualizado a ${newIsMIT} en Firestore.`);
+                    } catch (error) {
+                        console.error("Checklist: Error al actualizar MIT:", error);
+                        window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
+                        target.checked = !newIsMIT; // Revert to previous state
+                    }
+                }
+            });
+
+            // Event delegation for click events (e.g., delete button)
+            checkListUl.addEventListener('click', async (e) => {
+                const target = e.target;
+                const listItem = target.closest('li');
+                if (!listItem) return;
+
+                if (target.classList.contains('button-danger')) {
+                    const itemToDeleteId = target.dataset.id;
+                    try {
+                        await checklistCollectionRef.doc(itemToDeleteId).delete();
+                        window.showTempMessage('Elemento eliminado del checklist.', 'info');
+                        console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
+                    } catch (error) {
+                        console.error("Checklist: Error al eliminar ítem:", error);
+                        window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
+                    }
+                }
+            });
+
+
             checklistCollectionRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
                 console.log("Checklist: Recibiendo snapshot de ítems.");
-                checkListUl.innerHTML = '';
+                checkListUl.innerHTML = ''; // Clear existing list items
                 if (snapshot.empty) {
                     checkListUl.innerHTML = '<li>No hay ítems en el checklist aún.</li>';
                     return;
@@ -532,9 +616,8 @@
                     const item = docSnap.data();
                     const itemId = docSnap.id;
                     const listItem = document.createElement('li');
-                    // Añadir checkbox para MIT
                     listItem.innerHTML = `
-                        <input type="checkbox" class="completion-checkbox" id="check-${itemId}" ${item.completed ? 'checked' : ''}>
+                        <input type="checkbox" class="completion-checkbox" id="check-${itemId}" data-item-id="${itemId}" ${item.completed ? 'checked' : ''}>
                         <label for="check-${itemId}"><span>${item.text}</span></label>
                         <div class="mit-controls">
                             <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''}>
@@ -544,92 +627,12 @@
                     `;
                     checkListUl.appendChild(listItem);
 
-                    // Aplicar clase MIT si es necesario
                     if (item.isMIT) {
                         listItem.classList.add('mit-task');
                     }
                     if (item.completed) {
                         listItem.querySelector('span').classList.add('task-completed');
                     }
-
-
-                    // Event listener para el checkbox de completado
-                    listItem.querySelector('.completion-checkbox').addEventListener('change', async (e) => {
-                        try {
-                            await checklistCollectionRef.doc(itemId).update({
-                                completed: e.target.checked
-                            });
-                            if (e.target.checked) {
-                                listItem.querySelector('span').classList.add('task-completed');
-                                document.getElementById('sound-task-done').play();
-                                window.showTempMessage('¡Tarea completada!', 'success');
-                            } else {
-                                listItem.querySelector('span').classList.remove('task-completed');
-                            }
-                            console.log(`Checklist: Ítem ${itemId} actualizado.`);
-                        } catch (error) {
-                            console.error("Checklist: Error al actualizar ítem:", error);
-                            window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
-                        }
-                    });
-
-                    // Event listener para el checkbox de MIT
-                    listItem.querySelector('.mit-checkbox').addEventListener('change', async (e) => {
-                        const newIsMIT = e.target.checked; // The intended state (true if checking, false if unchecking)
-                        const currentItemId = e.target.dataset.itemId; // Get the item ID from data attribute
-
-                        console.log(`MIT checkbox clicked for item ${currentItemId}. Intended state: ${newIsMIT}`);
-
-                        if (newIsMIT) {
-                            // If the user is trying to mark it as MIT
-                            try {
-                                // Fetch the actual count of MITs from Firestore
-                                const mitSnapshot = await checklistCollectionRef.where('isMIT', '==', true).get();
-                                const currentMitCount = mitSnapshot.size;
-                                console.log(`Current MIT count from Firestore: ${currentMitCount}`);
-
-                                if (currentMitCount >= 3) {
-                                    e.target.checked = false; // Revert UI immediately
-                                    window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
-                                    console.log(`MIT limit exceeded. Reverting checkbox for ${currentItemId}. Current Firestore MITs: ${currentMitCount}`);
-                                    return; // Stop the function here
-                                }
-                            } catch (error) {
-                                console.error("Error al contar MITs desde Firestore:", error);
-                                window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
-                                e.target.checked = false; // Revert checkbox on error
-                                return;
-                            }
-                        }
-
-                        // If allowed (or unchecking), proceed with the update
-                        try {
-                            await checklistCollectionRef.doc(currentItemId).update({
-                                isMIT: newIsMIT
-                            });
-                            // The onSnapshot listener will handle adding/removing 'mit-task' class based on the database state
-                            console.log(`Checklist: Ítem ${currentItemId} MIT actualizado a ${newIsMIT} en Firestore.`);
-                        } catch (error) {
-                            console.error("Checklist: Error al actualizar MIT:", error);
-                            window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
-                            // If there's an error updating, revert the checkbox state in UI
-                            e.target.checked = !newIsMIT; // Revert to previous state
-                        }
-                    });
-
-
-                    // Event listener para el botón de eliminar
-                    listItem.querySelector('.button-danger').addEventListener('click', async (e) => {
-                        const itemToDeleteId = e.target.dataset.id;
-                        try {
-                            await checklistCollectionRef.doc(itemToDeleteId).delete();
-                            window.showTempMessage('Elemento eliminado del checklist.', 'info');
-                            console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
-                        } catch (error) {
-                            console.error("Checklist: Error al eliminar ítem:", error);
-                            window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
-                        }
-                    });
                 });
             }, (error) => {
                 console.error("Checklist: Error al escuchar ítems:", error);
