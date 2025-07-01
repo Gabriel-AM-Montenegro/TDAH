@@ -73,7 +73,7 @@
     </section>
 
     <section id="tareas" class="seccion">
-      <h2>📋 Tareas Importantes (Trello)</h2>
+      <h2>� Tareas Importantes (Trello)</h2>
       <div id="trello-status" class="status-indicator status-disconnected">
         ❌ Trello no conectado
       </div>
@@ -341,6 +341,7 @@
                         window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
 
                         setTimeout(() => {
+                            // Usar confirm() por ahora, idealmente reemplazar con un modal personalizado
                             const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                             if (startBreak) {
                                 timeLeft = 5 * 60; // 5 minutos para descanso
@@ -355,7 +356,7 @@
                             }
                         }, 1000);
                     } else { // Si terminó el tiempo de descanso
-                        window.showTempMessage('¡Descanso terminado! Es hora de volver al trabajo.', 'info', 4000);
+                        window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Mensaje motivador
                         resetTimer();
                     }
                 }
@@ -426,7 +427,7 @@
                                     }
                                 }, 1000);
                             } else {
-                                window.showTempMessage('¡Descanso terminado! Es hora de volver al trabajo.', 'info', 4000);
+                                window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Mensaje motivador
                                 resetTimer();
                             }
                         }
