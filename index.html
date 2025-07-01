@@ -22,19 +22,20 @@
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
       <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <!-- Los estilos inline iniciales se reducen, la mayoría se maneja en CSS y JS dinámicamente -->
       <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
-        <span id="user-display-name" style="margin-right: 10px;">Cargando usuario...</span>
-        <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
-          Iniciar con Google
-        </button>
-        <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
-          Iniciar con Email
-        </button>
-        <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
-          Continuar como Anónimo
-        </button>
+        <span id="user-display-name">Cargando usuario...</span>
+        <div class="auth-buttons-wrapper"> <!-- Nuevo wrapper para los botones -->
+            <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
+              Iniciar con Google
+            </button>
+            <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
+              Iniciar con Email
+            </button>
+            <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
+              Continuar como Anónimo
+            </button>
+        </div>
         <button id="logout-btn" class="button-secondary" style="display: none;">Cerrar Sesión</button>
       </div>
     </header>
@@ -275,6 +276,7 @@
 
         // Referencia al área de información del usuario para control de estilo
         const userInfoArea = document.getElementById('user-info-area');
+        const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper'); // Nuevo: el wrapper de botones
 
 
         // Adjuntar event listeners a los botones de navegación
@@ -297,39 +299,29 @@
                 userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
                 googleSigninBtn.style.display = 'none';
                 emailSigninToggleBtn.style.display = 'none';
-                anonymousSigninBtn.style.display = 'none'; // Ocultar si ya está logueado
+                anonymousSigninBtn.style.display = 'none';
+                authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones de auth
                 logoutBtn.style.display = 'inline-block';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
 
                 // Estilos para el estado autenticado: alinear a la derecha
-                userInfoArea.style.justifyContent = 'flex-end';
-                userInfoArea.style.flexDirection = 'row';
+                userInfoArea.classList.remove('auth-options-visible'); // Quitar la clase para aplicar estilos de logueado
                 userDisplayName.style.textAlign = 'right';
-                // Asegurar márgenes correctos para la disposición en fila
-                // Se eliminan los márgenes de los botones de autenticación ya que no estarán visibles
-                logoutBtn.style.marginLeft = '10px';
-
-
-                // Una vez autenticado, cargar todos los datos
-                if (typeof window.loadAllUserData === 'function') {
-                    window.loadAllUserData();
-                } else {
-                    console.error("loadAllUserData no está definida globalmente.");
-                }
+                // El margin-left del logoutBtn se maneja en CSS
             } else {
                 console.log("onAuthStateChanged: Usuario no autenticado. Mostrando opciones de inicio de sesión.");
                 userDisplayName.textContent = 'Por favor, inicia sesión:';
                 googleSigninBtn.style.display = 'inline-block';
                 emailSigninToggleBtn.style.display = 'inline-block';
-                anonymousSigninBtn.style.display = 'inline-block'; // Mostrar botón para anónimo
+                anonymousSigninBtn.style.display = 'inline-block';
+                authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones de auth
                 logoutBtn.style.display = 'none';
                 emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
 
                 // Estilos para el estado no autenticado: centrar botones
-                userInfoArea.style.justifyContent = 'center';
-                userInfoArea.style.flexDirection = 'row'; // Por defecto en fila, CSS lo apilará en móvil
+                userInfoArea.classList.add('auth-options-visible'); // Añadir la clase para aplicar estilos de no logueado
                 userDisplayName.style.textAlign = 'center';
-                
+
                 // Si el usuario no está autenticado, no intentar signInAnonymously automáticamente
                 // El usuario debe hacer clic en "Continuar como Anónimo"
             }
@@ -456,3 +448,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
+
