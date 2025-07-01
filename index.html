@@ -338,197 +338,66 @@
                 userInfoArea.classList.remove('auth-options-visible'); // Quitar la clase para aplicar estilos de logueado
                 userDisplayName.style.textAlign = 'right';
                 // El margin-left del logoutBtn se maneja en CSS
-            } else {
-                console.log("onAuthStateChanged: Usuario no autenticado. Mostrando opciones de inicio de sesión.");
-                userDisplayName.textContent = 'Por favor, inicia sesión:';
-                googleSigninBtn.style.display = 'inline-block';
-                emailSigninToggleBtn.style.display = 'inline-block';
-                anonymousSigninBtn.style.display = 'inline-block';
-                authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones de auth
-                logoutBtn.style.display = 'none';
-                emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
 
-                // Estilos para el estado no autenticado: centrar botones
-                userInfoArea.classList.add('auth-options-visible'); // Añadir la clase para aplicar estilos de no logueado
-                userDisplayName.style.textAlign = 'center';
+                // --- Lógica del Temporizador Pomodoro (MOVIDO AQUÍ) ---
+                let timer;
+                let isRunning = false;
+                let timeLeft = 25 * 60; // Default: 25 minutos de trabajo
+                let isBreakTime = false; // Nuevo: Para saber si estamos en tiempo de descanso
+                const timerDisplay = document.getElementById('timer');
+                // Asegurarse de que currentUserId esté disponible aquí
+                const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
 
-                // Si el usuario no está autenticado, no intentar signInAnonymously automáticamente
-                // El usuario debe hacer clic en "Continuar como Anónimo"
-            }
-        });
+                const startTimerBtn = document.getElementById('start-timer-btn');
+                const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
+                const resetTimerBtn = document.getElementById('reset-timer-btn');
 
-        // Adjuntar event listeners para Google Sign-In y Sign-Out
-        document.getElementById('google-signin-btn').addEventListener('click', async () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                await window.auth.signInWithPopup(provider);
-                window.showTempMessage('Inicio de sesión con Google exitoso!', 'success');
-            } catch (error) {
-                console.error("Error al iniciar sesión con Google:", error);
-                window.showTempMessage(`Error al iniciar sesión con Google: ${error.message}`, 'error');
-            }
-        });
-
-        // Lógica para mostrar/ocultar el formulario de email
-        emailSigninToggleBtn.addEventListener('click', () => {
-            emailAuthForm.style.display = emailAuthForm.style.display === 'none' ? 'block' : 'none';
-        });
-
-        emailFormCloseBtn.addEventListener('click', () => {
-            emailAuthForm.style.display = 'none';
-            emailInput.value = '';
-            passwordInput.value = '';
-        });
-
-        // Lógica para registrarse con Email y Contraseña
-        emailSignupBtn.addEventListener('click', async () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-
-            if (!email || !password) {
-                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
-                return;
-            }
-            if (password.length < 6) {
-                window.showTempMessage('La contraseña debe tener al menos 6 caracteres.', 'warning');
-                return;
-            }
-
-            try {
-                await window.auth.createUserWithEmailAndPassword(email, password);
-                window.showTempMessage('Registro exitoso! Has iniciado sesión.', 'success');
-                emailAuthForm.style.display = 'none'; // Ocultar formulario al registrarse
-            } catch (error) {
-                console.error("Error al registrarse con Email:", error);
-                if (error.code === 'auth/email-already-in-use') {
-                    window.showTempMessage('Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.', 'error');
-                } else {
-                    window.showTempMessage(`Error de registro: ${error.message}`, 'error');
+                function updateTimerDisplay() {
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 }
-            }
-        });
 
-        // Lógica para iniciar sesión con Email y Contraseña
-        emailLoginBtn.addEventListener('click', async () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
+                if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
+                    // Cargar estado del pomodoro desde Firestore
+                    pomodoroSettingsDocRef.onSnapshot((docSnap) => {
+                        console.log("Pomodoro: Recibiendo snapshot de settings.");
+                        if (docSnap.exists) {
+                            const settings = docSnap.data();
+                            timeLeft = settings.timeLeft;
+                            isRunning = settings.isRunning;
+                            isBreakTime = settings.isBreakTime || false; // Cargar estado de descanso
+                            updateTimerDisplay();
+                            if (isRunning && settings.lastUpdated) {
+                                const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
+                                timeLeft = Math.max(0, timeLeft - Math.floor(elapsedSinceLastUpdate));
+                                if (timeLeft > 0 && !timer) {
+                                    startTimer();
+                                } else if (timeLeft <= 0) {
+                                    clearInterval(timer);
+                                    isRunning = false;
+                                    savePomodoroState(0, false, isBreakTime); // Guardar estado final
+                                    
+                                    if (!isBreakTime) { // Si terminó el tiempo de trabajo
+                                        window.triggerConfetti(); // Disparar confeti
+                                        document.getElementById('sound-complete').play();
+                                        window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
 
-            if (!email || !password) {
-                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
-                return;
-            }
-
-            try {
-                await window.auth.signInWithEmailAndPassword(email, password);
-                window.showTempMessage('Inicio de sesión exitoso!', 'success');
-                emailAuthForm.style.display = 'none'; // Ocultar formulario al iniciar sesión
-            } catch (error) {
-                console.error("Error al iniciar sesión con Email:", error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    window.showTempMessage('Correo o contraseña incorrectos.', 'error');
-                } else if (error.code === 'auth/invalid-email') {
-                    window.showTempMessage('Formato de correo electrónico inválido.', 'error');
-                } else {
-                    window.showTempMessage(`Error de inicio de sesión: ${error.message}`, 'error');
-                }
-            }
-        });
-
-        // Lógica para iniciar sesión como anónimo
-        anonymousSigninBtn.addEventListener('click', async () => {
-            try {
-                // Si hay un token inicial (del entorno Canvas), usarlo.
-                // De lo contrario, iniciar sesión anónimamente.
-                if (window.initialAuthToken) {
-                    console.log("anonymousSigninBtn: Usando initialAuthToken.");
-                    await window.auth.signInWithCustomToken(window.initialAuthToken);
-                } else {
-                    console.log("anonymousSigninBtn: Usando signInAnonymously.");
-                    await window.auth.signInAnonymously();
-                }
-                window.showTempMessage('Has iniciado sesión como usuario anónimo.', 'info');
-            } catch (error) {
-                console.error("Error al iniciar sesión como anónimo:", error);
-                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-            }
-        });
-
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await window.auth.signOut();
-                window.showTempMessage('Sesión cerrada.', 'info');
-                // Recargar para limpiar el estado y volver a mostrar las opciones de inicio de sesión
-                location.reload(); 
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
-            }
-        });
-
-
-        // Inicializar la primera sección visible al cargar la página
-        window.mostrarSeccion('pomodoro');
-        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
-
-        // --- Lógica del Temporizador Pomodoro ---
-        let timer;
-        let isRunning = false;
-        let timeLeft = 25 * 60; // Default: 25 minutos de trabajo
-        let isBreakTime = false; // Nuevo: Para saber si estamos en tiempo de descanso
-        const timerDisplay = document.getElementById('timer');
-        const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
-
-        const startTimerBtn = document.getElementById('start-timer-btn');
-        const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
-        const resetTimerBtn = document.getElementById('reset-timer-btn');
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
-            // Cargar estado del pomodoro desde Firestore
-            pomodoroSettingsDocRef.onSnapshot((docSnap) => {
-                console.log("Pomodoro: Recibiendo snapshot de settings.");
-                if (docSnap.exists) {
-                    const settings = docSnap.data();
-                    timeLeft = settings.timeLeft;
-                    isRunning = settings.isRunning;
-                    isBreakTime = settings.isBreakTime || false; // Cargar estado de descanso
-                    updateTimerDisplay();
-                    if (isRunning && settings.lastUpdated) {
-                        const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
-                        timeLeft = Math.max(0, timeLeft - Math.floor(elapsedSinceLastUpdate));
-                        if (timeLeft > 0 && !timer) {
-                            startTimer();
-                        } else if (timeLeft <= 0) {
-                            clearInterval(timer);
-                            isRunning = false;
-                            savePomodoroState(0, false, isBreakTime); // Guardar estado final
-                            
-                            if (!isBreakTime) { // Si terminó el tiempo de trabajo
-                                window.triggerConfetti(); // Disparar confeti
-                                document.getElementById('sound-complete').play();
-                                window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
-
-                                setTimeout(() => { // Dar un momento para el confeti
-                                    // Usar confirm() por ahora, idealmente reemplazar con un modal personalizado
-                                    const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
-                                    if (startBreak) {
-                                        timeLeft = 5 * 60; // 5 minutos para descanso
-                                        isBreakTime = true;
-                                        updateTimerDisplay();
-                                        savePomodoroState(timeLeft, true, isBreakTime);
-                                        document.getElementById('sound-break').play();
-                                        window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                        startTimer(); // Reiniciar timer para el descanso
-                                    } else {
-                                        resetTimer(); // Si no, resetear al tiempo de trabajo
-                                    }
-                                }, 1000); // Retraso para el prompt
+                                        setTimeout(() => { // Dar un momento para el confeti
+                                            // Usar confirm() por ahora, idealmente reemplazar con un modal personalizado
+                                            const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                                            if (startBreak) {
+                                                timeLeft = 5 * 60; // 5 minutos para descanso
+                                                isBreakTime = true;
+                                                updateTimerDisplay();
+                                                savePomodoroState(timeLeft, true, isBreakTime);
+                                                document.getElementById('sound-break').play();
+                                                window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
+                                                startTimer(); // Reiniciar timer para el descanso
+                                            } else {
+                                                resetTimer(); // Si no, resetear al tiempo de trabajo
+                                            }
+                                        }, 1000); // Retraso para el prompt
                             } else { // Si terminó el tiempo de descanso
                                 window.showTempMessage('¡Descanso terminado! Es hora de volver al trabajo.', 'info', 4000);
                                 resetTimer(); // Resetear al tiempo de trabajo
@@ -629,14 +498,14 @@
         }
 
 
-        // --- Lógica del Journal ---
+        // --- Lógica del Journal (MOVIDO AQUÍ) ---
         const journalEntryTextarea = document.getElementById('journalEntry');
         const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
         const journalEntriesList = document.getElementById('journalEntriesList');
+        const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
+
 
         if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
-            // Acceder a las funciones de Firestore a través del objeto global 'firebase.firestore()' o 'db'
-            const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
             journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
                 console.log("Journal: Recibiendo snapshot de entradas.");
                 journalEntriesList.innerHTML = '';
@@ -689,7 +558,7 @@
         }
 
 
-        // --- Lógica del Checklist ---
+        // --- Lógica del Checklist (MOVIDO AQUÍ) ---
         const checkItemInput = document.getElementById('checkItem');
         const addCheckItemBtn = document.getElementById('add-check-item-btn');
         const checkListUl = document.getElementById('checkList');
@@ -780,7 +649,7 @@
         }
 
 
-        // --- Lógica de Trello ---
+        // --- Lógica de Trello (MOVIDO AQUÍ) ---
         const trelloApiKeyInput = document.getElementById('api-key');
         const trelloTokenInput = document.getElementById('token');
         const trelloBoardIdInput = document.getElementById('board-id');
@@ -943,7 +812,7 @@
         }
 
 
-        // --- Lógica de Limpiar Datos ---
+        // --- Lógica de Limpiar Datos (MOVIDO AQUÍ) ---
         const clearDataBtn = document.getElementById('clear-data-btn');
         if (clearDataBtn) {
             async function limpiarDatos() {
@@ -1060,7 +929,7 @@
         }
 
 
-        // Actualizar contadores de estado
+        // Actualizar contadores de estado (MOVIDO AQUÍ)
         function updateAppStatus() {
             // Asegúrate de que currentUserId esté definido antes de intentar acceder a Firestore
             if (window.currentUserId && window.db) {
@@ -1087,6 +956,139 @@
         // Se llama inicialmente en onAuthStateChanged y luego con un intervalo
         setInterval(updateAppStatus, 5000);
         updateAppStatus();
+            } else {
+                console.log("onAuthStateChanged: Usuario no autenticado. Mostrando opciones de inicio de sesión.");
+                userDisplayName.textContent = 'Por favor, inicia sesión:';
+                googleSigninBtn.style.display = 'inline-block';
+                emailSigninToggleBtn.style.display = 'inline-block';
+                anonymousSigninBtn.style.display = 'inline-block';
+                authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones de auth
+                logoutBtn.style.display = 'none';
+                emailAuthForm.style.display = 'none'; // Asegurarse de que el formulario de email esté oculto
+
+                // Estilos para el estado no autenticado: centrar botones
+                userInfoArea.classList.add('auth-options-visible'); // Añadir la clase para aplicar estilos de no logueado
+                userDisplayName.style.textAlign = 'center';
+
+                // Si el usuario no está autenticado, no intentar signInAnonymously automáticamente
+                // El usuario debe hacer clic en "Continuar como Anónimo"
+            }
+        });
+
+        // Adjuntar event listeners para Google Sign-In y Sign-Out
+        document.getElementById('google-signin-btn').addEventListener('click', async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await window.auth.signInWithPopup(provider);
+                window.showTempMessage('Inicio de sesión con Google exitoso!', 'success');
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+                window.showTempMessage(`Error al iniciar sesión con Google: ${error.message}`, 'error');
+            }
+        });
+
+        // Lógica para mostrar/ocultar el formulario de email
+        emailSigninToggleBtn.addEventListener('click', () => {
+            emailAuthForm.style.display = emailAuthForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        emailFormCloseBtn.addEventListener('click', () => {
+            emailAuthForm.style.display = 'none';
+            emailInput.value = '';
+            passwordInput.value = '';
+        });
+
+        // Lógica para registrarse con Email y Contraseña
+        emailSignupBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
+                return;
+            }
+            if (password.length < 6) {
+                window.showTempMessage('La contraseña debe tener al menos 6 caracteres.', 'warning');
+                return;
+            }
+
+            try {
+                await window.auth.createUserWithEmailAndPassword(email, password);
+                window.showTempMessage('Registro exitoso! Has iniciado sesión.', 'success');
+                emailAuthForm.style.display = 'none'; // Ocultar formulario al registrarse
+            } catch (error) {
+                console.error("Error al registrarse con Email:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    window.showTempMessage('Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.', 'error');
+                } else {
+                    window.showTempMessage(`Error de registro: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Lógica para iniciar sesión con Email y Contraseña
+        emailLoginBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
+                return;
+            }
+
+            try {
+                await window.auth.signInWithEmailAndPassword(email, password);
+                window.showTempMessage('Inicio de sesión exitoso!', 'success');
+                emailAuthForm.style.display = 'none'; // Ocultar formulario al iniciar sesión
+            } catch (error) {
+                console.error("Error al iniciar sesión con Email:", error);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    window.showTempMessage('Correo o contraseña incorrectos.', 'error');
+                } else if (error.code === 'auth/invalid-email') {
+                    window.showTempMessage('Formato de correo electrónico inválido.', 'error');
+                } else {
+                    window.showTempMessage(`Error de inicio de sesión: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Lógica para iniciar sesión como anónimo
+        anonymousSigninBtn.addEventListener('click', async () => {
+            try {
+                // Si hay un token inicial (del entorno Canvas), usarlo.
+                // De lo contrario, iniciar sesión anónimamente.
+                if (window.initialAuthToken) {
+                    console.log("anonymousSigninBtn: Usando initialAuthToken.");
+                    await window.auth.signInWithCustomToken(window.initialAuthToken);
+                } else {
+                    console.log("anonymousSigninBtn: Usando signInAnonymously.");
+                    await window.auth.signInAnonymously();
+                }
+                window.showTempMessage('Has iniciado sesión como usuario anónimo.', 'info');
+            } catch (error) {
+                console.error("Error al iniciar sesión como anónimo:", error);
+                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+            }
+        });
+
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await window.auth.signOut();
+                window.showTempMessage('Sesión cerrada.', 'info');
+                // Recargar para limpiar el estado y volver a mostrar las opciones de inicio de sesión
+                location.reload(); 
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+            }
+        });
+
+
+        // Inicializar la primera sección visible al cargar la página
+        window.mostrarSeccion('pomodoro');
+        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
+
     });
   </script>
 
@@ -1094,4 +1096,3 @@
   <script src="js/main.js"></script>
 </body>
 </html>
-
