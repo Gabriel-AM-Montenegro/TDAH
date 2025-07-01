@@ -1,5 +1,4 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
-/* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 
 :root {
   /* Colores */
@@ -80,6 +79,24 @@ header p {
   margin: 0;
   opacity: 0.9;
   font-size: 1.1em;
+}
+
+/* Estilos para el user-info-area y los botones de autenticación */
+#user-info-area {
+  /* margin-top: 10px; se mantiene en inline */
+  /* display: flex; se mantiene en inline */
+  align-items: center; /* Alinear verticalmente los elementos */
+  flex-wrap: wrap; /* Permitir que los elementos se envuelvan */
+  gap: 10px; /* Espacio entre los botones */
+  min-height: 50px; /* Asegura que el área tenga altura incluso si los botones están ocultos */
+  transition: all 0.3s ease; /* Transición suave para cambios de layout */
+}
+
+/* Estilos para los botones de autenticación */
+.auth-btn {
+  min-width: 180px; /* Ancho mínimo para que los botones no sean demasiado pequeños */
+  margin-bottom: 5px; /* Margen inferior para cuando se envuelven */
+  /* Los márgenes derechos se manejarán con gap en el contenedor flex */
 }
 
 /* ========== NAVEGACIÓN ========== */
@@ -556,6 +573,10 @@ input[type="checkbox"] {
     font-size: 2em;
   }
   
+  header p {
+    font-size: 1em;
+  }
+  
   .nav-tabs {
     flex-direction: column;
     align-items: stretch; /* Estirar botones a ancho completo */
@@ -597,6 +618,33 @@ input[type="checkbox"] {
 
   .input-group input {
       margin-bottom: var(--spacing-sm);
+  }
+
+  /* NUEVOS ESTILOS RESPONSIVE PARA EL ÁREA DE AUTENTICACIÓN */
+  #user-info-area {
+    flex-direction: column !important; /* Forzar columna en pantallas pequeñas */
+    justify-content: center !important; /* Centrar los elementos apilados */
+    align-items: center !important; /* Centrar los elementos horizontalmente cuando están en columna */
+    text-align: center !important; /* Centrar el texto del nombre de usuario */
+  }
+
+  #user-info-area #user-display-name {
+    margin-right: 0 !important; /* Eliminar margen derecho del texto */
+    margin-bottom: 10px; /* Añadir margen inferior al texto */
+    text-align: center !important;
+  }
+
+  #user-info-area .auth-btn,
+  #user-info-area #logout-btn {
+    width: 100%; /* Botones ocupan todo el ancho disponible */
+    max-width: 250px; /* Limitar el ancho máximo para que no se estiren demasiado */
+    margin-right: 0 !important; /* Eliminar margen derecho */
+    margin-left: 0 !important; /* Eliminar margen izquierdo */
+    margin-bottom: 10px !important; /* Espacio entre botones apilados */
+  }
+
+  #user-info-area #logout-btn {
+    margin-bottom: 0 !important; /* El último botón no necesita margen inferior */
   }
 }
 

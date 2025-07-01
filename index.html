@@ -19,22 +19,23 @@
   <div class="container">
 
     <header>
-      <h1>� TDAH Helper App</h1>
+      <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
       <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+      <!-- Los estilos inline iniciales se reducen, la mayoría se maneja en CSS y JS dinámicamente -->
+      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
         <span id="user-display-name" style="margin-right: 10px;">Cargando usuario...</span>
-        <button id="google-signin-btn" class="button-primary" style="display: none; margin-right: 10px; margin-bottom: 5px; min-width: 180px;">
+        <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
           Iniciar con Google
         </button>
-        <button id="email-signin-toggle-btn" class="button-secondary" style="display: none; margin-right: 10px; margin-bottom: 5px; min-width: 180px;">
+        <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
           Iniciar con Email
         </button>
-        <button id="anonymous-signin-btn" class="button-secondary" style="display: none; margin-bottom: 5px; min-width: 180px;">
+        <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
           Continuar como Anónimo
         </button>
-        <button id="logout-btn" class="button-secondary" style="display: none; margin-left: 10px; margin-bottom: 5px;">Cerrar Sesión</button>
+        <button id="logout-btn" class="button-secondary" style="display: none;">Cerrar Sesión</button>
       </div>
     </header>
 
@@ -305,9 +306,7 @@
                 userInfoArea.style.flexDirection = 'row';
                 userDisplayName.style.textAlign = 'right';
                 // Asegurar márgenes correctos para la disposición en fila
-                googleSigninBtn.style.marginRight = '10px';
-                emailSigninToggleBtn.style.marginRight = '10px';
-                anonymousSigninBtn.style.marginRight = '10px';
+                // Se eliminan los márgenes de los botones de autenticación ya que no estarán visibles
                 logoutBtn.style.marginLeft = '10px';
 
 
@@ -328,15 +327,9 @@
 
                 // Estilos para el estado no autenticado: centrar botones
                 userInfoArea.style.justifyContent = 'center';
-                userInfoArea.style.flexDirection = 'column';
+                userInfoArea.style.flexDirection = 'row'; // Por defecto en fila, CSS lo apilará en móvil
                 userDisplayName.style.textAlign = 'center';
-                // Eliminar márgenes laterales cuando están apilados
-                googleSigninBtn.style.marginRight = '0';
-                emailSigninToggleBtn.style.marginRight = '0';
-                anonymousSigninBtn.style.marginRight = '0';
-                logoutBtn.style.marginLeft = '0'; // También remover margen izquierdo del logout si se muestra aquí (aunque no debería)
-
-
+                
                 // Si el usuario no está autenticado, no intentar signInAnonymously automáticamente
                 // El usuario debe hacer clic en "Continuar como Anónimo"
             }
