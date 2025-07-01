@@ -499,7 +499,8 @@
                         });
                         journalEntryTextarea.value = '';
                         window.showTempMessage('Entrada guardada con éxito!', 'success');
-                    } catch (error) {
+                    }
+                    catch (error) {
                         console.error("Journal: Error al guardar entrada del diario:", error);
                         window.showTempMessage(`Error al guardar: ${error.message}`, 'error');
                     }
@@ -573,22 +574,31 @@
 
                     // Event listener para el checkbox de MIT
                     listItem.querySelector('.mit-checkbox').addEventListener('change', async (e) => {
-                        const mitCheckboxes = document.querySelectorAll('.mit-checkbox:checked');
-                        if (e.target.checked && mitCheckboxes.length > 3) {
-                            e.target.checked = false; // Desmarcar si excede el límite
-                            window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
-                            return;
+                        const isCheckingMIT = e.target.checked; // True if user is trying to mark as MIT, false if unmarking
+                        const allMitCheckboxes = document.querySelectorAll('.mit-checkbox');
+                        let mitCount = 0;
+                        for (const cb of allMitCheckboxes) {
+                            if (cb.checked) {
+                                mitCount++;
+                            }
                         }
+
+                        console.log(`MIT checkbox clicked for item ${itemId}. Is checking MIT: ${isCheckingMIT}. Current MIT count (from DOM): ${mitCount}`);
+
+                        // If user is trying to check this MIT, and the total count (including this one) would exceed 3
+                        if (isCheckingMIT && mitCount > 3) {
+                            e.target.checked = false; // Revert UI immediately
+                            window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                            console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}. Current count: ${mitCount}.`);
+                            return; // Stop further processing
+                        }
+
                         try {
                             await checklistCollectionRef.doc(itemId).update({
-                                isMIT: e.target.checked
+                                isMIT: isCheckingMIT
                             });
-                            if (e.target.checked) {
-                                listItem.classList.add('mit-task');
-                            } else {
-                                listItem.classList.remove('mit-task');
-                            }
-                            console.log(`Checklist: Ítem ${itemId} MIT actualizado.`);
+                            // The onSnapshot listener will handle adding/removing 'mit-task' class based on the database state
+                            console.log(`Checklist: Ítem ${itemId} MIT actualizado a ${isCheckingMIT}.`);
                         } catch (error) {
                             console.error("Checklist: Error al actualizar MIT:", error);
                             window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');

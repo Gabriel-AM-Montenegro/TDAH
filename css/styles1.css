@@ -1,5 +1,4 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
-
 :root {
   /* Colores */
   --primary-color: #4F46E5; /* Indigo */
@@ -20,6 +19,8 @@
   --warning-dark: #f59e0b; /* Amarillo oscuro */
   --info-light: #e0f2fe; /* Azul info claro */
   --info-dark: #0ea5e9; /* Azul info oscuro */
+  --mit-color: #FFD700; /* Color especial para MITs (Oro) */
+
 
   /* Espaciado */
   --spacing-xs: 5px;
@@ -382,6 +383,28 @@ li button {
   min-width: unset; /* Reiniciar el min-width de los botones generales */
 }
 
+/* Estilos específicos para los controles MIT dentro del li */
+.mit-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    color: var(--text-medium);
+    margin-left: var(--spacing-sm); /* Espacio entre el texto de la tarea y el control MIT */
+}
+
+.mit-controls input[type="checkbox"] {
+    margin-right: 0; /* Eliminar margen extra */
+}
+
+/* Estilo para las tareas marcadas como MIT */
+.mit-task {
+    background-color: #fffacd; /* Light goldenrod yellow */
+    border-left-color: var(--mit-color); /* Usar el color MIT definido en :root */
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2); /* Sombra dorada */
+}
+
+
 /* ========== ESTADOS DE TAREAS ========== */
 .task-urgent {
   border-left-color: var(--error-dark);
@@ -406,6 +429,23 @@ input[type="checkbox"] {
   cursor: pointer;
   accent-color: var(--primary-color); /* Personaliza el color del checkmark */
 }
+
+/* Estilo para la explicación de MITs */
+.mit-explanation {
+    background-color: var(--info-light);
+    border: 1px solid var(--info-dark);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-dark);
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.mit-explanation strong {
+    color: var(--primary-color);
+}
+
 
 /* ========== HELPERS Y MENSAJES ========== */
 .help-text {
