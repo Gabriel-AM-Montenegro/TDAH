@@ -582,18 +582,27 @@
 
                         if (newIsMIT) {
                             // If the user is trying to mark it as MIT
-                            // Count actual MITs from the DOM
-                            const currentMitCount = document.querySelectorAll('.mit-task').length;
-                            console.log(`Current MIT count from DOM: ${currentMitCount}`);
+                            try {
+                                // Fetch the actual count of MITs from Firestore
+                                const mitSnapshot = await checklistCollectionRef.where('isMIT', '==', true).get();
+                                const currentMitCount = mitSnapshot.size;
+                                console.log(`Current MIT count from Firestore: ${currentMitCount}`);
 
-                            if (currentMitCount >= 3) {
-                                e.target.checked = false; // Revert UI immediately
-                                window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
-                                console.log(`MIT limit exceeded. Reverting checkbox for ${currentItemId}.`);
-                                return; // Stop the function here
+                                if (currentMitCount >= 3) {
+                                    e.target.checked = false; // Revert UI immediately
+                                    window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                                    console.log(`MIT limit exceeded. Reverting checkbox for ${currentItemId}. Current Firestore MITs: ${currentMitCount}`);
+                                    return; // Stop the function here
+                                }
+                            } catch (error) {
+                                console.error("Error al contar MITs desde Firestore:", error);
+                                window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
+                                e.target.checked = false; // Revert checkbox on error
+                                return;
                             }
                         }
 
+                        // If allowed (or unchecking), proceed with the update
                         try {
                             await checklistCollectionRef.doc(currentItemId).update({
                                 isMIT: newIsMIT
@@ -603,6 +612,8 @@
                         } catch (error) {
                             console.error("Checklist: Error al actualizar MIT:", error);
                             window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
+                            // If there's an error updating, revert the checkbox state in UI
+                            e.target.checked = !newIsMIT; // Revert to previous state
                         }
                     });
 
