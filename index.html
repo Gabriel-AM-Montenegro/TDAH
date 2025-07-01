@@ -73,7 +73,7 @@
     </section>
 
     <section id="tareas" class="seccion">
-      <h2>� Tareas Importantes (Trello)</h2>
+      <h2>📋 Tareas Importantes (Trello)</h2>
       <div id="trello-status" class="status-indicator status-disconnected">
         ❌ Trello no conectado
       </div>
@@ -86,6 +86,10 @@
 
     <section id="checklist" class="seccion">
       <h2>✅ Checklist Rápido</h2>
+      <div class="mit-explanation">
+        <p>La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
+        <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
+      </div>
       <div class="input-group">
         <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
         <button id="add-check-item-btn">➕ Agregar</button>
@@ -526,14 +530,29 @@
                     const item = docSnap.data();
                     const itemId = docSnap.id;
                     const listItem = document.createElement('li');
+                    // Añadir checkbox para MIT
                     listItem.innerHTML = `
-                        <input type="checkbox" id="check-${itemId}" ${item.completed ? 'checked' : ''}>
+                        <input type="checkbox" class="completion-checkbox" id="check-${itemId}" ${item.completed ? 'checked' : ''}>
                         <label for="check-${itemId}"><span>${item.text}</span></label>
+                        <div class="mit-controls">
+                            <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" ${item.isMIT ? 'checked' : ''}>
+                            <label for="mit-${itemId}">MIT</label>
+                        </div>
                         <button class="button-danger" data-id="${itemId}">❌</button>
                     `;
                     checkListUl.appendChild(listItem);
 
-                    listItem.querySelector('input[type="checkbox"]').addEventListener('change', async (e) => {
+                    // Aplicar clase MIT si es necesario
+                    if (item.isMIT) {
+                        listItem.classList.add('mit-task');
+                    }
+                    if (item.completed) {
+                        listItem.querySelector('span').classList.add('task-completed');
+                    }
+
+
+                    // Event listener para el checkbox de completado
+                    listItem.querySelector('.completion-checkbox').addEventListener('change', async (e) => {
                         try {
                             await checklistCollectionRef.doc(itemId).update({
                                 completed: e.target.checked
@@ -552,6 +571,32 @@
                         }
                     });
 
+                    // Event listener para el checkbox de MIT
+                    listItem.querySelector('.mit-checkbox').addEventListener('change', async (e) => {
+                        const mitCheckboxes = document.querySelectorAll('.mit-checkbox:checked');
+                        if (e.target.checked && mitCheckboxes.length > 3) {
+                            e.target.checked = false; // Desmarcar si excede el límite
+                            window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                            return;
+                        }
+                        try {
+                            await checklistCollectionRef.doc(itemId).update({
+                                isMIT: e.target.checked
+                            });
+                            if (e.target.checked) {
+                                listItem.classList.add('mit-task');
+                            } else {
+                                listItem.classList.remove('mit-task');
+                            }
+                            console.log(`Checklist: Ítem ${itemId} MIT actualizado.`);
+                        } catch (error) {
+                            console.error("Checklist: Error al actualizar MIT:", error);
+                            window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
+                        }
+                    });
+
+
+                    // Event listener para el botón de eliminar
                     listItem.querySelector('.button-danger').addEventListener('click', async (e) => {
                         const itemToDeleteId = e.target.dataset.id;
                         try {
@@ -563,10 +608,6 @@
                             window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
                         }
                     });
-
-                    if (item.completed) {
-                        listItem.querySelector('span').classList.add('task-completed');
-                    }
                 });
             }, (error) => {
                 console.error("Checklist: Error al escuchar ítems:", error);
@@ -580,6 +621,7 @@
                         await checklistCollectionRef.add({
                             text: itemText,
                             completed: false,
+                            isMIT: false, // Nuevo campo para MIT
                             timestamp: new Date().toISOString()
                         });
                         checkItemInput.value = '';
