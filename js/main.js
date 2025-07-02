@@ -99,6 +99,7 @@ async function loadAllUserData() {
     let timer;
     let isRunning = false;
     let timeLeft = 25 * 60; // Default: 25 minutos
+    let isBreakTime = false; // Add isBreakTime variable for Pomodoro
     const timerDisplay = document.getElementById('timer');
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
 
@@ -120,6 +121,7 @@ async function loadAllUserData() {
                 const settings = docSnap.data();
                 timeLeft = settings.timeLeft;
                 isRunning = settings.isRunning;
+                isBreakTime = settings.isBreakTime || false; // Load isBreakTime
                 updateTimerDisplay();
                 if (isRunning && settings.lastUpdated) {
                     const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
@@ -129,25 +131,49 @@ async function loadAllUserData() {
                     } else if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        window.showTempMessage('¡Tiempo de trabajo completado!', 'success');
-                        document.getElementById('sound-complete').play();
-                        resetTimer();
+                        savePomodoroState(0, false, isBreakTime); // Save state on completion
+
+                        if (!isBreakTime) { // If work time ended
+                            window.triggerConfetti(); // Trigger confetti
+                            document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
+                            window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
+
+                            setTimeout(() => {
+                                // Use confirm() for now, ideally replace with a custom modal
+                                const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                                if (startBreak) {
+                                    timeLeft = 5 * 60; // 5 minutes for break
+                                    isBreakTime = true;
+                                    updateTimerDisplay();
+                                    savePomodoroState(timeLeft, true, isBreakTime); // Save break state
+                                    document.getElementById('sound-break').play().catch(e => console.error("Error playing break sound:", e));
+                                    window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
+                                    startTimer();
+                                } else {
+                                    resetTimer();
+                                }
+                            }, 1000);
+                        } else { // If break time ended
+                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
+                            resetTimer();
+                        }
                     }
                 }
             } else {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
-                pomodoroSettingsDocRef.set({ timeLeft: 25 * 60, isRunning: false, lastUpdated: new Date().toISOString() });
+                pomodoroSettingsDocRef.set({ timeLeft: 25 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
             }
         }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
             window.showTempMessage(`Error al cargar Pomodoro: ${error.message}`, 'error');
         });
 
-        async function savePomodoroState(newTimeLeft, newIsRunning) {
+        async function savePomodoroState(newTimeLeft, newIsRunning, newIsBreakTime) {
             try {
                 await pomodoroSettingsDocRef.set({
                     timeLeft: newTimeLeft,
                     isRunning: newIsRunning,
+                    isBreakTime: newIsBreakTime, // Save isBreakTime
                     lastUpdated: new Date().toISOString()
                 });
                 console.log("Pomodoro: Estado guardado en Firestore.");
@@ -160,17 +186,38 @@ async function loadAllUserData() {
         function startTimer() {
             if (!isRunning) {
                 isRunning = true;
-                savePomodoroState(timeLeft, true);
+                savePomodoroState(timeLeft, true, isBreakTime);
                 timer = setInterval(() => {
                     timeLeft--;
                     updateTimerDisplay();
                     if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        savePomodoroState(0, false);
-                        window.showTempMessage('¡Tiempo de trabajo completado!', 'success');
-                        document.getElementById('sound-complete').play();
-                        resetTimer();
+                        savePomodoroState(0, false, isBreakTime); // Save state on completion
+                        
+                        if (!isBreakTime) { // If work time ended
+                            window.triggerConfetti(); // Trigger confetti
+                            document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
+                            window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
+
+                            setTimeout(() => {
+                                const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                                if (startBreak) {
+                                    timeLeft = 5 * 60; // 5 minutes for break
+                                    isBreakTime = true;
+                                    updateTimerDisplay();
+                                    savePomodoroState(timeLeft, true, isBreakTime); // Save break state
+                                    document.getElementById('sound-break').play().catch(e => console.error("Error playing break sound:", e));
+                                    window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
+                                    startTimer();
+                                } else {
+                                    resetTimer();
+                                }
+                            }, 1000);
+                        } else { // If break time ended
+                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
+                            resetTimer();
+                        }
                     }
                 }, 1000);
                 console.log("Pomodoro: Temporizador iniciado.");
@@ -180,7 +227,7 @@ async function loadAllUserData() {
         function pausarPomodoro() {
             clearInterval(timer);
             isRunning = false;
-            savePomodoroState(timeLeft, false);
+            savePomodoroState(timeLeft, false, isBreakTime);
             window.showTempMessage('Temporizador pausado.', 'info');
             console.log("Pomodoro: Temporizador pausado.");
         }
@@ -188,9 +235,10 @@ async function loadAllUserData() {
         function resetTimer() {
             clearInterval(timer);
             isRunning = false;
-            timeLeft = 25 * 60;
+            timeLeft = 25 * 60; // Always reset to 25 minutes work time
+            isBreakTime = false; // Ensure we are not in break time
             updateTimerDisplay();
-            savePomodoroState(timeLeft, false);
+            savePomodoroState(timeLeft, false, isBreakTime);
             window.showTempMessage('Temporizador reiniciado.', 'info');
             console.log("Pomodoro: Temporizador reiniciado.");
         }
@@ -211,9 +259,93 @@ async function loadAllUserData() {
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
 
     if (checkItemInput && addCheckItemBtn && checkListUl) {
+        // Event delegation for checklist items
+        checkListUl.addEventListener('change', async (e) => {
+            const target = e.target;
+            const listItem = target.closest('li'); // Get the parent <li> element
+            if (!listItem) return; // Not a list item
+
+            const itemId = target.dataset.itemId; // Get the item ID from the target element's dataset
+
+            if (target.classList.contains('completion-checkbox')) {
+                // Handle completion checkbox
+                try {
+                    await checklistCollectionRef.doc(itemId).update({
+                        completed: target.checked
+                    });
+                    if (target.checked) {
+                        listItem.querySelector('span').classList.add('task-completed');
+                        document.getElementById('sound-task-done').play().catch(e => console.error("Error playing task done sound:", e));
+                        window.showTempMessage('¡Tarea completada!', 'success');
+                    } else {
+                        listItem.querySelector('span').classList.remove('task-completed');
+                    }
+                    console.log(`Checklist: Ítem ${itemId} actualizado.`);
+                } catch (error) {
+                    console.error("Checklist: Error updating item:", error);
+                    window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
+                }
+            } else if (target.classList.contains('mit-checkbox')) {
+                // Handle MIT checkbox
+                const newIsMIT = target.checked;
+                console.log(`MIT checkbox clicked for item ${itemId}. Intended state: ${newIsMIT}`);
+
+                if (newIsMIT) {
+                    try {
+                        const mitSnapshot = await checklistCollectionRef.where('isMIT', '==', true).get();
+                        const currentMitCount = mitSnapshot.size;
+                        console.log(`Current MIT count from Firestore: ${currentMitCount}`);
+
+                        if (currentMitCount >= 3) {
+                            target.checked = false; // Revert UI
+                            window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
+                            console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}. Current Firestore MITs: ${currentMitCount}`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error("Error counting MITs from Firestore:", error);
+                        window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
+                        target.checked = false; // Revert checkbox on error
+                        return;
+                    }
+                }
+
+                try {
+                    await checklistCollectionRef.doc(itemId).update({
+                        isMIT: newIsMIT
+                    });
+                    console.log(`Checklist: Ítem ${itemId} MIT updated to ${newIsMIT} in Firestore.`);
+                } catch (error) {
+                    console.error("Checklist: Error updating MIT:", error);
+                    window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
+                    target.checked = !newIsMIT; // Revert to previous state
+                }
+            }
+        });
+
+        // Event delegation for click events (e.g., delete button)
+        checkListUl.addEventListener('click', async (e) => {
+            const target = e.target;
+            const listItem = target.closest('li');
+            if (!listItem) return;
+
+            if (target.classList.contains('button-danger')) {
+                const itemToDeleteId = target.dataset.id;
+                try {
+                    await checklistCollectionRef.doc(itemToDeleteId).delete();
+                    window.showTempMessage('Elemento eliminado del checklist.', 'info');
+                    console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
+                } catch (error) {
+                    console.error("Checklist: Error deleting item:", error);
+                    window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
+                }
+            }
+        });
+
+
         checklistCollectionRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
             console.log("Checklist: Recibiendo snapshot de ítems.");
-            checkListUl.innerHTML = '';
+            checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
                 checkListUl.innerHTML = '<li>No hay ítems en el checklist aún.</li>';
                 return;
@@ -223,49 +355,25 @@ async function loadAllUserData() {
                 const itemId = docSnap.id;
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
-                    <input type="checkbox" id="check-${itemId}" ${item.completed ? 'checked' : ''}>
+                    <input type="checkbox" class="completion-checkbox" id="check-${itemId}" data-item-id="${itemId}" ${item.completed ? 'checked' : ''}>
                     <label for="check-${itemId}"><span>${item.text}</span></label>
+                    <div class="mit-controls">
+                        <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''} style="display: inline-block !important; width: 25px !important; height: 25px !important; border: 2px solid purple !important;">
+                        MIT
+                    </div>
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
 
-                listItem.querySelector('input[type="checkbox"]').addEventListener('change', async (e) => {
-                    try {
-                        await checklistCollectionRef.doc(itemId).update({
-                            completed: e.target.checked
-                        });
-                        if (e.target.checked) {
-                            listItem.querySelector('span').classList.add('task-completed');
-                            document.getElementById('sound-task-done').play();
-                            window.showTempMessage('¡Tarea completada!', 'success');
-                        } else {
-                            listItem.querySelector('span').classList.remove('task-completed');
-                        }
-                        console.log(`Checklist: Ítem ${itemId} actualizado.`);
-                    } catch (error) {
-                        console.error("Checklist: Error al actualizar ítem:", error);
-                        window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
-                    }
-                });
-
-                listItem.querySelector('.button-danger').addEventListener('click', async (e) => {
-                    const itemToDeleteId = e.target.dataset.id;
-                    try {
-                        await checklistCollectionRef.doc(itemToDeleteId).delete();
-                        window.showTempMessage('Elemento eliminado del checklist.', 'info');
-                        console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
-                    } catch (error) {
-                        console.error("Checklist: Error al eliminar ítem:", error);
-                        window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
-                    }
-                });
-
+                if (item.isMIT) {
+                    listItem.classList.add('mit-task');
+                }
                 if (item.completed) {
                     listItem.querySelector('span').classList.add('task-completed');
                 }
             });
         }, (error) => {
-            console.error("Checklist: Error al escuchar ítems:", error);
+            console.error("Checklist: Error listening to items:", error);
             window.showTempMessage(`Error al cargar checklist: ${error.message}`, 'error');
         });
 
@@ -276,13 +384,14 @@ async function loadAllUserData() {
                     await checklistCollectionRef.add({
                         text: itemText,
                         completed: false,
+                        isMIT: false, // New field for MIT
                         timestamp: new Date().toISOString()
                     });
                     checkItemInput.value = '';
                     window.showTempMessage('Elemento añadido al checklist.', 'success');
                     console.log("Checklist: Nuevo ítem añadido.");
                 } catch (error) {
-                    console.error("Checklist: Error al añadir ítem:", error);
+                    console.error("Checklist: Error adding item:", error);
                     window.showTempMessage(`Error al añadir: ${error.message}`, 'error');
                 }
             } else {
@@ -436,6 +545,7 @@ async function loadAllUserData() {
                     allCards.forEach(card => {
                         const listItem = document.createElement('li');
                         listItem.textContent = card.name;
+                        // Puedes añadir más detalles como fecha de vencimiento, etiquetas, etc.
                         listaTareasUl.appendChild(listItem);
                     });
                     console.log(`Trello: ${allCards.length} tareas cargadas.`);
@@ -464,6 +574,11 @@ async function loadAllUserData() {
             if (confirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
+                    const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
+                    const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
+                    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
+                    const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
+
                     const journalDocs = await journalCollectionRef.get(); // Usar .get() para obtener los documentos
                     journalDocs.forEach(async (d) => await d.ref.delete()); // Usar d.ref.delete()
 
@@ -571,13 +686,25 @@ async function loadAllUserData() {
 
     // Actualizar contadores de estado
     function updateAppStatus() {
-        const checklistItemsCount = checkListUl ? checkListUl.children.length : 0;
-        const tasksCountElement = document.getElementById('tasks-count');
-        const checklistCountElement = document.getElementById('checklist-count');
+        if (window.currentUserId && window.db) {
+            const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
+            checklistCollectionRef.get().then(snapshot => {
+                const checklistItemsCount = snapshot.size;
+                const tasksCountElement = document.getElementById('tasks-count');
+                const checklistCountElement = document.getElementById('checklist-count');
 
-        if (tasksCountElement) tasksCountElement.textContent = checklistItemsCount;
-        if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
+                if (tasksCountElement) tasksCountElement.textContent = checklistItemsCount;
+                if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
+            }).catch(error => {
+                console.error("Error getting checklist count:", error);
+            });
+        } else {
+            const tasksCountElement = document.getElementById('tasks-count');
+            const checklistCountElement = document.getElementById('checklist-count');
+            if (tasksCountElement) tasksCountElement.textContent = '0';
+            if (checklistCountElement) checklistCountElement.textContent = '0';
+        }
     }
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
-}
+}; // End of loadAllUserData

@@ -56,6 +56,7 @@
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
+      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Nuevo botón para Nutrición -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -1003,6 +1004,7 @@
         document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
         document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
         document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
+        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion')); // Event listener para el nuevo botón de nutrición
         document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
         console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
 
