@@ -133,26 +133,38 @@ async function loadAllUserData() {
                         isRunning = false;
                         savePomodoroState(0, false, isBreakTime); // Save state on completion
 
+                        console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
+
                         if (!isBreakTime) { // If work time ended
-                            window.triggerConfetti(); // Trigger confetti
-                            document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
-                            window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
+                            console.log("Pomodoro (onSnapshot): Tiempo de trabajo terminado. Activando confeti y sonido.");
+                            window.triggerConfetti();
+                            document.getElementById('sound-complete').play().catch(e => {
+                                console.error("Error al reproducir sonido de completado (onSnapshot):", e);
+                                window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
+                            });
 
                             setTimeout(async () => { // Use async for await showCustomConfirm
+                                console.log("Pomodoro (onSnapshot): Preguntando por descanso...");
                                 const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
-                                    timeLeft = 5 * 60; // 5 minutes for break
+                                    console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
+                                    timeLeft = 5 * 60; // 5 minutos para descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime); // Save break state
-                                    document.getElementById('sound-break').play().catch(e => console.error("Error playing break sound:", e));
+                                    document.getElementById('sound-break').play().catch(e => {
+                                        console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
+                                        window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
+                                    });
                                     window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                    startTimer();
+                                    startTimer(); // Start the break timer
                                 } else {
+                                    console.log("Pomodoro (onSnapshot): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
                                     resetTimer();
                                 }
-                            }, 1000);
+                            }, 1000); // Small delay to allow messages/confetti to show
                         } else { // If break time ended
+                            console.log("Pomodoro (onSnapshot): Tiempo de descanso terminado. Reiniciando temporizador.");
                             window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
                             resetTimer();
                         }
@@ -194,26 +206,38 @@ async function loadAllUserData() {
                         isRunning = false;
                         savePomodoroState(0, false, isBreakTime); // Save state on completion
                         
+                        console.log("Pomodoro: Tiempo terminado. isBreakTime:", isBreakTime);
+
                         if (!isBreakTime) { // If work time ended
-                            window.triggerConfetti(); // Trigger confetti
-                            document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
-                            window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
+                            console.log("Pomodoro: Tiempo de trabajo terminado. Activando confeti y sonido.");
+                            window.triggerConfetti();
+                            document.getElementById('sound-complete').play().catch(e => {
+                                console.error("Error al reproducir sonido de completado:", e);
+                                window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
+                            });
 
                             setTimeout(async () => { // Use async for await showCustomConfirm
+                                console.log("Pomodoro: Preguntando por descanso...");
                                 const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
-                                    timeLeft = 5 * 60; // 5 minutes for break
+                                    console.log("Pomodoro: Usuario eligió iniciar descanso.");
+                                    timeLeft = 5 * 60; // 5 minutos para descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime); // Save break state
-                                    document.getElementById('sound-break').play().catch(e => console.error("Error playing break sound:", e));
+                                    document.getElementById('sound-break').play().catch(e => {
+                                        console.error("Error al reproducir sonido de descanso:", e);
+                                        window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
+                                    });
                                     window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                    startTimer();
+                                    startTimer(); // Start the break timer
                                 } else {
+                                    console.log("Pomodoro: Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
                                     resetTimer();
                                 }
-                            }, 1000);
+                            }, 1000); // Small delay to allow messages/confetti to show
                         } else { // If break time ended
+                            console.log("Pomodoro: Tiempo de descanso terminado. Reiniciando temporizador.");
                             window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
                             resetTimer();
                         }
