@@ -179,9 +179,14 @@
 
   <div id="confetti-container"></div> <!-- Contenedor para el confeti -->
   <div id="temp-message-container"></div>
-  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
-  <audio id="sound-break" src="sounds/break.mp3" preload="auto"></audio>
-  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
+  <!-- Añadir onerror para depurar problemas de carga de audio -->
+  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto" onerror="console.error('Error cargando sound-complete.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de finalización.', 'error', 5000);"></audio>
+  <audio id="sound-break" src="sounds/break.mp3" preload="auto" onerror="console.error('Error cargando sound-break.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de descanso.', 'error', 5000);"></audio>
+  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto" onerror="console.error('Error cargando sound-task-done.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de tarea completada.', 'error', 5000);"></audio>
+
+  <!-- Div de prueba para verificar si el CSS se carga correctamente -->
+  <div id="css-check" style="position: fixed; top: 10px; right: 10px; width: 20px; height: 20px; background-color: red; border-radius: 50%;"></div>
+
 
   <!-- Script de inicialización de Firebase y autenticación -->
   <!-- Este script se ejecuta después de que los SDK de Firebase se han cargado (en el head) -->
@@ -342,7 +347,7 @@
                     
                     if (!isBreakTime) { // Si terminó el tiempo de trabajo
                         window.triggerConfetti();
-                        document.getElementById('sound-complete').play();
+                        document.getElementById('sound-complete').play().catch(e => console.error("Error al reproducir sonido de completado:", e));
                         window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
 
                         setTimeout(() => {
@@ -353,7 +358,7 @@
                                 isBreakTime = true;
                                 updateTimerDisplay();
                                 savePomodoroState(timeLeft, true, isBreakTime);
-                                document.getElementById('sound-break').play();
+                                document.getElementById('sound-break').play().catch(e => console.error("Error al reproducir sonido de descanso:", e));
                                 window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
                                 startTimer();
                             } else {
@@ -415,7 +420,7 @@
                             savePomodoroState(0, false, isBreakTime);
                             if (!isBreakTime) {
                                 window.triggerConfetti();
-                                document.getElementById('sound-complete').play();
+                                document.getElementById('sound-complete').play().catch(e => console.error("Error al reproducir sonido de completado:", e));
                                 window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
                                 setTimeout(() => {
                                     const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
@@ -424,7 +429,7 @@
                                         isBreakTime = true;
                                         updateTimerDisplay();
                                         savePomodoroState(timeLeft, true, isBreakTime);
-                                        document.getElementById('sound-break').play();
+                                        document.getElementById('sound-break').play().catch(e => console.error("Error al reproducir sonido de descanso:", e));
                                         window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
                                         startTimer();
                                     } else {
@@ -537,7 +542,7 @@
                         });
                         if (target.checked) {
                             listItem.querySelector('span').classList.add('task-completed');
-                            document.getElementById('sound-task-done').play();
+                            document.getElementById('sound-task-done').play().catch(e => console.error("Error al reproducir sonido de tarea completada:", e));
                             window.showTempMessage('¡Tarea completada!', 'success');
                         } else {
                             listItem.querySelector('span').classList.remove('task-completed');
@@ -620,8 +625,8 @@
                         <input type="checkbox" class="completion-checkbox" id="check-${itemId}" data-item-id="${itemId}" ${item.completed ? 'checked' : ''}>
                         <label for="check-${itemId}"><span>${item.text}</span></label>
                         <div class="mit-controls">
-                            <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''}>
-                            <label for="mit-${itemId}">MIT</label>
+                            <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''} style="display: inline-block !important; width: 25px !important; height: 25px !important; border: 2px solid purple !important;">
+                            MIT
                         </div>
                         <button class="button-danger" data-id="${itemId}">❌</button>
                     `;
@@ -1143,6 +1148,15 @@
 
         window.mostrarSeccion('pomodoro');
         console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
+
+        // Pequeña verificación visual de CSS
+        const cssCheckDiv = document.getElementById('css-check');
+        if (getComputedStyle(cssCheckDiv).backgroundColor === 'rgb(0, 128, 0)') { // Green color from CSS
+            console.log('CSS: styles1.css parece estar cargado correctamente.');
+        } else {
+            console.warn('CSS: styles1.css NO parece estar cargado correctamente o la regla de verificación no se aplica.');
+            window.showTempMessage('Advertencia: El archivo CSS puede no estar cargado correctamente. Revisa la consola.', 'warning', 5000);
+        }
 
     });
   </script>

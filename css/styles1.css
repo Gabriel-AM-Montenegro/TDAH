@@ -1,4 +1,9 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
+/* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
+body {
+  border: 5px solid red !important; /* Este borde debería desaparecer si el CSS carga */
+}
+
 :root {
   /* Colores */
   --primary-color: #4F46E5; /* Indigo */
@@ -391,10 +396,18 @@ li button {
     font-size: 0.9em;
     color: var(--text-medium);
     margin-left: var(--spacing-sm); /* Espacio entre el texto de la tarea y el control MIT */
+    /* Estilos de depuración para ver si el div está presente */
+    /* border: 1px solid blue; */
 }
 
 .mit-controls input[type="checkbox"] {
     margin-right: 0; /* Eliminar margen extra */
+    /* Estilos de depuración para forzar visibilidad del checkbox */
+    /* display: inline-block !important; */
+    /* opacity: 1 !important; */
+    /* width: 25px !important; */
+    /* height: 25px !important; */
+    /* border: 2px solid purple !important; */
 }
 
 /* Estilo para las tareas marcadas como MIT */
@@ -784,4 +797,9 @@ input[type="checkbox"] {
     transform: translateY(100vh) rotateZ(720deg);
     opacity: 0;
   }
+}
+
+/* Regla para el div de verificación de CSS */
+#css-check {
+    background-color: green !important; /* Debería ser verde si el CSS se carga */
 }
