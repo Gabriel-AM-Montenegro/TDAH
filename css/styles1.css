@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(62, 134, 111) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(230, 87, 187) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -802,4 +802,58 @@ input[type="checkbox"] {
 /* Regla para el div de verificación de CSS */
 #css-check {
     background-color: green !important; /* Debería ser verde si el CSS se carga */
+}
+
+/* Custom Confirmation Modal Styles */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.custom-modal-overlay.show {
+    opacity: 1;
+}
+
+.custom-modal-content {
+    background: var(--white);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--glass-shadow);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease-in-out;
+}
+
+.custom-modal-overlay.show .custom-modal-content {
+    transform: translateY(0);
+}
+
+.custom-modal-content p {
+    font-size: 1.1em;
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-dark);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    font-size: 1em;
+    min-width: 100px;
 }

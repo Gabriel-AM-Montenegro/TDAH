@@ -138,9 +138,8 @@ async function loadAllUserData() {
                             document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
                             window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
 
-                            setTimeout(() => {
-                                // Use confirm() for now, ideally replace with a custom modal
-                                const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                            setTimeout(async () => { // Use async for await showCustomConfirm
+                                const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
                                     timeLeft = 5 * 60; // 5 minutes for break
                                     isBreakTime = true;
@@ -200,8 +199,8 @@ async function loadAllUserData() {
                             document.getElementById('sound-complete').play().catch(e => console.error("Error playing complete sound:", e));
                             window.showTempMessage('¡Tiempo de trabajo completado!', 'success', 4000);
 
-                            setTimeout(() => {
-                                const startBreak = confirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                            setTimeout(async () => { // Use async for await showCustomConfirm
+                                const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
                                     timeLeft = 5 * 60; // 5 minutes for break
                                     isBreakTime = true;
@@ -541,17 +540,41 @@ async function loadAllUserData() {
                     allCards = allCards.concat(cards);
                 }
 
-                if (allCards.length > 0) {
-                    allCards.forEach(card => {
+                // Filtrar tareas para la semana actual (lunes a viernes)
+                const today = new Date();
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+                // Calculate Monday of the current week
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // Adjust for Sunday
+                monday.setHours(0, 0, 0, 0);
+
+                // Calculate Friday of the current week
+                const friday = new Date(monday);
+                friday.setDate(monday.getDate() + 4); // Monday + 4 days = Friday
+                friday.setHours(23, 59, 59, 999);
+
+                console.log(`Trello: Filtrando tareas entre ${monday.toISOString()} y ${friday.toISOString()}`);
+
+                const filteredCards = allCards.filter(card => {
+                    if (!card.due || card.dueComplete) {
+                        return false; // Exclude cards without due date or already completed
+                    }
+                    const cardDueDate = new Date(card.due);
+                    return cardDueDate >= monday && cardDueDate <= friday;
+                });
+
+                if (filteredCards.length > 0) {
+                    filteredCards.forEach(card => {
                         const listItem = document.createElement('li');
-                        listItem.textContent = card.name;
-                        // Puedes añadir más detalles como fecha de vencimiento, etiquetas, etc.
+                        const dueDate = card.due ? new Date(card.due).toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Sin fecha';
+                        listItem.textContent = `${card.name} (Vence: ${dueDate})`;
                         listaTareasUl.appendChild(listItem);
                     });
-                    console.log(`Trello: ${allCards.length} tareas cargadas.`);
+                    console.log(`Trello: ${filteredCards.length} tareas cargadas para esta semana.`);
                 } else {
-                    listaTareasUl.innerHTML = '<li>No hay tareas en tu board de Trello.</li>';
-                    console.log("Trello: No hay tareas en el board.");
+                    listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
+                    console.log("Trello: No hay tareas para esta semana.");
                 }
             } catch (error) {
                 console.error('Trello: Error al cargar tareas:', error);
@@ -571,7 +594,7 @@ async function loadAllUserData() {
     const clearDataBtn = document.getElementById('clear-data-btn');
     if (clearDataBtn) {
         async function limpiarDatos() {
-            if (confirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
+            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
@@ -579,8 +602,8 @@ async function loadAllUserData() {
                     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
                     const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
 
-                    const journalDocs = await journalCollectionRef.get(); // Usar .get() para obtener los documentos
-                    journalDocs.forEach(async (d) => await d.ref.delete()); // Usar d.ref.delete()
+                    const journalDocs = await journalCollectionRef.get();
+                    journalDocs.forEach(async (d) => await d.ref.delete());
 
                     const checklistDocs = await checklistCollectionRef.get();
                     checklistDocs.forEach(async (d) => await d.ref.delete());
