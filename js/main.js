@@ -206,38 +206,38 @@ async function loadAllUserData() {
                         isRunning = false;
                         savePomodoroState(0, false, isBreakTime); // Save state on completion
                         
-                        console.log("Pomodoro: Tiempo terminado. isBreakTime:", isBreakTime);
+                        console.log("Pomodoro (startTimer): Tiempo terminado. isBreakTime:", isBreakTime);
 
                         if (!isBreakTime) { // If work time ended
-                            console.log("Pomodoro: Tiempo de trabajo terminado. Activando confeti y sonido.");
+                            console.log("Pomodoro (startTimer): Tiempo de trabajo terminado. Activando confeti y sonido.");
                             window.triggerConfetti();
                             document.getElementById('sound-complete').play().catch(e => {
-                                console.error("Error al reproducir sonido de completado:", e);
+                                console.error("Error al reproducir sonido de completado (startTimer):", e);
                                 window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
                             });
 
                             setTimeout(async () => { // Use async for await showCustomConfirm
-                                console.log("Pomodoro: Preguntando por descanso...");
+                                console.log("Pomodoro (startTimer): Preguntando por descanso...");
                                 const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
-                                    console.log("Pomodoro: Usuario eligió iniciar descanso.");
+                                    console.log("Pomodoro (startTimer): Usuario eligió iniciar descanso.");
                                     timeLeft = 5 * 60; // 5 minutos para descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime); // Save break state
                                     document.getElementById('sound-break').play().catch(e => {
-                                        console.error("Error al reproducir sonido de descanso:", e);
+                                        console.error("Error al reproducir sonido de descanso (startTimer):", e);
                                         window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
                                     });
                                     window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
                                     startTimer(); // Start the break timer
                                 } else {
-                                    console.log("Pomodoro: Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
+                                    console.log("Pomodoro (startTimer): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
                                     resetTimer();
                                 }
                             }, 1000); // Small delay to allow messages/confetti to show
                         } else { // If break time ended
-                            console.log("Pomodoro: Tiempo de descanso terminado. Reiniciando temporizador.");
+                            console.log("Pomodoro (startTimer): Tiempo de descanso terminado. Reiniciando temporizador.");
                             window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
                             resetTimer();
                         }
@@ -755,3 +755,4 @@ async function loadAllUserData() {
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
 }; // End of loadAllUserData
+
