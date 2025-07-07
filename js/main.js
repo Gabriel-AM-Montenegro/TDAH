@@ -98,7 +98,7 @@ async function loadAllUserData() {
     // --- Lógica del Temporizador Pomodoro ---
     let timer;
     let isRunning = false;
-    let timeLeft = 25 * 60; // Default: 25 minutos
+    let timeLeft = 1 * 60; // Default: 1 minuto para pruebas (antes 25 * 60)
     let isBreakTime = false; // Add isBreakTime variable for Pomodoro
     const timerDisplay = document.getElementById('timer');
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
@@ -172,7 +172,7 @@ async function loadAllUserData() {
                 }
             } else {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
-                pomodoroSettingsDocRef.set({ timeLeft: 25 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
+                pomodoroSettingsDocRef.set({ timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() }); // Default: 1 minuto para pruebas
             }
         }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
@@ -258,7 +258,7 @@ async function loadAllUserData() {
         function resetTimer() {
             clearInterval(timer);
             isRunning = false;
-            timeLeft = 25 * 60; // Always reset to 25 minutes work time
+            timeLeft = 1 * 60; // Always reset to 1 minute work time for testing (before 25 * 60)
             isBreakTime = false; // Ensure we are not in break time
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
@@ -755,4 +755,3 @@ async function loadAllUserData() {
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
 }; // End of loadAllUserData
-

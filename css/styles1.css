@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(230, 87, 187) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(230, 189, 113) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -815,7 +815,7 @@ input[type="checkbox"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 10000; /* Asegura que esté por encima de todo */
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
