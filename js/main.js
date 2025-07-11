@@ -658,37 +658,50 @@ async function loadAllUserData() {
     }
 
 
-    // --- Lógica de Notas de Blog y Nutrición (no usan DB) ---
+    // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
+    // Colección de Firestore para artículos del blog
+    // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
+    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/public/data/blogArticles`);
+
     if (blogContentDiv && refreshBlogBtn) {
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5');
-                const articles = await response.json();
-                blogContentDiv.innerHTML = '';
-                articles.forEach(article => {
+                // Obtener documentos de la colección blogArticles
+                const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get();
+                blogContentDiv.innerHTML = ''; // Limpiar contenido existente
+
+                if (snapshot.empty) {
+                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
+                    console.log("Blog: No hay artículos en Firestore.");
+                    window.showTempMessage('No hay artículos de blog disponibles.', 'info');
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const article = doc.data();
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
                     articleCard.innerHTML = `
                         <h4>${article.title}</h4>
-                        <p>${article.body.substring(0, 100)}...</p>
-                        <small>Fuente: Blog de Neurodiversidad</small>
-                        <a href="#" class="article-link">Leer Más ↗</a>
+                        <p>${article.content}</p>
+                        <small>Fuente: ${article.source}</small>
+                        ${article.url ? `<a href="${article.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     blogContentDiv.appendChild(articleCard);
                 });
-                window.showTempMessage('Artículos del blog actualizados.', 'success');
-                console.log("Blog: Artículos cargados.");
+                window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
+                console.log("Blog: Artículos cargados desde Firestore.");
             } catch (error) {
                 blogContentDiv.innerHTML = '<p>Error al cargar artículos del blog.</p>';
-                console.error('Blog: Error al cargar notas de blog:', error);
-                window.showTempMessage('Error al cargar artículos del blog.', 'error');
+                console.error('Blog: Error al cargar notas de blog desde Firestore:', error);
+                window.showTempMessage(`Error al cargar artículos del blog: ${error.message}`, 'error');
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog();
+        cargarNotasBlog(); // Cargar al inicio
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
