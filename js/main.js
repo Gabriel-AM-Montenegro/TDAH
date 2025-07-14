@@ -663,7 +663,8 @@ async function loadAllUserData() {
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
     // Colección de Firestore para artículos del blog
     // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/public/data/blogArticles`);
+    // CAMBIO DE RUTA AQUÍ: Ajustado para que coincida con tu estructura actual en Firestore
+    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         async function cargarNotasBlog() {
