@@ -658,21 +658,17 @@ async function loadAllUserData() {
     }
 
 
-    // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
+    // --- Lógica de Notas de Blog ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    // Colección de Firestore para artículos del blog
-    // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
-    // CAMBIO DE RUTA AQUÍ: Ajustado para que coincida con tu estructura actual en Firestore
     const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                // Obtener documentos de la colección blogArticles
                 const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get();
-                blogContentDiv.innerHTML = ''; // Limpiar contenido existente
+                blogContentDiv.innerHTML = ''; 
 
                 if (snapshot.empty) {
                     blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
@@ -702,44 +698,56 @@ async function loadAllUserData() {
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog(); // Cargar al inicio
+        cargarNotasBlog(); 
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
 
 
+    // --- Lógica de Nutrición (ahora usa DB) ---
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
+    // Colección de Firestore para contenido de nutrición
+    // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
+    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); // <--- CAMBIO AQUÍ
+
     if (nutricionContentDiv && refreshNutricionBtn) {
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                const data = [
-                    { title: "Hidratación Esencial", content: "Beber suficiente agua es crucial para la función cerebral y la energía. Intenta beber 8 vasos al día.", source: "OMS" },
-                    { title: "Omega-3 y Cerebro", content: "Los ácidos grasos Omega-3, encontrados en pescados grasos y nueces, son vitales para la salud cerebral y la concentración.", source: "Harvard Health" },
-                    { title: "Alimentos Integrales", content: "Opta por granos enteros, frutas y verduras para un suministro constante de energía y nutrientes.", source: "Nutrición al Día" }
-                ];
-                nutricionContentDiv.innerHTML = '';
-                data.forEach(item => {
+                // Obtener documentos de la colección nutritionContent
+                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
+                nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
+
+                if (snapshot.empty) {
+                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
+                    console.log("Nutrición: No hay contenido en Firestore.");
+                    window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
                     card.innerHTML = `
                         <h4>${item.title}</h4>
                         <p>${item.content}</p>
                         <small>Fuente: ${item.source}</small>
+                        ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
                 });
-                window.showTempMessage('Contenido de nutrición actualizado.', 'success');
-                console.log("Nutrición: Contenido cargado.");
+                window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
+                console.log("Nutrición: Contenido cargado desde Firestore.");
             } catch (error) {
                 nutricionContentDiv.innerHTML = '<p>Error al cargar contenido de nutrición.</p>';
-                console.error('Nutrición: Error al cargar nutrición:', error);
-                window.showTempMessage('Error al cargar contenido de nutrición.', 'error');
+                console.error('Nutrición: Error al cargar nutrición desde Firestore:', error);
+                window.showTempMessage(`Error al cargar contenido de nutrición: ${error.message}`, 'error');
             }
         }
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
-        cargarNutricion();
+        cargarNutricion(); // Cargar al inicio
     } else {
         console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
     }
