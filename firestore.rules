@@ -17,5 +17,13 @@ service cloud.firestore {
 
     // Si tienes alguna otra colección pública que no sea blogArticles y no esté bajo /public/data,
     // necesitarías una regla específica para ella también.
+
+    
+    // NUEVA REGLA: Reglas para datos públicos bajo /public/data (como Nutrición)
+    // Permite leer si el usuario está autenticado. La escritura está deshabilitada desde el frontend.
+    match /artifacts/{appId}/public/data/{collection}/{documents=**} { // <--- NUEVA REGLA PARA /public/data
+      allow read: if request.auth != null;
+      allow write: if false; // Solo tú (o un proceso de backend) deberías escribir aquí
+    }
   }
 }
