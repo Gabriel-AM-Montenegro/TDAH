@@ -5,172 +5,38 @@
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
 
-// Variables globales para Firebase (se inicializarán a través de window en DOMContentLoaded)
+// Variables globales para Firebase (se inicializarán a través de window en loadAllUserData)
 let db;
 let auth;
 let currentUserId;
-let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 
-// Definición de loadAllUserData movida fuera de DOMContentLoaded para asegurar accesibilidad
+
+// Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
 async function loadAllUserData() {
     console.log("loadAllUserData: Iniciando carga de datos del usuario...");
-    // Asegurarse de que currentUserId esté disponible
-    if (!window.currentUserId || !window.db || !window.auth || !window.appId) {
-        console.warn("loadAllUserData: Firebase o currentUserId no disponibles. No se cargarán los datos del usuario.");
+    // Acceder a las variables globales de Firebase expuestas en el objeto window
+    db = window.db;
+    auth = window.auth;
+    currentUserId = window.currentUserId;
+    const appId = window.appId; // appId también es global ahora
+
+    if (!db || !auth || !currentUserId) {
+        console.error("loadAllUserData: Firebase no está completamente inicializado o el usuario no está autenticado. Reintentando...");
+        window.showTempMessage("Error: Firebase no está listo. Recargando...", 'error');
         return;
     }
-    db = window.db; // Reasignar para asegurar que la referencia es correcta
-    auth = window.auth;
-    currentUserId = window.currentUserId; // Actualizar la variable local
-    const appId = window.appId;
 
+    console.log("loadAllUserData: Firebase y Usuario Autenticado:", currentUserId);
     // Obtener el usuario actual para mostrar el nombre
     const user = auth.currentUser;
     const userName = user ? (user.displayName || user.email || user.uid.substring(0, 8)) : currentUserId.substring(0, 8);
-    window.showTempMessage(`Bienvenido, usuario ${userName}...`, 'info');
-
-    // --- Lógica del Tour de Bienvenida ---
-    const tourOverlay = document.getElementById('welcome-tour-overlay');
-    const tourTitle = document.getElementById('tour-title');
-    const tourDescription = document.getElementById('tour-description');
-    const tourHighlightImage = document.getElementById('tour-highlight-image');
-    const tourBackBtn = document.getElementById('tour-back-btn');
-    const tourNextBtn = document.getElementById('tour-next-btn');
-    const tourSkipBtn = document.getElementById('tour-skip-btn');
-    const tourDotsContainer = document.getElementById('tour-dots');
-
-    let currentTourStep = 0;
-    const tourSteps = [
-        {
-            title: "¡Bienvenido a TDAH Helper App!",
-            description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
-            image: "" // No image for intro
-        },
-        {
-            title: "⏱️ Temporizador Pomodoro",
-            description: "Usa el temporizador Pomodoro para trabajar en bloques de tiempo concentrado (25 min) seguidos de descansos cortos (5 min). ¡Ideal para mantener el foco y evitar el agotamiento!",
-            image: "https://placehold.co/400x200/4F46E5/FFFFFF?text=Pomodoro+Timer" // Placeholder image for Pomodoro
-        },
-        {
-            title: "✅ Checklist Rápido",
-            description: "Añade y gestiona tus tareas diarias de forma sencilla. Marca las completadas y prioriza tus 'Tareas Más Importantes' (MITs) para un día productivo.",
-            image: "https://placehold.co/400x200/7C3AED/FFFFFF?text=Checklist" // Placeholder image for Checklist
-        },
-        {
-            title: "📝 Journal Personal",
-            description: "Un espacio seguro para escribir tus pensamientos, emociones, logros y desafíos. Reflexionar te ayudará a entenderte mejor y a gestionar tu bienestar.",
-            image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
-        },
-        {
-            title: "✅ Hábitos Diarios", // Título actualizado para el tour
-            description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!",
-            image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" // Placeholder image for Habits
-        },
-        {
-            title: "¡Listo para Empezar!",
-            description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!",
-            image: "" // No image for outro
-        }
-    ];
-
-    async function showWelcomeTour() {
-        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
-        try {
-            const doc = await userSettingsRef.get();
-            if (doc.exists && doc.data().tourCompleted) {
-                console.log("Tour: Ya completado para este usuario.");
-                return; // No mostrar el tour si ya fue completado
-            }
-        } catch (error) {
-            console.error("Tour: Error al verificar estado del tour en Firestore:", error);
-            // Si hay un error, por seguridad, mostramos el tour
-        }
-
-        tourOverlay.classList.add('active');
-        renderTourStep();
-        createTourDots();
+    const userDisplayNameElement = document.getElementById('user-display-name'); // Renombrado para evitar conflicto
+    if (userDisplayNameElement) {
+        userDisplayNameElement.textContent = `Bienvenido, ${userName}!`;
+    } else {
+        console.warn("Elemento 'user-display-name' no encontrado.");
     }
-
-    function renderTourStep() {
-        const step = tourSteps[currentTourStep];
-        tourTitle.textContent = step.title;
-        tourDescription.textContent = step.description;
-
-        if (step.image) {
-            tourHighlightImage.src = step.image;
-            tourHighlightImage.style.display = 'block';
-        } else {
-            tourHighlightImage.style.display = 'none';
-        }
-
-        tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
-        tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
-        tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
-
-        updateTourDots();
-    }
-
-    function createTourDots() {
-        tourDotsContainer.innerHTML = '';
-        tourSteps.forEach((_, index) => {
-            const dot = document.createElement('span');
-            dot.classList.add('tour-dot');
-            if (index === currentTourStep) {
-                dot.classList.add('active');
-            }
-            dot.addEventListener('click', () => {
-                currentTourStep = index;
-                renderTourStep();
-            });
-            tourDotsContainer.appendChild(dot);
-        });
-    }
-
-    function updateTourDots() {
-        document.querySelectorAll('.tour-dot').forEach((dot, index) => {
-            if (index === currentTourStep) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
-        });
-    }
-
-    async function nextTourStep() {
-        if (currentTourStep < tourSteps.length - 1) {
-            currentTourStep++;
-            renderTourStep();
-        } else {
-            await completeTour();
-        }
-    }
-
-    async function prevTourStep() {
-        if (currentTourStep > 0) {
-            currentTourStep--;
-            renderTourStep();
-        }
-    }
-
-    async function completeTour() {
-        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
-        try {
-            await userSettingsRef.set({ tourCompleted: true }, { merge: true });
-            console.log("Tour: Estado de tour completado guardado en Firestore.");
-        } catch (error) {
-            console.error("Tour: Error al guardar estado de tour completado:", error);
-        }
-        tourOverlay.classList.remove('active');
-        window.showTempMessage("¡Tour de bienvenida completado! Explora la app.", 'info', 5000);
-    }
-
-    tourNextBtn.addEventListener('click', nextTourStep);
-    tourBackBtn.addEventListener('click', prevTourStep);
-    tourSkipBtn.addEventListener('click', completeTour); // Skip also completes the tour
-
-    // Llamar al tour de bienvenida después de que todo lo demás esté cargado
-    showWelcomeTour();
-
+    window.showTempMessage(`Bienvenido, usuario ${userName}...`, 'info'); // Usar userName aquí también
 
     // --- Lógica del Journal ---
     const journalEntryTextarea = document.getElementById('journalEntry');
@@ -178,6 +44,7 @@ async function loadAllUserData() {
     const journalEntriesList = document.getElementById('journalEntriesList');
 
     if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
+        // Acceder a las funciones de Firestore a través del objeto global 'firebase.firestore()' o 'db'
         const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
         journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
@@ -211,11 +78,6 @@ async function loadAllUserData() {
         saveJournalEntryButton.addEventListener('click', async () => {
             const entryText = journalEntryTextarea.value.trim();
             if (entryText) {
-                saveJournalEntryButton.classList.add('button-clicked');
-                setTimeout(() => {
-                    saveJournalEntryButton.classList.remove('button-clicked');
-                }, 300);
-
                 try {
                     await journalCollectionRef.add({
                         text: entryText,
@@ -255,6 +117,7 @@ async function loadAllUserData() {
     }
 
     if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
+        // Cargar estado del pomodoro desde Firestore
         pomodoroSettingsDocRef.onSnapshot((docSnap) => {
             console.log("Pomodoro: Recibiendo snapshot de settings.");
             if (docSnap.exists) {
@@ -338,11 +201,6 @@ async function loadAllUserData() {
             if (!isRunning) {
                 isRunning = true;
                 savePomodoroState(timeLeft, true, isBreakTime);
-                startTimerBtn.classList.add('button-clicked');
-                setTimeout(() => {
-                    startTimerBtn.classList.remove('button-clicked');
-                }, 300);
-
                 timer = setInterval(() => {
                     timeLeft--;
                     updateTimerDisplay();
@@ -396,10 +254,6 @@ async function loadAllUserData() {
             clearInterval(timer);
             isRunning = false;
             savePomodoroState(timeLeft, false, isBreakTime);
-            pausePomodoroBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                pausePomodoroBtn.classList.remove('button-clicked');
-            }, 300);
             window.showTempMessage('Temporizador pausado.', 'info');
             console.log("Pomodoro: Temporizador pausado.");
         }
@@ -411,10 +265,6 @@ async function loadAllUserData() {
             isBreakTime = false; // Ensure we are not in break time
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
-            resetTimerBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                resetTimerBtn.classList.remove('button-clicked');
-            }, 300);
             window.showTempMessage('Temporizador reiniciado.', 'info');
             console.log("Pomodoro: Temporizador reiniciado.");
         }
@@ -507,15 +357,13 @@ async function loadAllUserData() {
 
             if (target.classList.contains('button-danger')) {
                 const itemToDeleteId = target.dataset.id;
-                if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este ítem del checklist?')) {
-                    try {
-                        await checklistCollectionRef.doc(itemToDeleteId).delete();
-                        window.showTempMessage('Elemento eliminado del checklist.', 'info');
-                        console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
-                    } catch (error) {
-                        console.error("Checklist: Error deleting item:", error);
-                        window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
-                    }
+                try {
+                    await checklistCollectionRef.doc(itemToDeleteId).delete();
+                    window.showTempMessage('Elemento eliminado del checklist.', 'info');
+                    console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
+                } catch (error) {
+                    console.error("Checklist: Error deleting item:", error);
+                    window.showTempMessage(`Error al eliminar: ${error.message}`, 'error');
                 }
             }
         });
@@ -542,9 +390,6 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
-
-                // Micro-interacción: Añadir clase para animación de aparición
-                listItem.classList.add('new-item-animation');
 
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
@@ -776,14 +621,13 @@ async function loadAllUserData() {
     const clearDataBtn = document.getElementById('clear-data-btn');
     if (clearDataBtn) {
         async function limpiarDatos() {
-            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal, Hábitos)? Esta acción es irreversible.')) {
+            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
                     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
                     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
                     const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
-                    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
 
                     const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach(async (d) => await d.ref.delete());
@@ -803,14 +647,8 @@ async function loadAllUserData() {
                         console.log("Limpiar Datos: Configuración de Trello eliminada.");
                     }
 
-                    const habitDocs = await habitsCollectionRef.get();
-                    habitDocs.forEach(async (d) => await d.ref.delete());
-                    console.log("Limpiar Datos: Hábitos eliminados.");
-
-
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
-                    // No recargar la página aquí, dejar que onAuthStateChanged maneje el estado de no autenticado
-                    // o que el usuario elija una opción de inicio de sesión.
+                    location.reload();
                 } catch (error) {
                     console.error("Limpiar Datos: Error al limpiar datos:", error);
                     window.showTempMessage(`Error al limpiar datos: ${error.message}`, 'error');
@@ -823,50 +661,37 @@ async function loadAllUserData() {
     }
 
 
-    // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
+    // --- Lógica de Notas de Blog y Nutrición (no usan DB) ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    // Colección de Firestore para artículos del blog
-    // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`);
-
     if (blogContentDiv && refreshBlogBtn) {
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                // Obtener documentos de la colección blogArticles
-                const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get();
-                blogContentDiv.innerHTML = ''; // Limpiar contenido existente
-
-                if (snapshot.empty) {
-                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
-                    console.log("Blog: No hay artículos en Firestore.");
-                    window.showTempMessage('No hay artículos de blog disponibles.', 'info');
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const article = doc.data();
+                const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5');
+                const articles = await response.json();
+                blogContentDiv.innerHTML = '';
+                articles.forEach(article => {
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
                     articleCard.innerHTML = `
                         <h4>${article.title}</h4>
-                        <p>${article.content}</p>
-                        <small>Fuente: ${article.source}</small>
-                        ${article.url ? `<a href="${article.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
+                        <p>${article.body.substring(0, 100)}...</p>
+                        <small>Fuente: Blog de Neurodiversidad</small>
+                        <a href="#" class="article-link">Leer Más ↗</a>
                     `;
                     blogContentDiv.appendChild(articleCard);
                 });
-                window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
-                console.log("Blog: Artículos cargados desde Firestore.");
+                window.showTempMessage('Artículos del blog actualizados.', 'success');
+                console.log("Blog: Artículos cargados.");
             } catch (error) {
                 blogContentDiv.innerHTML = '<p>Error al cargar artículos del blog.</p>';
-                console.error('Blog: Error al cargar notas de blog desde Firestore:', error);
-                window.showTempMessage(`Error al cargar artículos del blog: ${error.message}`, 'error');
+                console.error('Blog: Error al cargar notas de blog:', error);
+                window.showTempMessage('Error al cargar artículos del blog.', 'error');
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog(); // Cargar al inicio
+        cargarNotasBlog();
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
@@ -874,217 +699,45 @@ async function loadAllUserData() {
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
-    // Colección de Firestore para contenido de nutrición
-    // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
-    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`);
-
     if (nutricionContentDiv && refreshNutricionBtn) {
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                // Obtener documentos de la colección nutritionContent
-                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
-                nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
-
-                if (snapshot.empty) {
-                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
-                    console.log("Nutrición: No hay contenido en Firestore.");
-                    window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const item = doc.data();
+                const data = [
+                    { title: "Hidratación Esencial", content: "Beber suficiente agua es crucial para la función cerebral y la energía. Intenta beber 8 vasos al día.", source: "OMS" },
+                    { title: "Omega-3 y Cerebro", content: "Los ácidos grasos Omega-3, encontrados en pescados grasos y nueces, son vitales para la salud cerebral y la concentración.", source: "Harvard Health" },
+                    { title: "Alimentos Integrales", content: "Opta por granos enteros, frutas y verduras para un suministro constante de energía y nutrientes.", source: "Nutrición al Día" }
+                ];
+                nutricionContentDiv.innerHTML = '';
+                data.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
                     card.innerHTML = `
                         <h4>${item.title}</h4>
                         <p>${item.content}</p>
                         <small>Fuente: ${item.source}</small>
-                        ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
                 });
-                window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
-                console.log("Nutrición: Contenido cargado desde Firestore.");
+                window.showTempMessage('Contenido de nutrición actualizado.', 'success');
+                console.log("Nutrición: Contenido cargado.");
             } catch (error) {
                 nutricionContentDiv.innerHTML = '<p>Error al cargar contenido de nutrición.</p>';
-                console.error('Nutrición: Error al cargar nutrición desde Firestore:', error);
-                window.showTempMessage(`Error al cargar contenido de nutrición: ${error.message}`, 'error');
+                console.error('Nutrición: Error al cargar nutrición:', error);
+                window.showTempMessage('Error al cargar contenido de nutrición.', 'error');
             }
         }
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
-        cargarNutricion(); // Cargar al inicio
+        cargarNutricion();
     } else {
         console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
-    }
-
-    // --- Lógica de Hábitos ---
-    const newHabitInput = document.getElementById('newHabitInput');
-    const addHabitBtn = document.getElementById('add-habit-btn');
-    const habitsListUl = document.getElementById('habitsList');
-    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
-
-    // Helper para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDateString() {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses son 0-indexados
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // Cargar hábitos desde Firestore
-    habitsCollectionRef.orderBy('creationDate', 'asc').onSnapshot((snapshot) => {
-        console.log("Hábitos: Recibiendo snapshot de hábitos.");
-        habitsListUl.innerHTML = ''; // Limpiar lista existente
-        if (snapshot.empty) {
-            habitsListUl.innerHTML = '<li>No hay hábitos registrados aún.</li>';
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            const habit = docSnap.data();
-            const habitId = docSnap.id;
-            const listItem = document.createElement('li');
-            listItem.className = 'habit-item'; // Clase para estilos de hábito
-
-            const habitNameSpan = document.createElement('span');
-            habitNameSpan.textContent = habit.name;
-            habitNameSpan.className = 'habit-name';
-
-            const completionContainer = document.createElement('div');
-            completionContainer.className = 'habit-completion-track';
-
-            // Generar los últimos 7 días
-            const todayDate = new Date();
-            const todayDateString = getTodayDateString();
-
-            for (let i = 6; i >= 0; i--) { // Últimos 7 días, incluyendo hoy
-                const date = new Date(todayDate);
-                date.setDate(todayDate.getDate() - i);
-                const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                
-                const isCompleted = habit.dailyCompletions && habit.dailyCompletions[dateString];
-                
-                const checkboxWrapper = document.createElement('div');
-                checkboxWrapper.className = 'completion-checkbox-wrapper';
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `habit-${habitId}-${dateString}`;
-                checkbox.dataset.habitId = habitId;
-                checkbox.dataset.date = dateString;
-                checkbox.checked = isCompleted;
-                checkbox.disabled = (dateString !== todayDateString); // Solo el checkbox de hoy es editable
-
-                const label = document.createElement('label');
-                label.htmlFor = `habit-${habitId}-${dateString}`;
-                label.className = 'completion-label';
-                label.title = date.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
-
-                checkboxWrapper.appendChild(checkbox);
-                checkboxWrapper.appendChild(label);
-                completionContainer.appendChild(checkboxWrapper);
-            }
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'button-danger';
-            deleteBtn.textContent = '❌';
-            deleteBtn.dataset.id = habitId; // Usar data-id para el ID del documento
-
-            listItem.appendChild(habitNameSpan);
-            listItem.appendChild(completionContainer);
-            listItem.appendChild(deleteBtn);
-            habitsListUl.appendChild(listItem);
-        });
-    }, (error) => {
-        console.error("Hábitos: Error al escuchar hábitos:", error);
-        window.showTempMessage(`Error al cargar hábitos: ${error.message}`, 'error');
-    });
-
-    // Añadir nuevo hábito
-    if (addHabitBtn) {
-        addHabitBtn.addEventListener('click', async () => {
-            const habitName = newHabitInput.value.trim();
-            if (habitName) {
-                // Micro-interacción: Feedback visual al botón
-                addHabitBtn.classList.add('button-clicked');
-                setTimeout(() => {
-                    addHabitBtn.classList.remove('button-clicked');
-                }, 300);
-
-                try {
-                    await habitsCollectionRef.add({
-                        name: habitName,
-                        creationDate: new Date().toISOString(),
-                        dailyCompletions: {} // Mapa para almacenar el seguimiento diario
-                    });
-                    newHabitInput.value = '';
-                    window.showTempMessage('Hábito añadido con éxito!', 'success');
-                    console.log("Hábitos: Nuevo hábito añadido.");
-                } catch (error) {
-                    console.error("Hábitos: Error al añadir hábito:", error);
-                    window.showTempMessage(`Error al añadir hábito: ${error.message}`, 'error');
-                }
-            } else {
-                window.showTempMessage('Por favor, escribe el nombre del hábito.', 'warning');
-            }
-        });
-    } else {
-        console.warn("Hábitos: Elementos HTML de Hábitos no encontrados.");
-    }
-
-    // Manejar el toggle de completado de hábito
-    if (habitsListUl) {
-        habitsListUl.addEventListener('change', async (e) => {
-            const target = e.target;
-            if (target.type === 'checkbox' && target.closest('.habit-item')) {
-                const habitId = target.dataset.habitId;
-                const date = target.dataset.date;
-                const isCompleted = target.checked;
-
-                try {
-                    const habitDocRef = habitsCollectionRef.doc(habitId);
-                    await habitDocRef.update({
-                        [`dailyCompletions.${date}`]: isCompleted
-                    });
-                    window.showTempMessage(`Hábito '${target.closest('.habit-item').querySelector('.habit-name').textContent}' ${isCompleted ? 'completado' : 'desmarcado'} para hoy.`, 'success');
-                    console.log(`Hábito ${habitId} actualizado para la fecha ${date}.`);
-                } catch (error) {
-                    console.error("Hábitos: Error al actualizar completado:", error);
-                    window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
-                    target.checked = !isCompleted; // Revert UI on error
-                }
-            }
-        });
-
-        // Manejar la eliminación de hábito
-        habitsListUl.addEventListener('click', async (e) => {
-            const target = e.target;
-            if (target.classList.contains('button-danger') && target.closest('.habit-item')) {
-                const habitId = target.dataset.id;
-                if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
-                    try {
-                        await habitsCollectionRef.doc(habitId).delete();
-                        window.showTempMessage('Hábito eliminado.', 'info');
-                        console.log(`Hábito ${habitId} eliminado.`);
-                    } catch (error) {
-                        console.error("Hábitos: Error al eliminar hábito:", error);
-                        window.showTempMessage(`Error al eliminar hábito: ${error.message}`, 'error');
-                    }
-                }
-            }
-        });
     }
 
 
     // Actualizar contadores de estado
     function updateAppStatus() {
         if (window.currentUserId && window.db) {
-            const checklistCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
-            const habitsCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
-
+            const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
             checklistCollectionRef.get().then(snapshot => {
                 const checklistItemsCount = snapshot.size;
                 const tasksCountElement = document.getElementById('tasks-count');
@@ -1095,15 +748,6 @@ async function loadAllUserData() {
             }).catch(error => {
                 console.error("Error getting checklist count:", error);
             });
-
-            // Puedes añadir un contador para hábitos si lo deseas
-            // habitsCollectionRef.get().then(snapshot => {
-            //     const habitsCount = snapshot.size;
-            //     // Actualiza un elemento HTML si tienes uno para el conteo de hábitos
-            // }).catch(error => {
-            //     console.error("Error getting habits count:", error);
-            // });
-
         } else {
             const tasksCountElement = document.getElementById('tasks-count');
             const checklistCountElement = document.getElementById('checklist-count');
@@ -1113,23 +757,24 @@ async function loadAllUserData() {
     }
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
-}
+}; // End of loadAllUserData
 
 
 // Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
 document.addEventListener('DOMContentLoaded', async () => {
     // Acceder a las variables globales de Firebase expuestas en el objeto window
+    // Estas ya están disponibles porque el script inline en index.html las inicializa
     db = window.db;
     auth = window.auth;
     const appId = window.appId;
 
     // Elementos de la UI de autenticación
-    const userDisplayName = document.getElementById('user-display-name'); // Cambiado de userIdDisplay
+    const userDisplayName = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
-    const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper'); // Cambiado de authOptionsArea
-    const googleSigninBtn = document.getElementById('google-signin-btn'); // Cambiado de loginGoogleBtnElement
-    const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn'); // Cambiado de loginEmailBtnElement
-    const anonymousSigninBtn = document.getElementById('anonymous-signin-btn'); // Cambiado de loginAnonBtnElement
+    const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
+    const googleSigninBtn = document.getElementById('google-signin-btn');
+    const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
+    const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
 
     // Firebase Auth State Listener
     window.auth.onAuthStateChanged(async (user) => {
@@ -1141,11 +786,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Mostrar información del usuario y botón de cerrar sesión
             userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
-            googleSigninBtn.style.display = 'none';
-            emailSigninToggleBtn.style.display = 'none';
-            anonymousSigninBtn.style.display = 'none';
             authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones
             logoutBtn.style.display = 'inline-block';
+            // Asegurarse de que el user-info-area no esté en modo centrado si el usuario está logueado
+            document.getElementById('user-info-area').classList.remove('auth-options-visible');
+
 
             // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
             if (!window.isLoggingOut) {
@@ -1160,11 +805,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.currentUserId = null;
             console.log("onAuthStateChanged: Usuario no autenticado.");
             userDisplayName.textContent = 'Por favor, inicia sesión:';
-            googleSigninBtn.style.display = 'inline-block';
-            emailSigninToggleBtn.style.display = 'inline-block';
-            anonymousSigninBtn.style.display = 'inline-block';
             authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
             logoutBtn.style.display = 'none';
+            // Asegurarse de que el user-info-area esté en modo centrado si no hay usuario
+            document.getElementById('user-info-area').classList.add('auth-options-visible');
 
             // Solo intentar signInWithCustomToken si initialAuthToken está presente
             // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
@@ -1186,9 +830,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Lógica para el botón de cerrar sesión
-    const logoutBtnElement = document.getElementById('logout-btn'); // Renombrado para evitar conflicto con la variable global
-    if (logoutBtnElement) {
-        logoutBtnElement.addEventListener('click', async () => {
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
             try {
                 window.isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
                 await auth.signOut();
@@ -1203,9 +846,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Lógica para los nuevos botones de inicio de sesión
-    // Ya están referenciados como googleSigninBtn, emailSigninToggleBtn, anonymousSigninBtn
-    // en el bloque DOMContentLoaded.
-
     if (anonymousSigninBtn) {
         anonymousSigninBtn.addEventListener('click', async () => {
             try {
@@ -1230,7 +870,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 // Usar la API de Firebase v8 (compatibilidad) que ya está cargada globalmente
                 const provider = new firebase.auth.GoogleAuthProvider();
-                await firebase.auth().signInWithPopup(auth, provider); // Pasar 'auth' como primer argumento
+                // CORRECCIÓN: Llamar signInWithPopup con UN SOLO argumento (el proveedor)
+                await firebase.auth().signInWithPopup(provider);
                 window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
             } catch (error) {
                 console.error("Error al iniciar sesión con Google:", error);
@@ -1239,9 +880,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
                 } else if (error.code === 'auth/cancelled-popup-request') {
                     errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
+                } else if (error.code === 'auth/auth-domain-config-error') {
+                    errorMessage = 'Error de configuración del dominio de autenticación. Asegúrate de que tu dominio esté autorizado en la consola de Firebase.';
                 }
                 window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
             }
         });
     }
+
+    // Inicializar la sección Pomodoro al cargar la página
+    window.mostrarSeccion('pomodoro');
 }); // End of DOMContentLoaded
