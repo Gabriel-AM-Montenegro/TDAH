@@ -6,125 +6,13 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados como scripts tradicionales para asegurar que 'firebase' esté disponible globalmente -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
-  <!-- Script de inicialización de Firebase y funciones globales -->
-  <script>
-    // Configuración de Firebase proporcionada por el usuario
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw",
-        authDomain: "tdah-app-efca9.firebaseapp.com",
-        projectId: "tdah-app-efca9",
-        storageBucket: "tdah-app-efca9.firebasestorage.app",
-        messagingSenderId: "765424031369",
-        appId: "1:765424031369:web:838eca686f68f21daa5858",
-        measurementId: "G-QY7X98XZZV"
-    };
-
-    // Inicializar Firebase y exponer a window para main.js
-    window.firebaseApp = firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); // Usar firebase.firestore() para la compatibilidad global
-    window.auth = firebase.auth();   // Usar firebase.auth() para la compatibilidad global
-
-    // Asegurarse de que window.appId y window.initialAuthToken estén disponibles
-    window.appId = firebaseConfig.appId;
-    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // Mantener para el entorno Canvas
-
-    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
-    window.mostrarSeccion = function(idSeccion) {
-        console.log(`Intentando mostrar sección: ${idSeccion}`);
-        document.querySelectorAll('.seccion').forEach(seccion => {
-            seccion.classList.remove('active');
-        });
-        document.querySelectorAll('.nav-tabs button').forEach(button => {
-            button.classList.remove('active');
-        });
-
-        const seccionActiva = document.getElementById(idSeccion);
-        if (seccionActiva) {
-            seccionActiva.classList.add('active');
-            console.log(`Sección ${idSeccion} activada.`);
-        } else {
-            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
-        }
-        const botonActivo = document.getElementById(`btn-${idSeccion}`);
-        if (botonActivo) {
-            botonActivo.classList.add('active');
-            console.log(`Botón con ID btn-${idSeccion} activado.`);
-        } else {
-            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
-        }
-    };
-
-    window.showTempMessage = function(message, type = 'info', duration = 3000) {
-        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
-        const tempMessageContainer = document.getElementById('temp-message-container');
-        if (!tempMessageContainer) {
-            console.error("Contenedor de mensajes temporales no encontrado.");
-            return;
-        }
-        const msgElement = document.createElement('div');
-        msgElement.className = `temp-message ${type}`;
-        msgElement.textContent = message;
-        tempMessageContainer.appendChild(msgElement);
-
-        msgElement.offsetHeight;
-        msgElement.classList.add('show');
-
-        setTimeout(() => {
-            msgElement.classList.remove('show');
-            msgElement.classList.add('hide');
-            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
-        }, duration);
-    };
-
-    window.showCustomConfirm = function(message) {
-        return new Promise((resolve) => {
-            const modalHtml = `
-                <div id="custom-confirm-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 10001;">
-                    <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%;">
-                        <p style="margin-bottom: 20px; font-size: 1.1em; color: #333;">${message}</p>
-                        <button id="confirm-yes" style="background: #4F46E5; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">Sí</button>
-                        <button id="confirm-no" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">No</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            const modal = document.getElementById('custom-confirm-modal');
-            document.getElementById('confirm-yes').onclick = () => {
-                modal.remove();
-                resolve(true);
-            };
-            document.getElementById('confirm-no').onclick = () => {
-                modal.remove();
-                resolve(false);
-            };
-        });
-    };
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        console.log("DOMContentLoaded: DOM completamente cargado. Configurando listeners de navegación.");
-
-        // Adjuntar event listeners a los botones de navegación
-        document.getElementById('btn-pomodoro').addEventListener('click', () => window.mostrarSeccion('pomodoro'));
-        document.getElementById('btn-tareas').addEventListener('click', () => window.mostrarSeccion('tareas'));
-        document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
-        document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
-        document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
-        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion'));
-        document.getElementById('btn-habitos').addEventListener('click', () => window.mostrarSeccion('habitos'));
-        document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
-        console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
-
-        // Inicializar la primera sección visible al cargar la página
-        window.mostrarSeccion('pomodoro');
-        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
-    });
-  </script>
+  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
+  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Si usas Analytics, descomenta la línea de abajo -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script> -->
 
 </head>
 <body>
@@ -133,19 +21,34 @@
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
-      <div id="user-info-area">
-        <div id="user-id-display" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px;">Cargando usuario...</div>
-        <button id="logout-btn" class="auth-btn" style="display: none;">Cerrar Sesión</button> <!-- Oculto por defecto -->
-        
-        <!-- Opciones de autenticación, ocultas por defecto -->
-        <div id="auth-options-area" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px; width: 100%;">
-            <p style="color: var(--text-medium); font-size: 0.9em; margin: 0;">Inicia sesión para guardar tus datos:</p>
-            <button id="login-anon-btn" class="auth-btn">Iniciar Sesión Anónima</button>
-            <button id="login-email-btn" class="auth-btn" style="background: #DB4437;">Iniciar Sesión con Email</button>
-            <button id="login-google-btn" class="auth-btn" style="background: #4285F4;">Iniciar Sesión con Google</button>
+      <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
+      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
+        <span id="user-display-name">Cargando usuario...</span>
+        <div class="auth-buttons-wrapper"> <!-- Nuevo wrapper para los botones -->
+            <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
+              Iniciar con Google
+            </button>
+            <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
+              Iniciar con Email
+            </button>
+            <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
+              Continuar como Anónimo
+            </button>
         </div>
+        <button id="logout-btn" class="button-secondary" style="display: none;">Cerrar Sesión</button>
       </div>
     </header>
+
+    <!-- Formulario de inicio de sesión/registro con Email -->
+    <div id="email-auth-form" class="auth-form-card" style="display: none; margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3>Iniciar Sesión / Registrarse con Email</h3>
+      <input type="email" id="email-input" placeholder="Correo electrónico" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+      <input type="password" id="password-input" placeholder="Contraseña" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+      <button id="email-signup-btn" class="button-primary" style="margin-right: 10px;">Registrarse</button>
+      <button id="email-login-btn" class="button-secondary">Iniciar Sesión</button>
+      <button id="email-form-close-btn" class="button-danger" style="float: right;">X</button>
+    </div>
 
     <div class="nav-tabs">
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
@@ -153,8 +56,7 @@
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
-      <button id="btn-nutricion">🍎 Nutrición</button>
-      <button id="btn-habitos">✅ Hábitos</button> <!-- Nuevo botón de navegación con icono y mayúscula -->
+      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Nuevo botón para Nutrición -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -185,6 +87,10 @@
 
     <section id="checklist" class="seccion">
       <h2>✅ Checklist Rápido</h2>
+      <div class="mit-explanation">
+        <p>La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
+        <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
+      </div>
       <div class="input-group">
         <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
         <button id="add-check-item-btn">➕ Agregar</button>
@@ -193,9 +99,6 @@
       <div class="help-text">
         💡 Para tareas pequeñas y recordatorios rápidos del día
       </div>
-       <div class="mit-explanation">
-            <strong>MITs (Most Important Tasks):</strong> Puedes marcar hasta 3 tareas como MITs. Estas son las tareas más importantes del día que te ayudarán a mantener el enfoque en lo esencial.
-        </div>
     </section>
 
     <section id="journal" class="seccion">
@@ -224,22 +127,6 @@
             <p>Cargando recomendaciones nutricionales y recetas...</p>
             </div>
         <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
-    </section>
-
-    <!-- Nueva sección de Hábitos -->
-    <section id="habitos" class="seccion">
-      <h2>✅ Hábitos Diarios</h2> <!-- Título de la sección con icono y mayúscula -->
-      <p class="subtitle">Registra y sigue tus hábitos diarios para construir rutinas saludables y mantener un registro de tu progreso.</p>
-      <div class="input-group">
-        <input type="text" id="newHabitInput" placeholder="Añadir nuevo hábito..." />
-        <button id="add-habit-btn">➕ Añadir Hábito</button>
-      </div>
-      <ul id="habitsList">
-        <!-- Los hábitos se cargarán aquí dinámicamente -->
-      </ul>
-      <div class="help-text">
-        💡 Marca el círculo para indicar que completaste el hábito hoy.
-      </div>
     </section>
 
     <section id="config" class="seccion">
@@ -291,31 +178,186 @@
     </section>
   </div>
 
+  <div id="confetti-container"></div> <!-- Contenedor para el confeti -->
   <div id="temp-message-container"></div>
-  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
-  <audio id="sound-break" src="sounds/break.mpod3" preload="auto"></audio>
-  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
+  <!-- Añadir onerror para depurar problemas de carga de audio -->
+  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto" onerror="console.error('Error cargando sound-complete.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de finalización.', 'error', 5000);"></audio>
+  <audio id="sound-break" src="sounds/break.mp3" preload="auto" onerror="console.error('Error cargando sound-break.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de descanso.', 'error', 5000);"></audio>
+  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto" onerror="console.error('Error cargando sound-task-done.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de tarea completada.', 'error', 5000);"></audio>
 
-  <!-- Tour de Bienvenida -->
-  <div id="welcome-tour-overlay" class="welcome-tour-overlay">
-    <div class="welcome-tour-modal">
-      <div class="welcome-tour-content">
-        <h3 id="tour-title"></h3>
-        <p id="tour-description"></p>
-        <div class="tour-highlight-image-container">
-            <img id="tour-highlight-image" src="" alt="Resaltado de la función" class="tour-highlight-image" style="display: none;">
-        </div>
-      </div>
-      <div class="welcome-tour-navigation">
-        <button id="tour-back-btn" class="tour-nav-btn" style="display: none;">⬅️ Anterior</button>
-        <div id="tour-dots" class="tour-dots"></div>
-        <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
-        <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
+  <!-- Div de prueba para verificar si el CSS se carga correctamente -->
+  <div id="css-check" style="position: fixed; top: 10px; right: 10px; width: 20px; height: 20px; background-color: red; border-radius: 50%;"></div>
+
+  <!-- Custom Confirmation Modal HTML -->
+  <div id="custom-confirm-modal" class="custom-modal-overlay" style="display: none;">
+    <div class="custom-modal-content">
+      <p id="custom-confirm-message"></p>
+      <div class="modal-buttons">
+        <button id="custom-confirm-yes">Sí</button>
+        <button id="custom-confirm-no">No</button>
       </div>
     </div>
   </div>
 
-  <script src="js/main.js"></script> <!-- main.js ahora es un script tradicional -->
+
+  <!-- Script de inicialización de Firebase y autenticación -->
+  <!-- Este script se ejecuta después de que los SDK de Firebase se han cargado (en el head) -->
+  <!-- y antes de main.js, asegurando que 'firebase' esté definido. -->
+  <script>
+    console.log("Script inline en body: Iniciando configuración de Firebase.");
+    // Configuración de Firebase proporcionada por el usuario
+    // ¡IMPORTANTE! Reemplaza estos valores con los de TU proyecto de Firebase
+    // Encuéntralos en la Consola de Firebase > Configuración del proyecto > Tus apps (aplicación web)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw", // <--- VERIFICA ESTE VALOR
+        authDomain: "tdah-app-efca9.firebaseapp.com",    // <--- VERIFICA ESTE VALOR
+        projectId: "tdah-app-efca9",                     // <--- VERIFICA ESTE VALOR
+        storageBucket: "tdah-app-efca9.firebasestorage.app",
+        messagingSenderId: "765424031369",
+        appId: "1:765424031369:web:838eca686f68f21daa5858",
+        measurementId: "G-QY7X98XZZV"
+    };
+
+    // Inicializar Firebase y exponer a window para main.js
+    // Usamos las funciones de la API global de Firebase (v8 compat)
+    window.firebaseApp = firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore(); // Acceder a Firestore
+    window.auth = firebase.auth();   // Acceder a Auth
+
+    // Asegurarse de usar el appId de la configuración de Firebase
+    window.appId = firebaseConfig.appId;
+    // __initial_auth_token es una variable global proporcionada por el entorno Canvas
+    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    console.log("Script inline en body: Firebase inicializado y variables expuestas.");
+
+    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
+    // Definirlas aquí para asegurar que estén disponibles cuando DOMContentLoaded se dispare.
+    window.mostrarSeccion = function(idSeccion) {
+        console.log(`Intentando mostrar sección: ${idSeccion}`);
+        document.querySelectorAll('.seccion').forEach(seccion => {
+            seccion.classList.remove('active');
+        });
+        document.querySelectorAll('.nav-tabs button').forEach(button => {
+            button.classList.remove('active');
+        });
+
+        const seccionActiva = document.getElementById(idSeccion);
+        if (seccionActiva) {
+            seccionActiva.classList.add('active');
+            console.log(`Sección ${idSeccion} activada.`);
+        } else {
+            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
+        }
+        const botonActivo = document.getElementById(`btn-${idSeccion}`);
+        if (botonActivo) {
+            botonActivo.classList.add('active');
+            console.log(`Botón ${idSeccion} activado.`);
+        } else {
+            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
+        }
+    };
+
+    window.showTempMessage = function(message, type = 'info', duration = 3000) {
+        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
+        const tempMessageContainer = document.getElementById('temp-message-container');
+        if (!tempMessageContainer) {
+            console.error("Contenedor de mensajes temporales no encontrado.");
+            return;
+        }
+        const msgElement = document.createElement('div');
+        msgElement.className = `temp-message ${type}`;
+        msgElement.textContent = message;
+        tempMessageContainer.appendChild(msgElement);
+
+        msgElement.offsetHeight;
+        msgElement.classList.add('show');
+
+        setTimeout(() => {
+            msgElement.classList.remove('show');
+            msgElement.classList.add('hide');
+            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
+        }, duration);
+    };
+
+    // Función para disparar el efecto de confeti
+    window.triggerConfetti = function() {
+        let confettiContainer = document.getElementById('confetti-container');
+        if (!confettiContainer) {
+            confettiContainer = document.createElement('div');
+            confettiContainer.id = 'confetti-container';
+            document.body.appendChild(confettiContainer);
+        }
+
+        const colors = ['var(--primary-color)', 'var(--secondary-color)', '#FFD700', '#FF69B4', '#00FFFF']; // Colores para el confeti
+        const numConfetti = 50; // Número de piezas de confeti
+
+        for (let i = 0; i < numConfetti; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = `${Math.random() * 100}vw`; // Posición horizontal aleatoria
+            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.animationDuration = `${Math.random() * 2 + 3}s`; // Duración aleatoria entre 3-5s
+            piece.style.animationDelay = `${Math.random() * 0.5}s`; // Ligero retraso para efecto escalonado
+            piece.style.width = `${Math.random() * 8 + 5}px`; // Tamaño aleatorio
+            piece.style.height = piece.style.width;
+            confettiContainer.appendChild(piece);
+        }
+
+        // Limpiar el confeti después de la animación
+        setTimeout(() => {
+            confettiContainer.innerHTML = ''; // Eliminar todas las piezas
+        }, 5000); // Coincide con la duración más larga de la animación
+    };
+
+    // Custom Confirmation Modal
+    window.showCustomConfirm = function(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-confirm-modal');
+            const msgElement = document.getElementById('custom-confirm-message');
+            const yesBtn = document.getElementById('custom-confirm-yes');
+            const noBtn = document.getElementById('custom-confirm-no');
+
+            msgElement.textContent = message;
+            modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
+
+            // Force reflow to ensure display:flex is applied before adding 'show' class
+            // This is crucial for CSS transitions to work from display:none to display:flex
+            void modal.offsetWidth; 
+
+            modal.classList.add('show'); // Now add the class that applies opacity and transform
+
+            const cleanup = () => {
+                modal.classList.remove('show'); // Start hide transition
+                // Wait for the transition to finish before setting display to 'none'
+                modal.addEventListener('transitionend', () => {
+                    modal.style.display = 'none';
+                }, { once: true });
+                yesBtn.removeEventListener('click', onYesClick);
+                noBtn.removeEventListener('click', onNoClick);
+            };
+
+            const onYesClick = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const onNoClick = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            yesBtn.addEventListener('click', onYesClick);
+            noBtn.addEventListener('click', onNoClick);
+        });
+    };
+
+    // Aquí se eliminó el listener DOMContentLoaded y el onAuthStateChanged
+    // para centralizarlo en main.js.
+  </script>
+
+  <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
+  <script src="js/main.js"></script>
 </body>
 </html>
+
 
