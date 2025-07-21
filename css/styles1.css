@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(62, 134, 111) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(226, 226, 71) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -877,4 +877,3 @@ input[type="checkbox"] {
     overflow: auto !important;
     max-height: 80vh !important; /* Permite desplazamiento si el contenido es largo */
 }
-
