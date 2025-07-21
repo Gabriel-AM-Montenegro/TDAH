@@ -31,14 +31,13 @@ async function loadAllUserData() {
     console.log("loadAllUserData: Firebase y Usuario Autenticado. UID:", currentUserId);
     // Obtener el usuario actual para mostrar el nombre
     const user = auth.currentUser; // Usar la variable global 'auth'
-    const userName = user ? (user.displayName || user.email || user.uid.substring(0, 8)) : currentUserId.substring(0, 8);
     const userDisplayNameElement = document.getElementById('user-display-name');
     if (userDisplayNameElement) {
-        userDisplayNameElement.textContent = `Bienvenido, ${userName}!`;
+        userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
     } else {
         console.error("loadAllUserData: Elemento 'user-display-name' no encontrado.");
     }
-    window.showTempMessage(`Bienvenido, usuario ${userName}...`, 'info'); // Usar userName aquí también
+    window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info'); // Usar userName aquí también
 
     // --- Lógica del Tour de Bienvenida ---
     const tourOverlay = document.getElementById('welcome-tour-overlay');
@@ -1120,9 +1119,9 @@ async function loadAllUserData() {
 
     // Actualizar contadores de estado
     function updateAppStatus() {
-        if (window.currentUserId && window.db) {
-            const checklistCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
-            // const habitsCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
+        if (currentUserId && db) { // Usar las variables globales
+            const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
+            // const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
 
             checklistCollectionRef.get().then(snapshot => {
                 const checklistItemsCount = snapshot.size;
@@ -1180,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    window.auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged(async (user) => { // Usar la variable global 'auth'
         console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
 
         // Comprobaciones defensivas para asegurar que los elementos existen
@@ -1199,6 +1198,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Mostrar información del usuario y botón de cerrar sesión
             if (userDisplayName) userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones
+            if (googleSigninBtn) googleSigninBtn.style.display = 'none'; // Ocultar botón de Google
+            if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'none'; // Ocultar botón de Email
+            if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'none'; // Ocultar botón de Anónimo
             if (logoutBtn) logoutBtn.style.display = 'inline-block';
             // Asegurarse de que el user-info-area no esté en modo centrado si el usuario está logueado
             const userInfoArea = document.getElementById('user-info-area');
@@ -1206,11 +1208,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
             // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
-            if (!window.isLoggingOut) {
+            if (!isLoggingOut) { // Usar la variable global isLoggingOut
                  loadAllUserData(); // Llama a la función globalmente definida
             } else {
                 console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
-                window.isLoggingOut = false;
+                isLoggingOut = false; // Usar la variable global isLoggingOut
                 loadAllUserData(); // Cargar datos incluso si se reautentica por initialAuthToken
             }
 
@@ -1219,6 +1221,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("onAuthStateChanged: Usuario no autenticado.");
             if (userDisplayName) userDisplayName.textContent = 'Por favor, inicia sesión:';
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
+            if (googleSigninBtn) googleSigninBtn.style.display = 'inline-block'; // Mostrar botón de Google
+            if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón de Email
+            if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'inline-block'; // Mostrar botón de Anónimo
             if (logoutBtn) logoutBtn.style.display = 'none';
             // Asegurarse de que el user-info-area esté en modo centrado si no hay usuario
             const userInfoArea = document.getElementById('user-info-area');
@@ -1226,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Solo intentar signInWithCustomToken si initialAuthToken está presente
             // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
-            if (window.initialAuthToken && !window.isLoggingOut) {
+            if (window.initialAuthToken && !isLoggingOut) { // Usar la variable global isLoggingOut
                 try {
                     console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
                     await auth.signInWithCustomToken(window.initialAuthToken); // Usar la variable global 'auth'
@@ -1235,9 +1240,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
                     window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
                 }
-            } else if (window.isLoggingOut) {
+            } else if (isLoggingOut) { // Usar la variable global isLoggingOut
                 // Si estamos explícitamente cerrando sesión, simplemente reiniciamos la bandera y no hacemos nada más.
-                window.isLoggingOut = false;
+                isLoggingOut = false; // Usar la variable global isLoggingOut
                 console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
             }
         }
@@ -1247,14 +1252,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
-                window.isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
+                isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
                 await auth.signOut(); // Usar la variable global 'auth'
                 window.showTempMessage('Sesión cerrada correctamente.', 'info');
                 // onAuthStateChanged manejará las actualizaciones de la UI
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
-                window.isLoggingOut = false; // Resetear la bandera si el cierre de sesión falla
+                isLoggingOut = false; // Resetear la bandera si el cierre de sesión falla
             }
         });
     }
