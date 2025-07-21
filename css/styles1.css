@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(207, 52, 184) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(103, 186, 225) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -812,18 +812,17 @@ input[type="checkbox"] {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
+    display: none; /* Por defecto, oculto */
     justify-content: center;
     align-items: center;
     z-index: 10000; /* Asegura que esté por encima de todo */
     opacity: 0;
-    visibility: hidden; /* Añadido para ocultar completamente cuando no está activo */
-    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .custom-modal-overlay.show {
     opacity: 1;
-    visibility: visible; /* Asegura visibilidad al mostrar */
+    display: flex; /* Mostrar al añadir la clase 'show' */
 }
 
 .custom-modal-content {
@@ -860,22 +859,117 @@ input[type="checkbox"] {
     min-width: 100px;
 }
 
-/* ========== ESTILOS DEL TOUR DE BIENVENIDA (DEBUGGING) ========== */
-/* Estas reglas temporales fuerzan la visibilidad para depuración */
-.welcome-tour-overlay.active {
-    opacity: 1 !important;
-    visibility: visible !important;
-    background: rgba(0, 0, 0, 0.9) !important; /* Hazlo más oscuro para que sea obvio */
+/* ========== ESTILOS DEL TOUR DE BIENVENIDA ========== */
+/* El overlay del tour ahora tiene sus propias reglas de display */
+#welcome-tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
+    backdrop-filter: blur(5px); /* Efecto de desenfoque */
+    display: none; /* Por defecto, oculto */
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* Asegura que esté por encima de todo */
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.welcome-tour-modal {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
+#welcome-tour-overlay.active {
+    opacity: 1;
+    display: flex !important; /* Mostrar al activar, con !important para forzar */
+}
+
+/* El contenido del modal del tour ahora tiene su propia clase */
+.welcome-tour-modal-inner {
+    background: var(--white);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-xl);
+    max-width: 500px;
+    width: 95%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    /* Reglas de depuración */
     border: 5px solid red !important; /* Un borde rojo para que sea muy visible */
 }
 
-/* Asegurarse de que el contenido del modal no esté oculto por desbordamiento */
+#welcome-tour-overlay.active .welcome-tour-modal-inner {
+    transform: translateY(0) !important; /* Forzar visibilidad */
+    opacity: 1 !important; /* Forzar visibilidad */
+}
+
 .welcome-tour-content {
-    overflow: auto !important;
-    max-height: 80vh !important; /* Permite desplazamiento si el contenido es largo */
+  text-align: center;
+}
+
+.welcome-tour-content h3 {
+  color: var(--primary-color);
+  font-size: 2em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.welcome-tour-content p {
+  color: var(--text-dark);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+}
+
+.tour-highlight-image-container {
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px; /* Altura mínima para la imagen */
+}
+
+.tour-highlight-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-tour-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Para responsive */
+  gap: var(--spacing-sm);
+}
+
+.tour-nav-btn {
+  padding: 10px 15px;
+  font-size: 0.9em;
+  border-radius: 20px;
+  flex-grow: 1; /* Para que los botones se estiren */
+  min-width: 120px; /* Ancho mínimo para botones */
+}
+
+.tour-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.tour-dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--text-light);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.tour-dot.active {
+  background-color: var(--primary-color);
+  transform: scale(1.2);
 }
