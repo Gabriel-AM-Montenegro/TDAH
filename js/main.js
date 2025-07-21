@@ -84,12 +84,14 @@ async function loadAllUserData() {
     ];
 
     if (tourOverlay && tourTitle && tourDescription && tourHighlightImage && tourBackBtn && tourNextBtn && tourSkipBtn && tourDotsContainer) {
+        console.log("Tour: Todos los elementos HTML del Tour de Bienvenida encontrados.");
         async function showWelcomeTour() {
             const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
             try {
                 const doc = await userSettingsRef.get();
+                console.log("Tour: Documento de configuración de usuario para el tour:", doc.exists ? doc.data() : "No existe");
                 if (doc.exists && doc.data().tourCompleted) {
-                    console.log("Tour: Ya completado para este usuario.");
+                    console.log("Tour: Ya completado para este usuario. No se mostrará.");
                     return; // No mostrar el tour si ya fue completado
                 }
             } catch (error) {
@@ -97,6 +99,7 @@ async function loadAllUserData() {
                 // Si hay un error, por seguridad, mostramos el tour
             }
 
+            console.log("Tour: Mostrando overlay del tour.");
             tourOverlay.classList.add('active');
             renderTourStep();
             createTourDots();
@@ -119,6 +122,7 @@ async function loadAllUserData() {
             tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
 
             updateTourDots();
+            console.log(`Tour: Renderizando paso ${currentTourStep + 1}/${tourSteps.length}: ${step.title}`);
         }
 
         function createTourDots() {
@@ -173,6 +177,7 @@ async function loadAllUserData() {
             }
             tourOverlay.classList.remove('active');
             window.showTempMessage("¡Tour de bienvenida completado! Explora la app.", 'info', 5000);
+            console.log("Tour: Tour completado y ocultado.");
         }
 
         tourNextBtn.addEventListener('click', nextTourStep);
@@ -182,7 +187,7 @@ async function loadAllUserData() {
         // Llamar al tour de bienvenida después de que todo lo demás esté cargado
         showWelcomeTour();
     } else {
-        console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados.");
+        console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -192,16 +197,17 @@ async function loadAllUserData() {
     const journalEntriesList = document.getElementById('journalEntriesList');
 
     if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
+        console.log("Journal: Elementos HTML del Journal encontrados.");
         const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
         journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
             journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
-                console.log("Journal: Colección vacía.");
+                console.log("Journal: Colección vacía. Mostrando mensaje de vacío.");
                 journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>'; // Mensaje si está vacío
                 return;
             }
-            console.log(`Journal: ${snapshot.size} entradas encontradas.`);
+            console.log(`Journal: ${snapshot.size} entradas encontradas. Renderizando...`);
             snapshot.forEach((doc, index) => {
                 if (index < 5) { // Log de las primeras 5 entradas para depuración
                     console.log("Journal: Entrada de muestra:", doc.data());
@@ -221,6 +227,7 @@ async function loadAllUserData() {
                 listItem.appendChild(dateSpan);
                 listItem.appendChild(contentDiv);
                 journalEntriesList.appendChild(listItem);
+                console.log(`Journal: Añadida entrada "${entry.text.substring(0, 20)}..." a la lista.`);
             });
         }, (error) => {
             console.error("Journal: Error al escuchar entradas del diario:", error);
@@ -242,6 +249,7 @@ async function loadAllUserData() {
                     });
                     journalEntryTextarea.value = '';
                     window.showTempMessage('Entrada guardada con éxito!', 'success');
+                    console.log("Journal: Nueva entrada guardada en Firestore.");
                 } catch (error) {
                     console.error("Journal: Error al guardar entrada del diario:", error);
                     window.showTempMessage(`Error al guardar: ${error.message}`, 'error');
@@ -251,7 +259,7 @@ async function loadAllUserData() {
             }
         });
     } else {
-        console.warn("Journal: Elementos HTML del Journal no encontrados.");
+        console.warn("Journal: Elementos HTML del Journal no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -274,10 +282,12 @@ async function loadAllUserData() {
     }
 
     if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
+        console.log("Pomodoro: Elementos HTML del Temporizador encontrados.");
         pomodoroSettingsDocRef.onSnapshot((docSnap) => {
             console.log("Pomodoro: Recibiendo snapshot de settings.");
             if (docSnap.exists) {
                 const settings = docSnap.data();
+                console.log("Pomodoro: Configuración de Pomodoro encontrada:", settings);
                 timeLeft = settings.timeLeft;
                 isRunning = settings.isRunning;
                 isBreakTime = settings.isBreakTime || false; // Load isBreakTime
@@ -443,7 +453,7 @@ async function loadAllUserData() {
         pausePomodoroBtn.addEventListener('click', pausarPomodoro);
         resetTimerBtn.addEventListener('click', resetTimer);
     } else {
-        console.warn("Pomodoro: Elementos HTML del Temporizador no encontrados.");
+        console.warn("Pomodoro: Elementos HTML del Temporizador no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -454,6 +464,7 @@ async function loadAllUserData() {
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
 
     if (checkItemInput && addCheckItemBtn && checkListUl) {
+        console.log("Checklist: Elementos HTML del Checklist encontrados.");
         // Event delegation for checklist items
         checkListUl.addEventListener('change', async (e) => {
             const target = e.target;
@@ -544,11 +555,11 @@ async function loadAllUserData() {
             console.log("Checklist: Recibiendo snapshot de ítems.");
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
-                console.log("Checklist: Colección vacía.");
+                console.log("Checklist: Colección vacía. Mostrando mensaje de vacío.");
                 checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>'; // Mensaje si está vacío
                 return;
             }
-            console.log(`Checklist: ${snapshot.size} ítems encontrados.`);
+            console.log(`Checklist: ${snapshot.size} ítems encontrados. Renderizando...`);
             snapshot.forEach((docSnap, index) => {
                 if (index < 5) { // Log de los primeros 5 ítems para depuración
                     console.log("Checklist: Ítem de muestra:", docSnap.data());
@@ -566,6 +577,7 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
+                console.log(`Checklist: Añadido ítem "${item.text.substring(0, 20)}..." a la lista.`);
 
                 // Micro-interacción: Añadir clase para animación de aparición
                 listItem.classList.add('new-item-animation');
@@ -610,7 +622,7 @@ async function loadAllUserData() {
         }
         addCheckItemBtn.addEventListener('click', addCheckItem);
     } else {
-        console.warn("Checklist: Elementos HTML del Checklist no encontrados.");
+        console.warn("Checklist: Elementos HTML del Checklist no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -627,6 +639,7 @@ async function loadAllUserData() {
     const saveTrelloConfigBtn = document.getElementById('save-trello-config-btn');
 
     if (trelloApiKeyInput && trelloTokenInput && trelloBoardIdInput && trelloStatusDiv && trelloSuccessMessage && configTrelloBtn && testTrelloBtn && saveTrelloConfigBtn) {
+        console.log("Trello: Elementos HTML de Trello encontrados.");
         trelloConfigDocRef.onSnapshot((docSnap) => {
             console.log("Trello: Recibiendo snapshot de configuración.");
             if (docSnap.exists) {
@@ -787,7 +800,7 @@ async function loadAllUserData() {
                 });
 
                 if (filteredCards.length > 0) {
-                    console.log(`Trello: ${filteredCards.length} tareas encontradas para esta semana.`);
+                    console.log(`Trello: ${filteredCards.length} tareas encontradas para esta semana. Renderizando...`);
                     filteredCards.forEach((card, index) => {
                         if (index < 5) { // Log de las primeras 5 tareas para depuración
                             console.log("Trello: Tarea de muestra:", card);
@@ -796,6 +809,7 @@ async function loadAllUserData() {
                         const dueDate = card.due ? new Date(card.due).toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Sin fecha';
                         listItem.textContent = `${card.name} (Vence: ${dueDate})`;
                         listaTareasUl.appendChild(listItem);
+                        console.log(`Trello: Añadida tarea "${card.name}" a la lista.`);
                     });
                 } else {
                     listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
@@ -811,13 +825,14 @@ async function loadAllUserData() {
         testTrelloBtn.addEventListener('click', probarConexionTrello);
         saveTrelloConfigBtn.addEventListener('click', guardarConfigTrello);
     } else {
-        console.warn("Trello: Elementos HTML de Trello no encontrados.");
+        console.warn("Trello: Elementos HTML de Trello no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
     // --- Lógica de Limpiar Datos ---
     const clearDataBtn = document.getElementById('clear-data-btn');
     if (clearDataBtn) {
+        console.log("Limpiar Datos: Botón 'clear-data-btn' encontrado.");
         async function limpiarDatos() {
             if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal, Hábitos)? Esta acción es irreversible.')) {
                 clearDataBtn.classList.add('button-clicked');
@@ -869,7 +884,7 @@ async function loadAllUserData() {
         }
         clearDataBtn.addEventListener('click', limpiarDatos);
     } else {
-        console.warn("Limpiar Datos: Botón 'clear-data-btn' no encontrado.");
+        console.warn("Limpiar Datos: Botón 'clear-data-btn' no encontrado. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -881,6 +896,7 @@ async function loadAllUserData() {
     const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`);
 
     if (blogContentDiv && refreshBlogBtn) {
+        console.log("Blog: Elementos HTML del Blog encontrados.");
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
@@ -889,11 +905,11 @@ async function loadAllUserData() {
                 blogContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
-                    console.log("Blog: Colección vacía.");
+                    console.log("Blog: Colección vacía. Mostrando mensaje de vacío.");
                     blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún. ¡Añade algunos desde la consola de Firebase!</p>'; // Mensaje si está vacío
                     return;
                 }
-                console.log(`Blog: ${snapshot.size} artículos encontrados.`);
+                console.log(`Blog: ${snapshot.size} artículos encontrados. Renderizando...`);
                 snapshot.forEach((doc, index) => {
                     if (index < 5) { // Log de los primeros 5 artículos para depuración
                         console.log("Blog: Artículo de muestra:", doc.data());
@@ -908,6 +924,7 @@ async function loadAllUserData() {
                         ${article.url ? `<a href="${article.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     blogContentDiv.appendChild(articleCard);
+                    console.log(`Blog: Añadido artículo "${article.title.substring(0, 20)}..." a la lista.`);
                 });
                 window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
                 console.log("Blog: Artículos cargados desde Firestore.");
@@ -920,7 +937,7 @@ async function loadAllUserData() {
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
         cargarNotasBlog(); // Cargar al inicio
     } else {
-        console.warn("Blog: Elementos HTML del Blog no encontrados.");
+        console.warn("Blog: Elementos HTML del Blog no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
 
@@ -931,6 +948,7 @@ async function loadAllUserData() {
     const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`);
 
     if (nutricionContentDiv && refreshNutricionBtn) {
+        console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
@@ -939,11 +957,11 @@ async function loadAllUserData() {
                 nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
-                    console.log("Nutrición: Colección vacía.");
+                    console.log("Nutrición: Colección vacía. Mostrando mensaje de vacío.");
                     nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún. ¡Añade algunas recomendaciones!</p>'; // Mensaje si está vacío
                     return;
                 }
-                console.log(`Nutrición: ${snapshot.size} ítems encontrados.`);
+                console.log(`Nutrición: ${snapshot.size} ítems encontrados. Renderizando...`);
                 snapshot.forEach((doc, index) => {
                     if (index < 5) { // Log de los primeros 5 ítems para depuración
                         console.log("Nutrición: Ítem de muestra:", doc.data());
@@ -958,6 +976,7 @@ async function loadAllUserData() {
                         ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
+                    console.log(`Nutrición: Añadido ítem "${item.title.substring(0, 20)}..." a la lista.`);
                 });
                 window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
                 console.log("Nutrición: Contenido cargado desde Firestore.");
@@ -970,7 +989,7 @@ async function loadAllUserData() {
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
         cargarNutricion(); // Cargar al inicio
     } else {
-        console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
+        console.warn("Nutrición: Elementos HTML de Nutrición no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
     // --- Lógica de Hábitos ---
@@ -990,15 +1009,16 @@ async function loadAllUserData() {
 
     // Cargar hábitos desde Firestore
     if (habitsListUl) {
+        console.log("Hábitos: Elemento HTML 'habitsList' encontrado.");
         habitsCollectionRef.orderBy('creationDate', 'asc').onSnapshot((snapshot) => {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
             habitsListUl.innerHTML = ''; // Limpiar lista existente
             if (snapshot.empty) {
-                console.log("Hábitos: Colección vacía.");
+                console.log("Hábitos: Colección vacía. Mostrando mensaje de vacío.");
                 habitsListUl.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade un nuevo hábito!</li>'; // Mensaje si está vacío
                 return;
             }
-            console.log(`Hábitos: ${snapshot.size} hábitos encontrados.`);
+            console.log(`Hábitos: ${snapshot.size} hábitos encontrados. Renderizando...`);
             snapshot.forEach((docSnap, index) => {
                 if (index < 5) { // Log de los primeros 5 hábitos para depuración
                     console.log("Hábitos: Hábito de muestra:", docSnap.data());
@@ -1056,17 +1076,19 @@ async function loadAllUserData() {
                 listItem.appendChild(completionContainer);
                 listItem.appendChild(deleteBtn);
                 habitsListUl.appendChild(listItem);
+                console.log(`Hábitos: Añadido hábito "${habit.name}" a la lista.`);
             });
         }, (error) => {
             console.error("Hábitos: Error al escuchar hábitos:", error);
             window.showTempMessage(`Error al cargar hábitos: ${error.message}`, 'error');
         });
     } else {
-        console.warn("Hábitos: Elemento HTML 'habitsList' no encontrado.");
+        console.warn("Hábitos: Elemento HTML 'habitsList' no encontrado. Asegúrate de que tu HTML esté actualizado.");
     }
 
     // Añadir nuevo hábito
     if (newHabitInput && addHabitBtn) {
+        console.log("Hábitos: Elementos HTML 'newHabitInput' y 'addHabitBtn' encontrados.");
         addHabitBtn.addEventListener('click', async () => {
             const habitName = newHabitInput.value.trim();
             if (habitName) {
@@ -1094,7 +1116,7 @@ async function loadAllUserData() {
             }
         });
     } else {
-        console.warn("Hábitos: Elementos HTML 'newHabitInput' o 'addHabitBtn' no encontrados.");
+        console.warn("Hábitos: Elementos HTML 'newHabitInput' o 'addHabitBtn' no encontrados. Asegúrate de que tu HTML esté actualizado.");
     }
 
     // Manejar el toggle de completado de hábito
@@ -1346,5 +1368,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Inicializar la sección Pomodoro al cargar la página
+    console.log("DOMContentLoaded: Llamando a mostrarSeccion('pomodoro').");
     window.mostrarSeccion('pomodoro');
 }); // End of DOMContentLoaded
