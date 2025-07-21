@@ -131,60 +131,60 @@
             console.log("onAuthStateChanged: Estado de autenticación cambiado.");
             const userIdDisplay = document.getElementById('user-id-display');
             const logoutBtn = document.getElementById('logout-btn');
-            const userInfoArea = document.getElementById('user-info-area');
+            const authOptionsArea = document.getElementById('auth-options-area'); // Nuevo elemento para opciones de autenticación
 
             if (user) {
                 window.currentUserId = user.uid;
                 console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
                 if (userIdDisplay) {
                     userIdDisplay.textContent = `ID de Usuario: ${window.currentUserId}`;
-                    userIdDisplay.style.display = 'block'; // Ensure it's visible
+                    userIdDisplay.style.display = 'block'; // Asegurarse de que sea visible
                 }
                 if (logoutBtn) {
-                    logoutBtn.style.display = 'block'; // Show logout button
+                    logoutBtn.style.display = 'block'; // Mostrar botón de cerrar sesión
                 }
-                if (userInfoArea) {
-                    userInfoArea.classList.remove('auth-options-visible'); // Remove auth options class if present
-                    userInfoArea.style.justifyContent = 'flex-end'; // Align to right
-                    userInfoArea.style.flexDirection = 'row'; // Keep row layout
+                if (authOptionsArea) {
+                    authOptionsArea.style.display = 'none'; // Ocultar opciones de inicio de sesión
                 }
-
+                // Solo cargar datos del usuario si no estamos en medio de un proceso de cierre de sesión
+                // La variable `isLoggingOut` se manejará en main.js
                 if (typeof window.loadAllUserData === 'function') {
                     window.loadAllUserData();
                 } else {
                     console.error("loadAllUserData no está definida globalmente.");
                 }
-            } else {
-                window.currentUserId = null; // Clear current user ID
-                console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
+            } else { // Usuario es null (no autenticado)
+                window.currentUserId = null; // Limpiar ID de usuario actual
+                console.log("onAuthStateChanged: Usuario no autenticado.");
                 if (userIdDisplay) {
-                    userIdDisplay.textContent = 'Cargando usuario...'; // Reset text
-                    userIdDisplay.style.display = 'block'; // Keep visible while loading/trying to sign in
+                    userIdDisplay.textContent = 'No autenticado'; // Mostrar texto de no autenticado
+                    userIdDisplay.style.display = 'none'; // Ocultar ID de usuario si no está logueado
                 }
                 if (logoutBtn) {
-                    logoutBtn.style.display = 'none'; // Hide logout button
+                    logoutBtn.style.display = 'none'; // Ocultar botón de cerrar sesión
                 }
-                if (userInfoArea) {
-                    userInfoArea.classList.add('auth-options-visible'); // Add class to center auth options
-                    userInfoArea.style.justifyContent = 'center'; // Center for auth options
-                    userInfoArea.style.flexDirection = 'column'; // Stack for auth options
+                if (authOptionsArea) {
+                    authOptionsArea.style.display = 'flex'; // Mostrar opciones de inicio de sesión
                 }
 
-                try {
-                    if (window.initialAuthToken) {
-                        console.log("onAuthStateChanged: Usando initialAuthToken.");
-                        await window.auth.signInWithCustomToken(window.initialAuthToken);
-                    } else {
-                        console.log("onAuthStateChanged: Usando signInAnonymously.");
-                        await window.auth.signInAnonymously();
+                // Si no estamos en medio de un cierre de sesión explícito, intentar inicio de sesión anónimo
+                // La variable `isLoggingOut` se manejará en main.js
+                if (!window.isLoggingOut) { // Usar window.isLoggingOut ya que es global
+                    try {
+                        if (window.initialAuthToken) {
+                            console.log("onAuthStateChanged: Usando initialAuthToken.");
+                            await window.auth.signInWithCustomToken(window.initialAuthToken);
+                        } else {
+                            console.log("onAuthStateChanged: Usando signInAnonymously.");
+                            await window.auth.signInAnonymously();
+                        }
+                        console.log("onAuthStateChanged: signInAnonymously/CustomToken exitoso.");
+                    } catch (error) {
+                        console.error("onAuthStateChanged: Error al iniciar sesión en Firebase:", error);
+                        window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
                     }
-                    console.log("onAuthStateChanged: signInAnonymously/CustomToken exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged: Error al iniciar sesión en Firebase:", error);
-                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
-                    if (userIdDisplay) {
-                        userIdDisplay.textContent = 'No autenticado'; // Show not authenticated
-                    }
+                } else {
+                    window.isLoggingOut = false; // Resetear la bandera después de manejar el estado de cierre de sesión
                 }
             }
         });
@@ -204,8 +204,16 @@
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
       <div id="user-info-area">
-        <div id="user-id-display">Cargando usuario...</div>
-        <button id="logout-btn" class="auth-btn">Cerrar Sesión</button>
+        <div id="user-id-display" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px;">Cargando usuario...</div>
+        <button id="logout-btn" class="auth-btn" style="display: none;">Cerrar Sesión</button> <!-- Oculto por defecto -->
+        
+        <!-- Opciones de autenticación, ocultas por defecto -->
+        <div id="auth-options-area" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px; width: 100%;">
+            <p style="color: var(--text-medium); font-size: 0.9em; margin: 0;">Inicia sesión para guardar tus datos:</p>
+            <button id="login-anon-btn" class="auth-btn">Iniciar Sesión Anónima</button>
+            <button id="login-email-btn" class="auth-btn" style="background: #DB4437;">Iniciar Sesión con Email</button>
+            <button id="login-google-btn" class="auth-btn" style="background: #4285F4;">Iniciar Sesión con Google</button>
+        </div>
       </div>
     </header>
 
@@ -380,3 +388,4 @@
   <script src="js/main.js"></script> <!-- main.js ahora es un script tradicional -->
 </body>
 </html>
+

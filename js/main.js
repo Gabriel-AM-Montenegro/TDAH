@@ -9,7 +9,7 @@ window.loadAllUserData = loadAllUserData;
 let db;
 let auth;
 let currentUserId;
-
+let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 
 // Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
 async function loadAllUserData() {
@@ -1134,14 +1134,47 @@ async function loadAllUserData() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
+                isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
                 await auth.signOut();
                 window.showTempMessage('Sesión cerrada correctamente.', 'info');
-                // Opcionalmente, recargar la página o redirigir a una pantalla de inicio de sesión
-                location.reload(); // Esto activará el inicio de sesión anónimo de nuevo
+                // No es necesario recargar, onAuthStateChanged manejará las actualizaciones de la UI
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+                isLoggingOut = false; // Resetear la bandera si el cierre de sesión falla
             }
         });
     }
+
+    // Lógica para los nuevos botones de inicio de sesión
+    const loginAnonBtn = document.getElementById('login-anon-btn');
+    const loginEmailBtn = document.getElementById('login-email-btn');
+    const loginGoogleBtn = document.getElementById('login-google-btn');
+
+    if (loginAnonBtn) {
+        loginAnonBtn.addEventListener('click', async () => {
+            try {
+                await auth.signInAnonymously();
+                window.showTempMessage('Sesión anónima iniciada.', 'success');
+            } catch (error) {
+                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+                console.error("Error al iniciar sesión anónima:", error);
+            }
+        });
+    }
+
+    if (loginEmailBtn) {
+        loginEmailBtn.addEventListener('click', () => {
+            window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
+            console.log("Intento de inicio de sesión con Email.");
+        });
+    }
+
+    if (loginGoogleBtn) {
+        loginGoogleBtn.addEventListener('click', () => {
+            window.showTempMessage('Funcionalidad de inicio de sesión con Google no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
+            console.log("Intento de inicio de sesión con Google.");
+        });
+    }
+
 }; // End of loadAllUserData
