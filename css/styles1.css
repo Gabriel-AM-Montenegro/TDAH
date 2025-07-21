@@ -1,9 +1,4 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
-/* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
-body {
-  border: 5px solid rgb(230, 189, 113) !important; /* Este borde debería desaparecer si el CSS carga */
-}
-
 :root {
   /* Colores */
   --primary-color: #4F46E5; /* Indigo */
@@ -302,8 +297,11 @@ button:disabled {
   box-shadow: none;
 }
 
+/* Micro-interacción: Feedback al hacer clic en botones */
 button:active {
-  transform: translateY(0);
+  transform: translateY(0); /* Vuelve a la posición original */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Sombra más sutil al presionar */
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color)); /* Invertir gradiente o un color más oscuro */
 }
 
 .button-danger {
@@ -396,18 +394,10 @@ li button {
     font-size: 0.9em;
     color: var(--text-medium);
     margin-left: var(--spacing-sm); /* Espacio entre el texto de la tarea y el control MIT */
-    /* Estilos de depuración para ver si el div está presente */
-    /* border: 1px solid blue; */
 }
 
 .mit-controls input[type="checkbox"] {
     margin-right: 0; /* Eliminar margen extra */
-    /* Estilos de depuración para forzar visibilidad del checkbox */
-    /* display: inline-block !important; */
-    /* opacity: 1 !important; */
-    /* width: 25px !important; */
-    /* height: 25px !important; */
-    /* border: 2px solid purple !important; */
 }
 
 /* Estilo para las tareas marcadas como MIT */
@@ -631,6 +621,25 @@ input[type="checkbox"] {
     display: block; /* Para que ocupe su propio bloque */
 }
 
+/* Animación para nuevos ítems del checklist */
+li.new-item-animation {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInSlideUp 0.4s ease-out forwards;
+}
+
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
 #journalEntriesList li .journal-date {
     font-size: 0.8rem;
     color: var(--text-medium);
@@ -797,63 +806,4 @@ input[type="checkbox"] {
     transform: translateY(100vh) rotateZ(720deg);
     opacity: 0;
   }
-}
-
-/* Regla para el div de verificación de CSS */
-#css-check {
-    background-color: green !important; /* Debería ser verde si el CSS se carga */
-}
-
-/* Custom Confirmation Modal Styles */
-.custom-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000; /* Asegura que esté por encima de todo */
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.custom-modal-overlay.show {
-    opacity: 1;
-}
-
-.custom-modal-content {
-    background: var(--white);
-    padding: var(--spacing-xl);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--glass-shadow);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    transform: translateY(-20px);
-    transition: transform 0.3s ease-in-out;
-}
-
-.custom-modal-overlay.show .custom-modal-content {
-    transform: translateY(0);
-}
-
-.custom-modal-content p {
-    font-size: 1.1em;
-    margin-bottom: var(--spacing-lg);
-    color: var(--text-dark);
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: center;
-    gap: var(--spacing-md);
-}
-
-.modal-buttons button {
-    padding: 10px 20px;
-    font-size: 1em;
-    min-width: 100px;
 }

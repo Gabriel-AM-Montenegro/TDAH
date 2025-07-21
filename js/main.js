@@ -76,6 +76,12 @@ async function loadAllUserData() {
             const entryText = journalEntryTextarea.value.trim();
             if (entryText) {
                 try {
+                    // Micro-interacción: Feedback visual al botón de guardar
+                    saveJournalEntryButton.classList.add('button-clicked');
+                    setTimeout(() => {
+                        saveJournalEntryButton.classList.remove('button-clicked');
+                    }, 300); // Duración de la animación
+
                     await journalCollectionRef.add({
                         text: entryText,
                         timestamp: new Date().toISOString()
@@ -198,6 +204,12 @@ async function loadAllUserData() {
             if (!isRunning) {
                 isRunning = true;
                 savePomodoroState(timeLeft, true, isBreakTime);
+                // Micro-interacción: Feedback visual al botón
+                startTimerBtn.classList.add('button-clicked');
+                setTimeout(() => {
+                    startTimerBtn.classList.remove('button-clicked');
+                }, 300);
+
                 timer = setInterval(() => {
                     timeLeft--;
                     updateTimerDisplay();
@@ -251,6 +263,11 @@ async function loadAllUserData() {
             clearInterval(timer);
             isRunning = false;
             savePomodoroState(timeLeft, false, isBreakTime);
+            // Micro-interacción: Feedback visual al botón
+            pausePomodoroBtn.classList.add('button-clicked');
+            setTimeout(() => {
+                pausePomodoroBtn.classList.remove('button-clicked');
+            }, 300);
             window.showTempMessage('Temporizador pausado.', 'info');
             console.log("Pomodoro: Temporizador pausado.");
         }
@@ -262,6 +279,11 @@ async function loadAllUserData() {
             isBreakTime = false; // Ensure we are not in break time
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
+            // Micro-interacción: Feedback visual al botón
+            resetTimerBtn.classList.add('button-clicked');
+            setTimeout(() => {
+                resetTimerBtn.classList.remove('button-clicked');
+            }, 300);
             window.showTempMessage('Temporizador reiniciado.', 'info');
             console.log("Pomodoro: Temporizador reiniciado.");
         }
@@ -387,6 +409,9 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
+
+                // Micro-interacción: Añadir clase para animación de aparición
+                listItem.classList.add('new-item-animation');
 
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
@@ -658,17 +683,20 @@ async function loadAllUserData() {
     }
 
 
-    // --- Lógica de Notas de Blog ---
+    // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
+    // Colección de Firestore para artículos del blog
+    // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
+    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`);
 
     if (blogContentDiv && refreshBlogBtn) {
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
+                // Obtener documentos de la colección blogArticles
                 const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get();
-                blogContentDiv.innerHTML = ''; 
+                blogContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
                     blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
@@ -698,18 +726,17 @@ async function loadAllUserData() {
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog(); 
+        cargarNotasBlog(); // Cargar al inicio
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
 
 
-    // --- Lógica de Nutrición (ahora usa DB) ---
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
     // Colección de Firestore para contenido de nutrición
     // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
-    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); // <--- CAMBIO AQUÍ
+    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`);
 
     if (nutricionContentDiv && refreshNutricionBtn) {
         async function cargarNutricion() {
