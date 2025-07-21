@@ -6,13 +6,136 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
-  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script> -->
+  <!-- Firebase SDKs: Cargados como scripts tradicionales para asegurar que 'firebase' esté disponible globalmente -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"></script>
+  <!-- Analytics SDK (si lo necesitas, pero no es esencial para el funcionamiento principal) -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js"></script> -->
+
+  <!-- Script de inicialización de Firebase y autenticación -->
+  <!-- MOVIDO AQUÍ para asegurar que los SDK de Firebase estén cargados antes de ser usados -->
+  <script>
+    // Configuración de Firebase proporcionada por el usuario
+    const firebaseConfig = {
+        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw",
+        authDomain: "tdah-app-efca9.firebaseapp.com",
+        projectId: "tdah-app-efca9",
+        storageBucket: "tdah-app-efca9.firebasestorage.app",
+        messagingSenderId: "765424031369",
+        appId: "1:765424031369:web:838eca686f68f21daa5858",
+        measurementId: "G-QY7X98XZZV"
+    };
+
+    // Inicializar Firebase y exponer a window para main.js
+    // Usamos las funciones modulares directamente de Firebase SDK v9
+    window.firebaseApp = firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore(); // Usar firebase.firestore() para la compatibilidad global
+    window.auth = firebase.auth();   // Usar firebase.auth() para la compatibilidad global
+
+    // Asegurarse de usar el appId de la configuración de Firebase
+    window.appId = firebaseConfig.appId;
+    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // Mantener para el entorno Canvas
+
+    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
+    // Definirlas aquí para asegurar que estén disponibles cuando DOMContentLoaded se dispare.
+    window.mostrarSeccion = function(idSeccion) {
+        console.log(`Intentando mostrar sección: ${idSeccion}`);
+        document.querySelectorAll('.seccion').forEach(seccion => {
+            seccion.classList.remove('active');
+        });
+        document.querySelectorAll('.nav-tabs button').forEach(button => {
+            button.classList.remove('active');
+        });
+
+        const seccionActiva = document.getElementById(idSeccion);
+        if (seccionActiva) {
+            seccionActiva.classList.add('active');
+            console.log(`Sección ${idSeccion} activada.`);
+        } else {
+            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
+        }
+        const botonActivo = document.getElementById(`btn-${idSeccion}`);
+        if (botonActivo) {
+            botonActivo.classList.add('active');
+            console.log(`Botón ${idSeccion} activado.`);
+        } else {
+            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
+        }
+    };
+
+    window.showTempMessage = function(message, type = 'info', duration = 3000) {
+        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
+        const tempMessageContainer = document.getElementById('temp-message-container');
+        if (!tempMessageContainer) {
+            console.error("Contenedor de mensajes temporales no encontrado.");
+            return;
+        }
+        const msgElement = document.createElement('div');
+        msgElement.className = `temp-message ${type}`;
+        msgElement.textContent = message;
+        tempMessageContainer.appendChild(msgElement);
+
+        msgElement.offsetHeight;
+        msgElement.classList.add('show');
+
+        setTimeout(() => {
+            msgElement.classList.remove('show');
+            msgElement.classList.add('hide');
+            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
+        }, duration);
+    };
+
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log("DOMContentLoaded: DOM completamente cargado. Iniciando autenticación Firebase...");
+
+        // Adjuntar event listeners a los botones de navegación
+        document.getElementById('btn-pomodoro').addEventListener('click', () => window.mostrarSeccion('pomodoro'));
+        document.getElementById('btn-tareas').addEventListener('click', () => window.mostrarSeccion('tareas'));
+        document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
+        document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
+        document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
+        document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
+        console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
+
+        // Manejar la autenticación
+        window.auth.onAuthStateChanged(async (user) => {
+            console.log("onAuthStateChanged: Estado de autenticación cambiado.");
+            if (user) {
+                window.currentUserId = user.uid;
+                console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
+                // Una vez autenticado, cargar todos los datos
+                // Asegurarse de que loadAllUserData esté disponible globalmente
+                if (typeof window.loadAllUserData === 'function') {
+                    window.loadAllUserData();
+                } else {
+                    console.error("loadAllUserData no está definida globalmente.");
+                }
+            } else {
+                console.log("onAuthStateChanged: Usuario no autenticado. Intentando signInAnonymously...");
+                try {
+                    if (window.initialAuthToken) {
+                        console.log("onAuthStateChanged: Usando initialAuthToken.");
+                        await window.auth.signInWithCustomToken(window.initialAuthToken);
+                    } else {
+                        console.log("onAuthStateChanged: Usando signInAnonymously.");
+                        await window.auth.signInAnonymously();
+                    }
+                    console.log("onAuthStateChanged: signInAnonymously/CustomToken exitoso.");
+                } catch (error) {
+                    console.error("onAuthStateChanged: Error al iniciar sesión en Firebase:", error);
+                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Inicializar la primera sección visible al cargar la página
+        window.mostrarSeccion('pomodoro');
+        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
+
+    });
+  </script>
 
 </head>
 <body>
@@ -21,34 +144,8 @@
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
-      <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
-        <span id="user-display-name">Cargando usuario...</span>
-        <div class="auth-buttons-wrapper"> <!-- Nuevo wrapper para los botones -->
-            <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
-              Iniciar con Google
-            </button>
-            <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
-              Iniciar con Email
-            </button>
-            <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
-              Continuar como Anónimo
-            </button>
-        </div>
-        <button id="logout-btn" class="button-secondary" style="display: none;">Cerrar Sesión</button>
-      </div>
+      <div id="user-id-display" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px;">Cargando usuario...</div>
     </header>
-
-    <!-- Formulario de inicio de sesión/registro con Email -->
-    <div id="email-auth-form" class="auth-form-card" style="display: none; margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h3>Iniciar Sesión / Registrarse con Email</h3>
-      <input type="email" id="email-input" placeholder="Correo electrónico" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      <input type="password" id="password-input" placeholder="Contraseña" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-      <button id="email-signup-btn" class="button-primary" style="margin-right: 10px;">Registrarse</button>
-      <button id="email-login-btn" class="button-secondary">Iniciar Sesión</button>
-      <button id="email-form-close-btn" class="button-danger" style="float: right;">X</button>
-    </div>
 
     <div class="nav-tabs">
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
@@ -56,7 +153,6 @@
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
-      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Nuevo botón para Nutrición -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -87,10 +183,6 @@
 
     <section id="checklist" class="seccion">
       <h2>✅ Checklist Rápido</h2>
-      <div class="mit-explanation">
-        <p>La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
-        <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
-      </div>
       <div class="input-group">
         <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
         <button id="add-check-item-btn">➕ Agregar</button>
@@ -178,367 +270,31 @@
     </section>
   </div>
 
-  <div id="confetti-container"></div> <!-- Contenedor para el confeti -->
   <div id="temp-message-container"></div>
-  <!-- Añadir onerror para depurar problemas de carga de audio -->
-  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto" onerror="console.error('Error cargando sound-complete.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de finalización.', 'error', 5000);"></audio>
-  <audio id="sound-break" src="sounds/break.mp3" preload="auto" onerror="console.error('Error cargando sound-break.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de descanso.', 'error', 5000);"></audio>
-  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto" onerror="console.error('Error cargando sound-task-done.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de tarea completada.', 'error', 5000);"></audio>
+  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto"></audio>
+  <audio id="sound-break" src="sounds/break.mpod3" preload="auto"></audio>
+  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto"></audio>
 
-  <!-- Div de prueba para verificar si el CSS se carga correctamente -->
-  <div id="css-check" style="position: fixed; top: 10px; right: 10px; width: 20px; height: 20px; background-color: red; border-radius: 50%;"></div>
-
-  <!-- Custom Confirmation Modal HTML -->
-  <div id="custom-confirm-modal" class="custom-modal-overlay" style="display: none;">
-    <div class="custom-modal-content">
-      <p id="custom-confirm-message"></p>
-      <div class="modal-buttons">
-        <button id="custom-confirm-yes">Sí</button>
-        <button id="custom-confirm-no">No</button>
+  <!-- Tour de Bienvenida -->
+  <div id="welcome-tour-overlay" class="welcome-tour-overlay">
+    <div class="welcome-tour-modal">
+      <div class="welcome-tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+        <div class="tour-highlight-image-container">
+            <img id="tour-highlight-image" src="" alt="Resaltado de la función" class="tour-highlight-image" style="display: none;">
+        </div>
+      </div>
+      <div class="welcome-tour-navigation">
+        <button id="tour-back-btn" class="tour-nav-btn" style="display: none;">⬅️ Anterior</button>
+        <div id="tour-dots" class="tour-dots"></div>
+        <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
+        <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
       </div>
     </div>
   </div>
 
-
-  <!-- Script de inicialización de Firebase y autenticación -->
-  <!-- Este script se ejecuta después de que los SDK de Firebase se han cargado (en el head) -->
-  <!-- y antes de main.js, asegurando que 'firebase' esté definido. -->
-  <script>
-    console.log("Script inline en body: Iniciando configuración de Firebase.");
-    // Configuración de Firebase proporcionada por el usuario
-    // ¡IMPORTANTE! Reemplaza estos valores con los de TU proyecto de Firebase
-    // Encuéntralos en la Consola de Firebase > Configuración del proyecto > Tus apps (aplicación web)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw", // <--- VERIFICA ESTE VALOR
-        authDomain: "tdah-app-efca9.firebaseapp.com",    // <--- VERIFICA ESTE VALOR
-        projectId: "tdah-app-efca9",                     // <--- VERIFICA ESTE VALOR
-        storageBucket: "tdah-app-efca9.firebasestorage.app",
-        messagingSenderId: "765424031369",
-        appId: "1:765424031369:web:838eca686f68f21daa5858",
-        measurementId: "G-QY7X98XZZV"
-    };
-
-    // Inicializar Firebase y exponer a window para main.js
-    // Usamos las funciones de la API global de Firebase (v8 compat)
-    window.firebaseApp = firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); // Acceder a Firestore
-    window.auth = firebase.auth();   // Acceder a Auth
-
-    // Asegurarse de usar el appId de la configuración de Firebase
-    window.appId = firebaseConfig.appId;
-    // __initial_auth_token es una variable global proporcionada por el entorno Canvas
-    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    console.log("Script inline en body: Firebase inicializado y variables expuestas.");
-
-    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
-    // Definirlas aquí para asegurar que estén disponibles cuando DOMContentLoaded se dispare.
-    window.mostrarSeccion = function(idSeccion) {
-        console.log(`Intentando mostrar sección: ${idSeccion}`);
-        document.querySelectorAll('.seccion').forEach(seccion => {
-            seccion.classList.remove('active');
-        });
-        document.querySelectorAll('.nav-tabs button').forEach(button => {
-            button.classList.remove('active');
-        });
-
-        const seccionActiva = document.getElementById(idSeccion);
-        if (seccionActiva) {
-            seccionActiva.classList.add('active');
-            console.log(`Sección ${idSeccion} activada.`);
-        } else {
-            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
-        }
-        const botonActivo = document.getElementById(`btn-${idSeccion}`);
-        if (botonActivo) {
-            botonActivo.classList.add('active');
-            console.log(`Botón ${idSeccion} activado.`);
-        } else {
-            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
-        }
-    };
-
-    window.showTempMessage = function(message, type = 'info', duration = 3000) {
-        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
-        const tempMessageContainer = document.getElementById('temp-message-container');
-        if (!tempMessageContainer) {
-            console.error("Contenedor de mensajes temporales no encontrado.");
-            return;
-        }
-        const msgElement = document.createElement('div');
-        msgElement.className = `temp-message ${type}`;
-        msgElement.textContent = message;
-        tempMessageContainer.appendChild(msgElement);
-
-        msgElement.offsetHeight;
-        msgElement.classList.add('show');
-
-        setTimeout(() => {
-            msgElement.classList.remove('show');
-            msgElement.classList.add('hide');
-            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
-        }, duration);
-    };
-
-    // Función para disparar el efecto de confeti
-    window.triggerConfetti = function() {
-        let confettiContainer = document.getElementById('confetti-container');
-        if (!confettiContainer) {
-            confettiContainer = document.createElement('div');
-            confettiContainer.id = 'confetti-container';
-            document.body.appendChild(confettiContainer);
-        }
-
-        const colors = ['var(--primary-color)', 'var(--secondary-color)', '#FFD700', '#FF69B4', '#00FFFF']; // Colores para el confeti
-        const numConfetti = 50; // Número de piezas de confeti
-
-        for (let i = 0; i < numConfetti; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'confetti-piece';
-            piece.style.left = `${Math.random() * 100}vw`; // Posición horizontal aleatoria
-            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.animationDuration = `${Math.random() * 2 + 3}s`; // Duración aleatoria entre 3-5s
-            piece.style.animationDelay = `${Math.random() * 0.5}s`; // Ligero retraso para efecto escalonado
-            piece.style.width = `${Math.random() * 8 + 5}px`; // Tamaño aleatorio
-            piece.style.height = piece.style.width;
-            confettiContainer.appendChild(piece);
-        }
-
-        // Limpiar el confeti después de la animación
-        setTimeout(() => {
-            confettiContainer.innerHTML = ''; // Eliminar todas las piezas
-        }, 5000); // Coincide con la duración más larga de la animación
-    };
-
-    // Custom Confirmation Modal
-    window.showCustomConfirm = function(message) {
-        return new Promise((resolve) => {
-            const modal = document.getElementById('custom-confirm-modal');
-            const msgElement = document.getElementById('custom-confirm-message');
-            const yesBtn = document.getElementById('custom-confirm-yes');
-            const noBtn = document.getElementById('custom-confirm-no');
-
-            msgElement.textContent = message;
-            modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
-
-            // Force reflow to ensure display:flex is applied before adding 'show' class
-            // This is crucial for CSS transitions to work from display:none to display:flex
-            void modal.offsetWidth; 
-
-            modal.classList.add('show'); // Now add the class that applies opacity and transform
-
-            const cleanup = () => {
-                modal.classList.remove('show'); // Start hide transition
-                // Wait for the transition to finish before setting display to 'none'
-                modal.addEventListener('transitionend', () => {
-                    modal.style.display = 'none';
-                }, { once: true });
-                yesBtn.removeEventListener('click', onYesClick);
-                noBtn.removeEventListener('click', onNoClick);
-            };
-
-            const onYesClick = () => {
-                cleanup();
-                resolve(true);
-            };
-
-            const onNoClick = () => {
-                cleanup();
-                resolve(false);
-            };
-
-            yesBtn.addEventListener('click', onYesClick);
-            noBtn.addEventListener('click', onNoClick);
-        });
-    };
-
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        console.log("DOMContentLoaded: DOM completamente cargado. Iniciando autenticación Firebase...");
-
-        // Referencias a elementos de la UI de autenticación
-        const userDisplayName = document.getElementById('user-display-name');
-        const googleSigninBtn = document.getElementById('google-signin-btn');
-        const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
-        const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const emailAuthForm = document.getElementById('email-auth-form');
-        const emailInput = document.getElementById('email-input');
-        const passwordInput = document.getElementById('password-input');
-        const emailSignupBtn = document.getElementById('email-signup-btn');
-        const emailLoginBtn = document.getElementById('email-login-btn');
-        const emailFormCloseBtn = document.getElementById('email-form-close-btn');
-
-        // Referencia al área de información del usuario para control de estilo
-        const userInfoArea = document.getElementById('user-info-area');
-        const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
-
-
-        // Adjuntar event listeners a los botones de navegación
-        document.getElementById('btn-pomodoro').addEventListener('click', () => window.mostrarSeccion('pomodoro'));
-        document.getElementById('btn-tareas').addEventListener('click', () => window.mostrarSeccion('tareas'));
-        document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
-        document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
-        document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
-        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion')); // Event listener para el nuevo botón de nutrición
-        document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
-        console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
-
-        // Manejar la autenticación
-        window.auth.onAuthStateChanged(async (user) => {
-            console.log("onAuthStateChanged: Estado de autenticación cambiado.");
-            if (user) {
-                window.currentUserId = user.uid;
-                console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
-
-                // Mostrar información del usuario y botón de cerrar sesión
-                userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
-                googleSigninBtn.style.display = 'none';
-                emailSigninToggleBtn.style.display = 'none';
-                anonymousSigninBtn.style.display = 'none';
-                authButtonsWrapper.style.display = 'none';
-                logoutBtn.style.display = 'inline-block';
-                emailAuthForm.style.display = 'none';
-
-                userInfoArea.classList.remove('auth-options-visible');
-                userDisplayName.style.textAlign = 'right';
-
-                // Cargar todos los datos del usuario y configurar listeners
-                window.loadAllUserData();
-
-            } else {
-                console.log("onAuthStateChanged: Usuario no autenticado. Mostrando opciones de inicio de sesión.");
-                userDisplayName.textContent = 'Por favor, inicia sesión:';
-                googleSigninBtn.style.display = 'inline-block';
-                emailSigninToggleBtn.style.display = 'inline-block';
-                anonymousSigninBtn.style.display = 'inline-block';
-                authButtonsWrapper.style.display = 'flex';
-                logoutBtn.style.display = 'none';
-                emailAuthForm.style.display = 'none';
-
-                userInfoArea.classList.add('auth-options-visible');
-                userDisplayName.style.textAlign = 'center';
-            }
-        });
-
-        // Adjuntar event listeners para Google Sign-In y Sign-Out
-        document.getElementById('google-signin-btn').addEventListener('click', async () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                await window.auth.signInWithPopup(provider);
-                window.showTempMessage('Inicio de sesión con Google exitoso!', 'success');
-            } catch (error) {
-                console.error("Error al iniciar sesión con Google:", error);
-                window.showTempMessage(`Error al iniciar sesión con Google: ${error.message}`, 'error');
-            }
-        });
-
-        emailSigninToggleBtn.addEventListener('click', () => {
-            emailAuthForm.style.display = emailAuthForm.style.display === 'none' ? 'block' : 'none';
-        });
-
-        emailFormCloseBtn.addEventListener('click', () => {
-            emailAuthForm.style.display = 'none';
-            emailInput.value = '';
-            passwordInput.value = '';
-        });
-
-        emailSignupBtn.addEventListener('click', async () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-
-            if (!email || !password) {
-                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
-                return;
-            }
-            if (password.length < 6) {
-                window.showTempMessage('La contraseña debe tener al menos 6 caracteres.', 'warning');
-                return;
-            }
-
-            try {
-                await window.auth.createUserWithEmailAndPassword(email, password);
-                window.showTempMessage('Registro exitoso! Has iniciado sesión.', 'success');
-                emailAuthForm.style.display = 'none';
-            } catch (error) {
-                console.error("Error al registrarse con Email:", error);
-                if (error.code === 'auth/email-already-in-use') {
-                    window.showTempMessage('Este correo ya está registrado. Intenta iniciar sesión o usa otro correo.', 'error');
-                } else {
-                    window.showTempMessage(`Error de registro: ${error.message}`, 'error');
-                }
-            }
-        });
-
-        emailLoginBtn.addEventListener('click', async () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-
-            if (!email || !password) {
-                window.showTempMessage('Por favor, ingresa un correo y una contraseña.', 'warning');
-                return;
-            }
-
-            try {
-                await window.auth.signInWithEmailAndPassword(email, password);
-                window.showTempMessage('Inicio de sesión exitoso!', 'success');
-                emailAuthForm.style.display = 'none';
-            } catch (error) {
-                console.error("Error al iniciar sesión con Email:", error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    window.showTempMessage('Correo o contraseña incorrectos.', 'error');
-                } else if (error.code === 'auth/invalid-email') {
-                    window.showTempMessage('Formato de correo electrónico inválido.', 'error');
-                } else {
-                    window.showTempMessage(`Error de inicio de sesión: ${error.message}`, 'error');
-                }
-            }
-        });
-
-        anonymousSigninBtn.addEventListener('click', async () => {
-            try {
-                if (window.initialAuthToken) {
-                    console.log("anonymousSigninBtn: Usando initialAuthToken.");
-                    await window.auth.signInWithCustomToken(window.initialAuthToken);
-                } else {
-                    console.log("anonymousSigninBtn: Usando signInAnonymously.");
-                    await window.auth.signInAnonymously();
-                }
-                window.showTempMessage('Has iniciado sesión como usuario anónimo.', 'info');
-            } catch (error) {
-                console.error("Error al iniciar sesión como anónimo:", error);
-                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-            }
-        });
-
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await window.auth.signOut();
-                window.showTempMessage('Sesión cerrada.', 'info');
-                location.reload(); 
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
-            }
-        });
-
-
-        window.mostrarSeccion('pomodoro');
-        console.log("DOMContentLoaded: Sección Pomodoro inicializada como activa.");
-
-        // Pequeña verificación visual de CSS
-        const cssCheckDiv = document.getElementById('css-check');
-        if (getComputedStyle(cssCheckDiv).backgroundColor === 'rgb(0, 128, 0)') { // Green color from CSS
-            console.log('CSS: styles1.css parece estar cargado correctamente.');
-        } else {
-            console.warn('CSS: styles1.css NO parece estar cargado correctamente o la regla de verificación no se aplica.');
-            window.showTempMessage('Advertencia: El archivo CSS puede no estar cargado correctamente. Revisa la consola.', 'warning', 5000);
-        }
-
-    });
-  </script>
-
-  <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
-  <script src="js/main.js"></script>
+  <script src="js/main.js"></script> <!-- main.js ahora es un script tradicional -->
 </body>
 </html>
+

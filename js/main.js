@@ -35,6 +35,146 @@ async function loadAllUserData() {
     }
     window.showTempMessage(`Bienvenido, usuario ${currentUserId.substring(0, 8)}...`, 'info');
 
+
+    // --- Lógica del Tour de Bienvenida ---
+    const tourOverlay = document.getElementById('welcome-tour-overlay');
+    const tourTitle = document.getElementById('tour-title');
+    const tourDescription = document.getElementById('tour-description');
+    const tourHighlightImage = document.getElementById('tour-highlight-image');
+    const tourBackBtn = document.getElementById('tour-back-btn');
+    const tourNextBtn = document.getElementById('tour-next-btn');
+    const tourSkipBtn = document.getElementById('tour-skip-btn');
+    const tourDotsContainer = document.getElementById('tour-dots');
+
+    let currentTourStep = 0;
+    const tourSteps = [
+        {
+            title: "¡Bienvenido a TDAH Helper App!",
+            description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
+            image: "" // No image for intro
+        },
+        {
+            title: "⏱️ Temporizador Pomodoro",
+            description: "Usa el temporizador Pomodoro para trabajar en bloques de tiempo concentrado (25 min) seguidos de descansos cortos (5 min). ¡Ideal para mantener el foco y evitar el agotamiento!",
+            image: "https://placehold.co/400x200/4F46E5/FFFFFF?text=Pomodoro+Timer" // Placeholder image for Pomodoro
+        },
+        {
+            title: "✅ Checklist Rápido",
+            description: "Añade y gestiona tus tareas diarias de forma sencilla. Marca las completadas y prioriza tus 'Tareas Más Importantes' (MITs) para un día productivo.",
+            image: "https://placehold.co/400x200/7C3AED/FFFFFF?text=Checklist" // Placeholder image for Checklist
+        },
+        {
+            title: "📝 Journal Personal",
+            description: "Un espacio seguro para escribir tus pensamientos, emociones, logros y desafíos. Reflexionar te ayudará a entenderte mejor y a gestionar tu bienestar.",
+            image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
+        },
+        {
+            title: "¡Listo para Empezar!",
+            description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!",
+            image: "" // No image for outro
+        }
+    ];
+
+    async function showWelcomeTour() {
+        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+        try {
+            const doc = await userSettingsRef.get();
+            if (doc.exists && doc.data().tourCompleted) {
+                console.log("Tour: Ya completado para este usuario.");
+                return; // No mostrar el tour si ya fue completado
+            }
+        } catch (error) {
+            console.error("Tour: Error al verificar estado del tour en Firestore:", error);
+            // Si hay un error, por seguridad, mostramos el tour
+        }
+
+        tourOverlay.classList.add('active');
+        renderTourStep();
+        createTourDots();
+    }
+
+    function renderTourStep() {
+        const step = tourSteps[currentTourStep];
+        tourTitle.textContent = step.title;
+        tourDescription.textContent = step.description;
+
+        if (step.image) {
+            tourHighlightImage.src = step.image;
+            tourHighlightImage.style.display = 'block';
+        } else {
+            tourHighlightImage.style.display = 'none';
+        }
+
+        tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
+        tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
+        tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
+
+        updateTourDots();
+    }
+
+    function createTourDots() {
+        tourDotsContainer.innerHTML = '';
+        tourSteps.forEach((_, index) => {
+            const dot = document.createElement('span');
+            dot.classList.add('tour-dot');
+            if (index === currentTourStep) {
+                dot.classList.add('active');
+            }
+            dot.addEventListener('click', () => {
+                currentTourStep = index;
+                renderTourStep();
+            });
+            tourDotsContainer.appendChild(dot);
+        });
+    }
+
+    function updateTourDots() {
+        document.querySelectorAll('.tour-dot').forEach((dot, index) => {
+            if (index === currentTourStep) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    async function nextTourStep() {
+        if (currentTourStep < tourSteps.length - 1) {
+            currentTourStep++;
+            renderTourStep();
+        } else {
+            await completeTour();
+        }
+    }
+
+    async function prevTourStep() {
+        if (currentTourStep > 0) {
+            currentTourStep--;
+            renderTourStep();
+        }
+    }
+
+    async function completeTour() {
+        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+        try {
+            await userSettingsRef.set({ tourCompleted: true }, { merge: true });
+            console.log("Tour: Estado de tour completado guardado en Firestore.");
+        } catch (error) {
+            console.error("Tour: Error al guardar estado de tour completado:", error);
+        }
+        tourOverlay.classList.remove('active');
+        window.showTempMessage("¡Tour de bienvenida completado! Explora la app.", 'info', 5000);
+    }
+
+    tourNextBtn.addEventListener('click', nextTourStep);
+    tourBackBtn.addEventListener('click', prevTourStep);
+    tourSkipBtn.addEventListener('click', completeTour); // Skip also completes the tour
+
+    // Modificar loadAllUserData para llamar a showWelcomeTour después de la autenticación
+    // La llamada a showWelcomeTour se moverá al final de loadAllUserData
+    // para asegurar que Firebase esté completamente inicializado y el currentUserId esté disponible.
+
+
     // --- Lógica del Journal ---
     const journalEntryTextarea = document.getElementById('journalEntry');
     const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
@@ -803,4 +943,7 @@ async function loadAllUserData() {
     }
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
+
+    // Llamar al tour de bienvenida después de que todo lo demás esté cargado
+    showWelcomeTour();
 }; // End of loadAllUserData
