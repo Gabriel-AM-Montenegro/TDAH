@@ -2,24 +2,25 @@
 // Las variables globales db, auth, currentUserId, appId, initialAuthToken
 // se acceden a través del objeto window, ya que se exponen en el script de index.html.
 
+// Inicializar variables globales de Firebase directamente desde window.
+// Esto asume que el script inline en index.html ya las ha definido antes de que main.js se cargue.
+const db = window.db;
+const auth = window.auth;
+let currentUserId = window.currentUserId; // currentUserId puede cambiar con la autenticación
+const appId = window.appId; // appId debería ser constante
+
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
 
-// Variables globales para Firebase (se inicializarán a través de window en DOMContentLoaded)
-let db;
-let auth;
-let currentUserId;
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 
 // Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
 async function loadAllUserData() {
     console.log("loadAllUserData: Iniciando carga de datos del usuario...");
-    // Acceder a las variables globales de Firebase expuestas en el objeto window
-    db = window.db;
-    auth = window.auth;
-    currentUserId = window.currentUserId;
-    const appId = window.appId; // appId también es global ahora
-
+    
+    // Las variables db, auth, currentUserId, appId ya están inicializadas globalmente
+    // por lo que no necesitamos reasignarlas aquí desde window.
+    
     // Si Firebase no está completamente inicializado o el usuario no está autenticado, no cargamos los datos.
     // onAuthStateChanged se encargará de llamar a loadAllUserData cuando sea apropiado.
     if (!db || !auth || !currentUserId) {
@@ -29,7 +30,7 @@ async function loadAllUserData() {
 
     console.log("loadAllUserData: Firebase y Usuario Autenticado. UID:", currentUserId);
     // Obtener el usuario actual para mostrar el nombre
-    const user = auth.currentUser;
+    const user = auth.currentUser; // Usar la variable global 'auth'
     const userName = user ? (user.displayName || user.email || user.uid.substring(0, 8)) : currentUserId.substring(0, 8);
     const userDisplayNameElement = document.getElementById('user-display-name');
     if (userDisplayNameElement) {
@@ -1158,9 +1159,10 @@ async function loadAllUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
     // Acceder a las variables globales de Firebase expuestas en el objeto window
     // Estas ya están disponibles porque el script inline en index.html las inicializa
-    db = window.db;
-    auth = window.auth;
-    const appId = window.appId;
+    // NO reasignar db, auth, appId aquí, ya están inicializadas como const/let globales.
+    // db = window.db; // REMOVER
+    // auth = window.auth; // REMOVER
+    // const appId = window.appId; // REMOVER
 
     // Elementos de la UI de autenticación
     const userDisplayName = document.getElementById('user-display-name');
@@ -1171,6 +1173,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
 
     // Firebase Auth State Listener
+    // Asegurarse de que auth esté definido antes de añadir el listener
+    if (!auth) {
+        console.error("DOMContentLoaded: Firebase Auth no está inicializado. No se puede configurar el listener onAuthStateChanged.");
+        // Podríamos añadir un retry o un mensaje al usuario aquí.
+        return;
+    }
+
     window.auth.onAuthStateChanged(async (user) => {
         console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
 
@@ -1184,8 +1193,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
         if (user) {
-            window.currentUserId = user.uid;
-            console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
+            currentUserId = user.uid; // Actualizar la variable global currentUserId
+            console.log("onAuthStateChanged: Usuario autenticado. UID:", currentUserId);
 
             // Mostrar información del usuario y botón de cerrar sesión
             if (userDisplayName) userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
@@ -1206,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
         } else { // Usuario es null (no autenticado)
-            window.currentUserId = null;
+            currentUserId = null; // Actualizar la variable global currentUserId
             console.log("onAuthStateChanged: Usuario no autenticado.");
             if (userDisplayName) userDisplayName.textContent = 'Por favor, inicia sesión:';
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
@@ -1220,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.initialAuthToken && !window.isLoggingOut) {
                 try {
                     console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
-                    await window.auth.signInWithCustomToken(window.initialAuthToken);
+                    await auth.signInWithCustomToken(window.initialAuthToken); // Usar la variable global 'auth'
                     console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
                 } catch (error) {
                     console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
@@ -1239,7 +1248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         logoutBtn.addEventListener('click', async () => {
             try {
                 window.isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
-                await auth.signOut();
+                await auth.signOut(); // Usar la variable global 'auth'
                 window.showTempMessage('Sesión cerrada correctamente.', 'info');
                 // onAuthStateChanged manejará las actualizaciones de la UI
             } catch (error) {
@@ -1259,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 300);
 
             try {
-                await auth.signInAnonymously();
+                await auth.signInAnonymously(); // Usar la variable global 'auth'
                 window.showTempMessage('Sesión anónima iniciada.', 'success');
             } catch (error) {
                 window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
