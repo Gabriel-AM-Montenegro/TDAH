@@ -69,7 +69,7 @@ async function loadAllUserData() {
             image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
         },
         {
-            title: " habitos Diarios",
+            title: "✅ Hábitos Diarios", // Título actualizado para el tour
             description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!",
             image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" // Placeholder image for Habits
         },
@@ -788,7 +788,7 @@ async function loadAllUserData() {
     const clearDataBtn = document.getElementById('clear-data-btn');
     if (clearDataBtn) {
         async function limpiarDatos() {
-            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
+            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal, Hábitos)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
@@ -1128,4 +1128,20 @@ async function loadAllUserData() {
 
     // Llamar al tour de bienvenida después de que todo lo demás esté cargado
     showWelcomeTour();
+
+    // Lógica para el botón de cerrar sesión
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.showTempMessage('Sesión cerrada correctamente.', 'info');
+                // Opcionalmente, recargar la página o redirigir a una pantalla de inicio de sesión
+                location.reload(); // Esto activará el inicio de sesión anónimo de nuevo
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+            }
+        });
+    }
 }; // End of loadAllUserData
