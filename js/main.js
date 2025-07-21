@@ -2,388 +2,307 @@
 // Las variables globales db, auth, currentUserId, appId, initialAuthToken
 // se acceden a través del objeto window, ya que se exponen en el script de index.html.
 
-// Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
-window.loadAllUserData = loadAllUserData;
-
-// Variables globales para Firebase (se inicializarán a través de window en loadAllUserData)
+// Variables globales para Firebase (se inicializarán a través de window en DOMContentLoaded)
 let db;
 let auth;
 let currentUserId;
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 
-// Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
-document.addEventListener('DOMContentLoaded', async () => {
-    // Acceder a las variables globales de Firebase expuestas en el objeto window
-    db = window.db;
+// Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
+// Definición de loadAllUserData movida fuera de DOMContentLoaded
+async function loadAllUserData() {
+    console.log("loadAllUserData: Iniciando carga de datos del usuario...");
+    // Asegurarse de que currentUserId esté disponible
+    if (!window.currentUserId || !window.db || !window.auth || !window.appId) {
+        console.warn("loadAllUserData: Firebase o currentUserId no disponibles. No se cargarán los datos del usuario.");
+        // Podrías mostrar un mensaje temporal o un spinner aquí si es necesario
+        return;
+    }
+    db = window.db; // Reasignar para asegurar que la referencia es correcta
     auth = window.auth;
+    currentUserId = window.currentUserId; // Actualizar la variable local
     const appId = window.appId;
 
-    // Elementos de la UI de autenticación
-    const userIdDisplay = document.getElementById('user-id-display');
-    const logoutBtn = document.getElementById('logout-btn');
-    const authOptionsArea = document.getElementById('auth-options-area');
-    const loginAnonBtn = document.getElementById('login-anon-btn');
-    const loginEmailBtn = document.getElementById('login-email-btn'); // Corregido el nombre de la variable
-    const loginGoogleBtn = document.getElementById('login-google-btn');
+    window.showTempMessage(`Bienvenido, usuario ${currentUserId.substring(0, 8)}...`, 'info');
 
-    // Firebase Auth State Listener
-    window.auth.onAuthStateChanged(async (user) => {
-        console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
+    // --- Lógica del Tour de Bienvenida ---
+    const tourOverlay = document.getElementById('welcome-tour-overlay');
+    const tourTitle = document.getElementById('tour-title');
+    const tourDescription = document.getElementById('tour-description');
+    const tourHighlightImage = document.getElementById('tour-highlight-image');
+    const tourBackBtn = document.getElementById('tour-back-btn');
+    const tourNextBtn = document.getElementById('tour-next-btn');
+    const tourSkipBtn = document.getElementById('tour-skip-btn');
+    const tourDotsContainer = document.getElementById('tour-dots');
 
-        if (user) {
-            window.currentUserId = user.uid;
-            console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
-            if (userIdDisplay) {
-                userIdDisplay.textContent = `ID de Usuario: ${window.currentUserId}`;
-                userIdDisplay.style.display = 'block'; // Asegurarse de que sea visible
-            }
-            if (logoutBtn) {
-                logoutBtn.style.display = 'block'; // Mostrar botón de cerrar sesión
-            }
-            if (authOptionsArea) {
-                authOptionsArea.style.display = 'none'; // Ocultar opciones de inicio de sesión
-            }
-            // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
-            // Esto evita que loadAllUserData se ejecute si el estado de autenticación vuelve brevemente a un usuario
-            // debido a initialAuthToken justo después de un logout.
-            if (!window.isLoggingOut) {
-                 window.loadAllUserData();
-            } else {
-                console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
-                // Si llegamos aquí, significa que initialAuthToken se activó inmediatamente después del logout.
-                // Aún así, debemos cargar los datos, pero asegurarnos de que la bandera se reinicie.
-                window.isLoggingOut = false;
-                window.loadAllUserData(); // Cargar datos incluso si se reautentica por initialAuthToken
-            }
-
-        } else { // Usuario es null (no autenticado)
-            window.currentUserId = null;
-            console.log("onAuthStateChanged: Usuario no autenticado.");
-            if (userIdDisplay) {
-                userIdDisplay.textContent = 'No autenticado';
-                userIdDisplay.style.display = 'none'; // Ocultar ID de usuario si no está logueado
-            }
-            if (logoutBtn) {
-                logoutBtn.style.display = 'none'; // Ocultar botón de cerrar sesión
-            }
-            if (authOptionsArea) {
-                authOptionsArea.style.display = 'flex'; // Mostrar opciones de inicio de sesión
-            }
-
-            // Solo intentar signInWithCustomToken si initialAuthToken está presente
-            // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
-            if (window.initialAuthToken && !window.isLoggingOut) {
-                try {
-                    console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
-                    await window.auth.signInWithCustomToken(window.initialAuthToken);
-                    console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
-                    window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
-                }
-            } else if (window.isLoggingOut) {
-                // Si estamos explícitamente cerrando sesión, simplemente reiniciamos la bandera y no hacemos nada más.
-                // La UI ya debería estar mostrando las opciones de inicio de sesión.
-                window.isLoggingOut = false;
-                console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
-            }
-            // Si initialAuthToken NO está presente, y no es un logout, entonces no hay inicio de sesión automático.
-            // El usuario debe hacer clic en un botón de inicio de sesión.
+    let currentTourStep = 0;
+    const tourSteps = [
+        {
+            title: "¡Bienvenido a TDAH Helper App!",
+            description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
+            image: "" // No image for intro
+        },
+        {
+            title: "⏱️ Temporizador Pomodoro",
+            description: "Usa el temporizador Pomodoro para trabajar en bloques de tiempo concentrado (25 min) seguidos de descansos cortos (5 min). ¡Ideal para mantener el foco y evitar el agotamiento!",
+            image: "https://placehold.co/400x200/4F46E5/FFFFFF?text=Pomodoro+Timer" // Placeholder image for Pomodoro
+        },
+        {
+            title: "✅ Checklist Rápido",
+            description: "Añade y gestiona tus tareas diarias de forma sencilla. Marca las completadas y prioriza tus 'Tareas Más Importantes' (MITs) para un día productivo.",
+            image: "https://placehold.co/400x200/7C3AED/FFFFFF?text=Checklist" // Placeholder image for Checklist
+        },
+        {
+            title: "📝 Journal Personal",
+            description: "Un espacio seguro para escribir tus pensamientos, emociones, logros y desafíos. Reflexionar te ayudará a entenderte mejor y a gestionar tu bienestar.",
+            image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
+        },
+        {
+            title: "✅ Hábitos Diarios", // Título actualizado para el tour
+            description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!",
+            image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" // Placeholder image for Habits
+        },
+        {
+            title: "¡Listo para Empezar!",
+            description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!",
+            image: "" // No image for outro
         }
-    });
+    ];
 
-    // Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
-    // Esta función ahora será llamada por onAuthStateChanged cuando el usuario esté autenticado.
-    async function loadAllUserData() {
-        console.log("loadAllUserData: Iniciando carga de datos del usuario...");
-        // Asegurarse de que currentUserId esté disponible
-        if (!window.currentUserId) {
-            console.warn("loadAllUserData: currentUserId no disponible. No se cargarán los datos del usuario.");
-            return;
-        }
-        currentUserId = window.currentUserId; // Actualizar la variable local
-
-        window.showTempMessage(`Bienvenido, usuario ${currentUserId.substring(0, 8)}...`, 'info');
-
-        // --- Lógica del Tour de Bienvenida ---
-        const tourOverlay = document.getElementById('welcome-tour-overlay');
-        const tourTitle = document.getElementById('tour-title');
-        const tourDescription = document.getElementById('tour-description');
-        const tourHighlightImage = document.getElementById('tour-highlight-image');
-        const tourBackBtn = document.getElementById('tour-back-btn');
-        const tourNextBtn = document.getElementById('tour-next-btn');
-        const tourSkipBtn = document.getElementById('tour-skip-btn');
-        const tourDotsContainer = document.getElementById('tour-dots');
-
-        let currentTourStep = 0;
-        const tourSteps = [
-            {
-                title: "¡Bienvenido a TDAH Helper App!",
-                description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
-                image: "" // No image for intro
-            },
-            {
-                title: "⏱️ Temporizador Pomodoro",
-                description: "Usa el temporizador Pomodoro para trabajar en bloques de tiempo concentrado (25 min) seguidos de descansos cortos (5 min). ¡Ideal para mantener el foco y evitar el agotamiento!",
-                image: "https://placehold.co/400x200/4F46E5/FFFFFF?text=Pomodoro+Timer" // Placeholder image for Pomodoro
-            },
-            {
-                title: "✅ Checklist Rápido",
-                description: "Añade y gestiona tus tareas diarias de forma sencilla. Marca las completadas y prioriza tus 'Tareas Más Importantes' (MITs) para un día productivo.",
-                image: "https://placehold.co/400x200/7C3AED/FFFFFF?text=Checklist" // Placeholder image for Checklist
-            },
-            {
-                title: "📝 Journal Personal",
-                description: "Un espacio seguro para escribir tus pensamientos, emociones, logros y desafíos. Reflexionar te ayudará a entenderte mejor y a gestionar tu bienestar.",
-                image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
-            },
-            {
-                title: "✅ Hábitos Diarios", // Título actualizado para el tour
-                description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!",
-                image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" // Placeholder image for Habits
-            },
-            {
-                title: "¡Listo para Empezar!",
-                description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!",
-                image: "" // No image for outro
+    async function showWelcomeTour() {
+        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+        try {
+            const doc = await userSettingsRef.get();
+            if (doc.exists && doc.data().tourCompleted) {
+                console.log("Tour: Ya completado para este usuario.");
+                return; // No mostrar el tour si ya fue completado
             }
-        ];
-
-        async function showWelcomeTour() {
-            const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
-            try {
-                const doc = await userSettingsRef.get();
-                if (doc.exists && doc.data().tourCompleted) {
-                    console.log("Tour: Ya completado para este usuario.");
-                    return; // No mostrar el tour si ya fue completado
-                }
-            } catch (error) {
-                console.error("Tour: Error al verificar estado del tour en Firestore:", error);
-                // Si hay un error, por seguridad, mostramos el tour
-            }
-
-            tourOverlay.classList.add('active');
-            renderTourStep();
-            createTourDots();
+        } catch (error) {
+            console.error("Tour: Error al verificar estado del tour en Firestore:", error);
+            // Si hay un error, por seguridad, mostramos el tour
         }
 
-        function renderTourStep() {
-            const step = tourSteps[currentTourStep];
-            tourTitle.textContent = step.title;
-            tourDescription.textContent = step.description;
+        tourOverlay.classList.add('active');
+        renderTourStep();
+        createTourDots();
+    }
 
-            if (step.image) {
-                tourHighlightImage.src = step.image;
-                tourHighlightImage.style.display = 'block';
-            } else {
-                tourHighlightImage.style.display = 'none';
-            }
+    function renderTourStep() {
+        const step = tourSteps[currentTourStep];
+        tourTitle.textContent = step.title;
+        tourDescription.textContent = step.description;
 
-            tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
-            tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
-            tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
-
-            updateTourDots();
-        }
-
-        function createTourDots() {
-            tourDotsContainer.innerHTML = '';
-            tourSteps.forEach((_, index) => {
-                const dot = document.createElement('span');
-                dot.classList.add('tour-dot');
-                if (index === currentTourStep) {
-                    dot.classList.add('active');
-                }
-                dot.addEventListener('click', () => {
-                    currentTourStep = index;
-                    renderTourStep();
-                });
-                tourDotsContainer.appendChild(dot);
-            });
-        }
-
-        function updateTourDots() {
-            document.querySelectorAll('.tour-dot').forEach((dot, index) => {
-                if (index === currentTourStep) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
-
-        async function nextTourStep() {
-            if (currentTourStep < tourSteps.length - 1) {
-                currentTourStep++;
-                renderTourStep();
-            } else {
-                await completeTour();
-            }
-        }
-
-        async function prevTourStep() {
-            if (currentTourStep > 0) {
-                currentTourStep--;
-                renderTourStep();
-            }
-        }
-
-        async function completeTour() {
-            const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
-            try {
-                await userSettingsRef.set({ tourCompleted: true }, { merge: true });
-                console.log("Tour: Estado de tour completado guardado en Firestore.");
-            } catch (error) {
-                console.error("Tour: Error al guardar estado de tour completado:", error);
-            }
-            tourOverlay.classList.remove('active');
-            window.showTempMessage("¡Tour de bienvenida completado! Explora la app.", 'info', 5000);
-        }
-
-        tourNextBtn.addEventListener('click', nextTourStep);
-        tourBackBtn.addEventListener('click', prevTourStep);
-        tourSkipBtn.addEventListener('click', completeTour); // Skip also completes the tour
-
-        // Llamar al tour de bienvenida después de que todo lo demás esté cargado
-        showWelcomeTour();
-
-
-        // --- Lógica del Journal ---
-        const journalEntryTextarea = document.getElementById('journalEntry');
-        const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
-        const journalEntriesList = document.getElementById('journalEntriesList');
-
-        if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
-            const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
-            journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
-                console.log("Journal: Recibiendo snapshot de entradas.");
-                journalEntriesList.innerHTML = '';
-                if (snapshot.empty) {
-                    journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
-                    return;
-                }
-                snapshot.forEach(doc => {
-                    const entry = doc.data();
-                    const listItem = document.createElement('li');
-                    const dateSpan = document.createElement('span');
-                    dateSpan.className = 'journal-date';
-                    dateSpan.textContent = new Date(entry.timestamp).toLocaleString('es-ES', {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-
-                    const contentDiv = document.createElement('div');
-                    contentDiv.textContent = entry.text;
-
-                    listItem.appendChild(dateSpan);
-                    listItem.appendChild(contentDiv);
-                    journalEntriesList.appendChild(listItem);
-                });
-            }, (error) => {
-                console.error("Journal: Error al escuchar entradas del diario:", error);
-                window.showTempMessage(`Error al cargar diario: ${error.message}`, 'error');
-            });
-
-            saveJournalEntryButton.addEventListener('click', async () => {
-                const entryText = journalEntryTextarea.value.trim();
-                if (entryText) {
-                    saveJournalEntryButton.classList.add('button-clicked');
-                    setTimeout(() => {
-                        saveJournalEntryButton.classList.remove('button-clicked');
-                    }, 300);
-
-                    try {
-                        await journalCollectionRef.add({
-                            text: entryText,
-                            timestamp: new Date().toISOString()
-                        });
-                        journalEntryTextarea.value = '';
-                        window.showTempMessage('Entrada guardada con éxito!', 'success');
-                    } catch (error) {
-                        console.error("Journal: Error al guardar entrada del diario:", error);
-                        window.showTempMessage(`Error al guardar: ${error.message}`, 'error');
-                    }
-                } else {
-                    window.showTempMessage('Por favor, escribe algo en tu entrada antes de guardar.', 'warning');
-                }
-            });
+        if (step.image) {
+            tourHighlightImage.src = step.image;
+            tourHighlightImage.style.display = 'block';
         } else {
-            console.warn("Journal: Elementos HTML del Journal no encontrados.");
+            tourHighlightImage.style.display = 'none';
         }
 
+        tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
+        tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
+        tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
 
-        // --- Lógica del Temporizador Pomodoro ---
-        let timer;
-        let isRunning = false;
-        let timeLeft = 1 * 60; // Default: 1 minuto para pruebas (antes 25 * 60)
-        let isBreakTime = false; // Add isBreakTime variable for Pomodoro
-        const timerDisplay = document.getElementById('timer');
-        const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
+        updateTourDots();
+    }
 
-        const startTimerBtn = document.getElementById('start-timer-btn');
-        const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
-        const resetTimerBtn = document.getElementById('reset-timer-btn');
+    function createTourDots() {
+        tourDotsContainer.innerHTML = '';
+        tourSteps.forEach((_, index) => {
+            const dot = document.createElement('span');
+            dot.classList.add('tour-dot');
+            if (index === currentTourStep) {
+                dot.classList.add('active');
+            }
+            dot.addEventListener('click', () => {
+                currentTourStep = index;
+                renderTourStep();
+            });
+            tourDotsContainer.appendChild(dot);
+        });
+    }
 
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    function updateTourDots() {
+        document.querySelectorAll('.tour-dot').forEach((dot, index) => {
+            if (index === currentTourStep) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    async function nextTourStep() {
+        if (currentTourStep < tourSteps.length - 1) {
+            currentTourStep++;
+            renderTourStep();
+        } else {
+            await completeTour();
         }
+    }
 
-        if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
-            pomodoroSettingsDocRef.onSnapshot((docSnap) => {
-                console.log("Pomodoro: Recibiendo snapshot de settings.");
-                if (docSnap.exists) {
-                    const settings = docSnap.data();
-                    timeLeft = settings.timeLeft;
-                    isRunning = settings.isRunning;
-                    isBreakTime = settings.isBreakTime || false; // Load isBreakTime
-                    updateTimerDisplay();
-                    if (isRunning && settings.lastUpdated) {
-                        const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
-                        timeLeft = Math.max(0, timeLeft - Math.floor(elapsedSinceLastUpdate));
-                        if (timeLeft > 0 && !timer) {
-                            startTimer();
-                        } else if (timeLeft <= 0) {
-                            clearInterval(timer);
-                            isRunning = false;
-                            savePomodoroState(0, false, isBreakTime); // Save state on completion
+    async function prevTourStep() {
+        if (currentTourStep > 0) {
+            currentTourStep--;
+            renderTourStep();
+        }
+    }
 
-                            console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
+    async function completeTour() {
+        const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+        try {
+            await userSettingsRef.set({ tourCompleted: true }, { merge: true });
+            console.log("Tour: Estado de tour completado guardado en Firestore.");
+        } catch (error) {
+            console.error("Tour: Error al guardar estado de tour completado:", error);
+        }
+        tourOverlay.classList.remove('active');
+        window.showTempMessage("¡Tour de bienvenida completado! Explora la app.", 'info', 5000);
+    }
 
-                            if (!isBreakTime) { // If work time ended
-                                console.log("Pomodoro (onSnapshot): Tiempo de trabajo terminado. Activando confeti y sonido.");
-                                window.triggerConfetti();
-                                document.getElementById('sound-complete').play().catch(e => {
-                                    console.error("Error al reproducir sonido de completado (onSnapshot):", e);
-                                    window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
-                                });
+    tourNextBtn.addEventListener('click', nextTourStep);
+    tourBackBtn.addEventListener('click', prevTourStep);
+    tourSkipBtn.addEventListener('click', completeTour); // Skip also completes the tour
 
-                                setTimeout(async () => { // Use async for await showCustomConfirm
-                                    console.log("Pomodoro (onSnapshot): Preguntando por descanso...");
-                                    const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
-                                    if (startBreak) {
-                                        console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
-                                        timeLeft = 5 * 60; // 5 minutos para descanso
-                                        isBreakTime = true;
-                                        updateTimerDisplay();
-                                        savePomodoroState(timeLeft, true, isBreakTime); // Save break state
-                                        document.getElementById('sound-break').play().catch(e => {
-                                            console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
-                                            window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
-                                        });
-                                        window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                        startTimer(); // Start the break timer
-                                    } else {
-                                        console.log("Pomodoro (onSnapshot): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
-                                        resetTimer();
-                                    }
-                                }, 1000); // Small delay to allow messages/confetti to show
-                            } else { // If break time ended
-                                console.log("Pomodoro (onSnapshot): Tiempo de descanso terminado. Reiniciando temporizador.");
-                                window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
-                                resetTimer();
-                            }
+    // Llamar al tour de bienvenida después de que todo lo demás esté cargado
+    showWelcomeTour();
+
+
+    // --- Lógica del Journal ---
+    const journalEntryTextarea = document.getElementById('journalEntry');
+    const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
+    const journalEntriesList = document.getElementById('journalEntriesList');
+
+    if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
+        const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
+        journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+            console.log("Journal: Recibiendo snapshot de entradas.");
+            journalEntriesList.innerHTML = '';
+            if (snapshot.empty) {
+                journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const entry = doc.data();
+                const listItem = document.createElement('li');
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'journal-date';
+                dateSpan.textContent = new Date(entry.timestamp).toLocaleString('es-ES', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                const contentDiv = document.createElement('div');
+                contentDiv.textContent = entry.text;
+
+                listItem.appendChild(dateSpan);
+                listItem.appendChild(contentDiv);
+                journalEntriesList.appendChild(listItem);
+            });
+        }, (error) => {
+            console.error("Journal: Error al escuchar entradas del diario:", error);
+            window.showTempMessage(`Error al cargar diario: ${error.message}`, 'error');
+        });
+
+        saveJournalEntryButton.addEventListener('click', async () => {
+            const entryText = journalEntryTextarea.value.trim();
+            if (entryText) {
+                saveJournalEntryButton.classList.add('button-clicked');
+                setTimeout(() => {
+                    saveJournalEntryButton.classList.remove('button-clicked');
+                }, 300);
+
+                try {
+                    await journalCollectionRef.add({
+                        text: entryText,
+                        timestamp: new Date().toISOString()
+                    });
+                    journalEntryTextarea.value = '';
+                    window.showTempMessage('Entrada guardada con éxito!', 'success');
+                } catch (error) {
+                    console.error("Journal: Error al guardar entrada del diario:", error);
+                    window.showTempMessage(`Error al guardar: ${error.message}`, 'error');
+                }
+            } else {
+                window.showTempMessage('Por favor, escribe algo en tu entrada antes de guardar.', 'warning');
+            }
+        });
+    } else {
+        console.warn("Journal: Elementos HTML del Journal no encontrados.");
+    }
+
+
+    // --- Lógica del Temporizador Pomodoro ---
+    let timer;
+    let isRunning = false;
+    let timeLeft = 1 * 60; // Default: 1 minuto para pruebas (antes 25 * 60)
+    let isBreakTime = false; // Add isBreakTime variable for Pomodoro
+    const timerDisplay = document.getElementById('timer');
+    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
+
+    const startTimerBtn = document.getElementById('start-timer-btn');
+    const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
+    const resetTimerBtn = document.getElementById('reset-timer-btn');
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
+        pomodoroSettingsDocRef.onSnapshot((docSnap) => {
+            console.log("Pomodoro: Recibiendo snapshot de settings.");
+            if (docSnap.exists) {
+                const settings = docSnap.data();
+                timeLeft = settings.timeLeft;
+                isRunning = settings.isRunning;
+                isBreakTime = settings.isBreakTime || false; // Load isBreakTime
+                updateTimerDisplay();
+                if (isRunning && settings.lastUpdated) {
+                    const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
+                    timeLeft = Math.max(0, timeLeft - Math.floor(elapsedSinceLastUpdate));
+                    if (timeLeft > 0 && !timer) {
+                        startTimer();
+                    } else if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        isRunning = false;
+                        savePomodoroState(0, false, isBreakTime); // Save state on completion
+
+                        console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
+
+                        if (!isBreakTime) { // If work time ended
+                            console.log("Pomodoro (onSnapshot): Tiempo de trabajo terminado. Activando confeti y sonido.");
+                            window.triggerConfetti();
+                            document.getElementById('sound-complete').play().catch(e => {
+                                console.error("Error al reproducir sonido de completado (onSnapshot):", e);
+                                window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
+                            });
+
+                            setTimeout(async () => { // Use async for await showCustomConfirm
+                                console.log("Pomodoro (onSnapshot): Preguntando por descanso...");
+                                const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
+                                if (startBreak) {
+                                    console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
+                                    timeLeft = 5 * 60; // 5 minutos para descanso
+                                    isBreakTime = true;
+                                    updateTimerDisplay();
+                                    savePomodoroState(timeLeft, true, isBreakTime); // Save break state
+                                    document.getElementById('sound-break').play().catch(e => {
+                                        console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
+                                        window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
+                                    });
+                                    window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
+                                    startTimer(); // Start the break timer
+                                } else {
+                                    console.log("Pomodoro (onSnapshot): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
+                                    resetTimer();
+                                }
+                            }, 1000); // Small delay to allow messages/confetti to show
+                        } else { // If break time ended
+                            console.log("Pomodoro (onSnapshot): Tiempo de descanso terminado. Reiniciando temporizador.");
+                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
+                            resetTimer();
                         }
                     }
                 } else {
@@ -1164,10 +1083,84 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateAppStatus();
     }
 
-    // Lógica para el botón de cerrar sesión
+// Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
+document.addEventListener('DOMContentLoaded', async () => {
+    // Acceder a las variables globales de Firebase expuestas en el objeto window
+    db = window.db;
+    auth = window.auth;
+    const appId = window.appId;
+
+    // Elementos de la UI de autenticación
+    const userIdDisplay = document.getElementById('user-id-display');
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
+    const authOptionsArea = document.getElementById('auth-options-area');
+    const loginAnonBtn = document.getElementById('login-anon-btn');
+    const loginEmailBtn = document.getElementById('login-email-btn');
+    const loginGoogleBtn = document.getElementById('login-google-btn');
+
+    // Firebase Auth State Listener
+    window.auth.onAuthStateChanged(async (user) => {
+        console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
+
+        if (user) {
+            window.currentUserId = user.uid;
+            console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
+            if (userIdDisplay) {
+                userIdDisplay.textContent = `ID de Usuario: ${window.currentUserId}`;
+                userIdDisplay.style.display = 'block'; // Asegurarse de que sea visible
+            }
+            if (logoutBtn) {
+                logoutBtn.style.display = 'block'; // Mostrar botón de cerrar sesión
+            }
+            if (authOptionsArea) {
+                authOptionsArea.style.display = 'none'; // Ocultar opciones de inicio de sesión
+            }
+            // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
+            if (!window.isLoggingOut) {
+                 loadAllUserData(); // Llama a la función globalmente definida
+            } else {
+                console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
+                window.isLoggingOut = false;
+                loadAllUserData(); // Cargar datos incluso si se reautentica por initialAuthToken
+            }
+
+        } else { // Usuario es null (no autenticado)
+            window.currentUserId = null;
+            console.log("onAuthStateChanged: Usuario no autenticado.");
+            if (userIdDisplay) {
+                userIdDisplay.textContent = 'No autenticado';
+                userIdDisplay.style.display = 'none'; // Ocultar ID de usuario si no está logueado
+            }
+            if (logoutBtn) {
+                logoutBtn.style.display = 'none'; // Ocultar botón de cerrar sesión
+            }
+            if (authOptionsArea) {
+                authOptionsArea.style.display = 'flex'; // Mostrar opciones de inicio de sesión
+            }
+
+            // Solo intentar signInWithCustomToken si initialAuthToken está presente
+            // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
+            if (window.initialAuthToken && !window.isLoggingOut) {
+                try {
+                    console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
+                    await window.auth.signInWithCustomToken(window.initialAuthToken);
+                    console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
+                } catch (error) {
+                    console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
+                    window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
+                }
+            } else if (window.isLoggingOut) {
+                // Si estamos explícitamente cerrando sesión, simplemente reiniciamos la bandera y no hacemos nada más.
+                window.isLoggingOut = false;
+                console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
+            }
+        }
+    });
+
+    // Lógica para el botón de cerrar sesión
+    const logoutBtnElement = document.getElementById('logout-btn'); // Renombrado para evitar conflicto con la variable global
+    if (logoutBtnElement) {
+        logoutBtnElement.addEventListener('click', async () => {
             try {
                 window.isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
                 await auth.signOut();
@@ -1182,12 +1175,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Lógica para los nuevos botones de inicio de sesión
-    const loginAnonBtn = document.getElementById('login-anon-btn');
-    const loginEmailBtn = document.getElementById('login-email-btn');
-    const loginGoogleBtn = document.getElementById('login-google-btn');
+    const loginAnonBtnElement = document.getElementById('login-anon-btn'); // Renombrado
+    const loginEmailBtnElement = document.getElementById('login-email-btn'); // Renombrado
+    const loginGoogleBtnElement = document.getElementById('login-google-btn'); // Renombrado
 
-    if (loginAnonBtn) {
-        loginAnonBtn.addEventListener('click', async () => {
+    if (loginAnonBtnElement) {
+        loginAnonBtnElement.addEventListener('click', async () => {
             try {
                 await auth.signInAnonymously();
                 window.showTempMessage('Sesión anónima iniciada.', 'success');
@@ -1198,15 +1191,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if (loginEmailBtn) {
-        loginEmailBtn.addEventListener('click', () => {
+    if (loginEmailBtnElement) {
+        loginEmailBtnElement.addEventListener('click', () => {
             window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
             console.log("Intento de inicio de sesión con Email.");
         });
     }
 
-    if (loginGoogleBtn) {
-        loginGoogleBtn.addEventListener('click', () => {
+    if (loginGoogleBtnElement) {
+        loginGoogleBtnElement.addEventListener('click', () => {
             window.showTempMessage('Funcionalidad de inicio de sesión con Google no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
             console.log("Intento de inicio de sesión con Google.");
         });
