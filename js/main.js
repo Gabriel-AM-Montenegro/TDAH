@@ -99,7 +99,7 @@ async function loadAllUserData() {
                 // Si hay un error, por seguridad, mostramos el tour
             }
 
-            console.log("Tour: Mostrando overlay del tour.");
+            console.log("Tour: Mostrando overlay del tour. Añadiendo 'active' a welcome-tour-overlay.");
             tourOverlay.classList.add('active');
             renderTourStep();
             createTourDots();
@@ -113,8 +113,10 @@ async function loadAllUserData() {
             if (step.image) {
                 tourHighlightImage.src = step.image;
                 tourHighlightImage.style.display = 'block';
+                console.log("Tour: Imagen de paso actual:", step.image);
             } else {
                 tourHighlightImage.style.display = 'none';
+                console.log("Tour: No hay imagen para este paso.");
             }
 
             tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
@@ -139,6 +141,7 @@ async function loadAllUserData() {
                 });
                 tourDotsContainer.appendChild(dot);
             });
+            console.log("Tour: Dots de navegación creados.");
         }
 
         function updateTourDots() {
@@ -149,9 +152,11 @@ async function loadAllUserData() {
                     dot.classList.remove('active');
                 }
             });
+            console.log("Tour: Dots de navegación actualizados.");
         }
 
         async function nextTourStep() {
+            console.log("Tour: Click en Siguiente/Finalizar.");
             if (currentTourStep < tourSteps.length - 1) {
                 currentTourStep++;
                 renderTourStep();
@@ -161,6 +166,7 @@ async function loadAllUserData() {
         }
 
         async function prevTourStep() {
+            console.log("Tour: Click en Anterior.");
             if (currentTourStep > 0) {
                 currentTourStep--;
                 renderTourStep();
@@ -168,6 +174,7 @@ async function loadAllUserData() {
         }
 
         async function completeTour() {
+            console.log("Tour: Completando tour.");
             const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
             try {
                 await userSettingsRef.set({ tourCompleted: true }, { merge: true });
@@ -187,7 +194,7 @@ async function loadAllUserData() {
         // Llamar al tour de bienvenida después de que todo lo demás esté cargado
         showWelcomeTour();
     } else {
-        console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados. Asegúrate de que tu HTML esté actualizado.");
+        console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados. Asegúrate de que tu HTML esté actualizado con los IDs correctos.");
     }
 
 
@@ -201,7 +208,7 @@ async function loadAllUserData() {
         const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
         journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
-            journalEntriesList.innerHTML = '';
+            journalEntriesList.innerHTML = ''; // Limpiar la lista antes de añadir nuevos elementos
             if (snapshot.empty) {
                 console.log("Journal: Colección vacía. Mostrando mensaje de vacío.");
                 journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>'; // Mensaje si está vacío
@@ -209,9 +216,6 @@ async function loadAllUserData() {
             }
             console.log(`Journal: ${snapshot.size} entradas encontradas. Renderizando...`);
             snapshot.forEach((doc, index) => {
-                if (index < 5) { // Log de las primeras 5 entradas para depuración
-                    console.log("Journal: Entrada de muestra:", doc.data());
-                }
                 const entry = doc.data();
                 const listItem = document.createElement('li');
                 const dateSpan = document.createElement('span');
@@ -227,7 +231,7 @@ async function loadAllUserData() {
                 listItem.appendChild(dateSpan);
                 listItem.appendChild(contentDiv);
                 journalEntriesList.appendChild(listItem);
-                console.log(`Journal: Añadida entrada "${entry.text.substring(0, 20)}..." a la lista.`);
+                console.log(`Journal: Añadida entrada "${entry.text.substring(0, Math.min(entry.text.length, 20))}..." a la lista.`);
             });
         }, (error) => {
             console.error("Journal: Error al escuchar entradas del diario:", error);
@@ -509,7 +513,7 @@ async function loadAllUserData() {
                             return;
                         }
                     } catch (error) {
-                        console.error("Error counting MITs from Firestore:", error);
+                        console.error("Checklist: Error counting MITs from Firestore:", error);
                         window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
                         target.checked = false; // Revert checkbox on error
                         return;
@@ -561,9 +565,6 @@ async function loadAllUserData() {
             }
             console.log(`Checklist: ${snapshot.size} ítems encontrados. Renderizando...`);
             snapshot.forEach((docSnap, index) => {
-                if (index < 5) { // Log de los primeros 5 ítems para depuración
-                    console.log("Checklist: Ítem de muestra:", docSnap.data());
-                }
                 const item = docSnap.data();
                 const itemId = docSnap.id;
                 const listItem = document.createElement('li');
@@ -577,7 +578,7 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
-                console.log(`Checklist: Añadido ítem "${item.text.substring(0, 20)}..." a la lista.`);
+                console.log(`Checklist: Añadido ítem "${item.text.substring(0, Math.min(item.text.length, 20))}..." a la lista.`);
 
                 // Micro-interacción: Añadir clase para animación de aparición
                 listItem.classList.add('new-item-animation');
@@ -802,14 +803,11 @@ async function loadAllUserData() {
                 if (filteredCards.length > 0) {
                     console.log(`Trello: ${filteredCards.length} tareas encontradas para esta semana. Renderizando...`);
                     filteredCards.forEach((card, index) => {
-                        if (index < 5) { // Log de las primeras 5 tareas para depuración
-                            console.log("Trello: Tarea de muestra:", card);
-                        }
                         const listItem = document.createElement('li');
                         const dueDate = card.due ? new Date(card.due).toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Sin fecha';
                         listItem.textContent = `${card.name} (Vence: ${dueDate})`;
                         listaTareasUl.appendChild(listItem);
-                        console.log(`Trello: Añadida tarea "${card.name}" a la lista.`);
+                        console.log(`Trello: Añadida tarea "${card.name.substring(0, Math.min(card.name.length, 20))}..." a la lista.`);
                     });
                 } else {
                     listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
@@ -911,9 +909,6 @@ async function loadAllUserData() {
                 }
                 console.log(`Blog: ${snapshot.size} artículos encontrados. Renderizando...`);
                 snapshot.forEach((doc, index) => {
-                    if (index < 5) { // Log de los primeros 5 artículos para depuración
-                        console.log("Blog: Artículo de muestra:", doc.data());
-                    }
                     const article = doc.data();
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
@@ -924,7 +919,7 @@ async function loadAllUserData() {
                         ${article.url ? `<a href="${article.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     blogContentDiv.appendChild(articleCard);
-                    console.log(`Blog: Añadido artículo "${article.title.substring(0, 20)}..." a la lista.`);
+                    console.log(`Blog: Añadido artículo "${article.title.substring(0, Math.min(article.title.length, 20))}..." a la lista.`);
                 });
                 window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
                 console.log("Blog: Artículos cargados desde Firestore.");
@@ -963,9 +958,6 @@ async function loadAllUserData() {
                 }
                 console.log(`Nutrición: ${snapshot.size} ítems encontrados. Renderizando...`);
                 snapshot.forEach((doc, index) => {
-                    if (index < 5) { // Log de los primeros 5 ítems para depuración
-                        console.log("Nutrición: Ítem de muestra:", doc.data());
-                    }
                     const item = doc.data();
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
@@ -976,7 +968,7 @@ async function loadAllUserData() {
                         ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
-                    console.log(`Nutrición: Añadido ítem "${item.title.substring(0, 20)}..." a la lista.`);
+                    console.log(`Nutrición: Añadido ítem "${item.title.substring(0, Math.min(item.title.length, 20))}..." a la lista.`);
                 });
                 window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
                 console.log("Nutrición: Contenido cargado desde Firestore.");
@@ -1020,9 +1012,6 @@ async function loadAllUserData() {
             }
             console.log(`Hábitos: ${snapshot.size} hábitos encontrados. Renderizando...`);
             snapshot.forEach((docSnap, index) => {
-                if (index < 5) { // Log de los primeros 5 hábitos para depuración
-                    console.log("Hábitos: Hábito de muestra:", docSnap.data());
-                }
                 const habit = docSnap.data();
                 const habitId = docSnap.id;
                 const listItem = document.createElement('li');
@@ -1076,7 +1065,7 @@ async function loadAllUserData() {
                 listItem.appendChild(completionContainer);
                 listItem.appendChild(deleteBtn);
                 habitsListUl.appendChild(listItem);
-                console.log(`Hábitos: Añadido hábito "${habit.name}" a la lista.`);
+                console.log(`Hábitos: Añadido hábito "${habit.name.substring(0, Math.min(habit.name.length, 20))}..." a la lista.`);
             });
         }, (error) => {
             console.error("Hábitos: Error al escuchar hábitos:", error);
@@ -1370,4 +1359,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicializar la sección Pomodoro al cargar la página
     console.log("DOMContentLoaded: Llamando a mostrarSeccion('pomodoro').");
     window.mostrarSeccion('pomodoro');
+
+    // Añadir listeners a los botones de navegación para mostrar/ocultar secciones
+    document.getElementById('btn-pomodoro').addEventListener('click', () => {
+        window.mostrarSeccion('pomodoro');
+        console.log("Sección Pomodoro activa. ClassList:", document.getElementById('pomodoro').classList.value);
+    });
+    document.getElementById('btn-tareas').addEventListener('click', () => {
+        window.mostrarSeccion('tareas');
+        console.log("Sección Tareas activa. ClassList:", document.getElementById('tareas').classList.value);
+    });
+    document.getElementById('btn-checklist').addEventListener('click', () => {
+        window.mostrarSeccion('checklist');
+        console.log("Sección Checklist activa. ClassList:", document.getElementById('checklist').classList.value);
+    });
+    document.getElementById('btn-journal').addEventListener('click', () => {
+        window.mostrarSeccion('journal');
+        console.log("Sección Journal activa. ClassList:", document.getElementById('journal').classList.value);
+    });
+    document.getElementById('btn-notas').addEventListener('click', () => {
+        window.mostrarSeccion('notas');
+        console.log("Sección Notas activa. ClassList:", document.getElementById('notas').classList.value);
+    });
+    document.getElementById('btn-nutricion').addEventListener('click', () => {
+        window.mostrarSeccion('nutricion');
+        console.log("Sección Nutrición activa. ClassList:", document.getElementById('nutricion').classList.value);
+    });
+    document.getElementById('btn-habitos').addEventListener('click', () => {
+        window.mostrarSeccion('habitos');
+        console.log("Sección Hábitos activa. ClassList:", document.getElementById('habitos').classList.value);
+    });
+    document.getElementById('btn-config').addEventListener('click', () => {
+        window.mostrarSeccion('config');
+        console.log("Sección Configuración activa. ClassList:", document.getElementById('config').classList.value);
+    });
+
 }); // End of DOMContentLoaded
