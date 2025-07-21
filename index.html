@@ -7,14 +7,14 @@
   <link rel="stylesheet" href="css/styles1.css">
 
   <!-- Firebase SDKs: Cargados como scripts tradicionales para asegurar que 'firebase' esté disponible globalmente -->
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"></script>
+  <!-- CAMBIO AQUÍ: Usando las versiones compat para compatibilidad global -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <!-- Analytics SDK (si lo necesitas, pero no es esencial para el funcionamiento principal) -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script> -->
 
   <!-- Script de inicialización de Firebase y autenticación -->
-  <!-- MOVIDO AQUÍ para asegurar que los SDK de Firebase estén cargados antes de ser usados -->
   <script>
     // Configuración de Firebase proporcionada por el usuario
     const firebaseConfig = {
@@ -33,7 +33,7 @@
     window.db = firebase.firestore(); // Usar firebase.firestore() para la compatibilidad global
     window.auth = firebase.auth();   // Usar firebase.auth() para la compatibilidad global
 
-    // Asegurarse de usar el appId de la configuración de Firebase
+    // Asegurarse de que window.appId esté disponible
     window.appId = firebaseConfig.appId;
     window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // Mantener para el entorno Canvas
 
@@ -58,7 +58,7 @@
         const botonActivo = document.getElementById(`btn-${idSeccion}`);
         if (botonActivo) {
             botonActivo.classList.add('active');
-            console.log(`Botón ${idSeccion} activado.`);
+            console.log(`Botón con ID btn-${idSeccion} activado.`);
         } else {
             console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
         }
@@ -97,6 +97,7 @@
         document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
         document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
         document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
+        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion')); // Asegurar que el botón de nutrición tiene listener
         console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
 
         // Manejar la autenticación
@@ -153,6 +154,7 @@
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
+      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Botón para la nueva sección de Nutrición -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -191,6 +193,9 @@
       <div class="help-text">
         💡 Para tareas pequeñas y recordatorios rápidos del día
       </div>
+       <div class="mit-explanation">
+            <strong>MITs (Most Important Tasks):</strong> Puedes marcar hasta 3 tareas como MITs. Estas son las tareas más importantes del día que te ayudarán a mantener el enfoque en lo esencial.
+        </div>
     </section>
 
     <section id="journal" class="seccion">
