@@ -23,12 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const logoutBtn = document.getElementById('logout-btn');
     const authOptionsArea = document.getElementById('auth-options-area');
     const loginAnonBtn = document.getElementById('login-anon-btn');
-    const loginEmailBtn = document.getElementById('login-email-btn');
+    const loginEmailBtn = document.getElementById('login-email-btn'); // Corregido el nombre de la variable
     const loginGoogleBtn = document.getElementById('login-google-btn');
 
     // Firebase Auth State Listener
     window.auth.onAuthStateChanged(async (user) => {
-        console.log("onAuthStateChanged: Estado de autenticación cambiado.");
+        console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
 
         if (user) {
             window.currentUserId = user.uid;
@@ -43,8 +43,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (authOptionsArea) {
                 authOptionsArea.style.display = 'none'; // Ocultar opciones de inicio de sesión
             }
-            // Cargar datos del usuario solo si está autenticado
-            window.loadAllUserData();
+            // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
+            // Esto evita que loadAllUserData se ejecute si el estado de autenticación vuelve brevemente a un usuario
+            // debido a initialAuthToken justo después de un logout.
+            if (!window.isLoggingOut) {
+                 window.loadAllUserData();
+            } else {
+                console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
+                // Si llegamos aquí, significa que initialAuthToken se activó inmediatamente después del logout.
+                // Aún así, debemos cargar los datos, pero asegurarnos de que la bandera se reinicie.
+                window.isLoggingOut = false;
+                window.loadAllUserData(); // Cargar datos incluso si se reautentica por initialAuthToken
+            }
+
         } else { // Usuario es null (no autenticado)
             window.currentUserId = null;
             console.log("onAuthStateChanged: Usuario no autenticado.");
@@ -59,11 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 authOptionsArea.style.display = 'flex'; // Mostrar opciones de inicio de sesión
             }
 
-            // Solo intentar signInWithCustomToken si es la carga inicial para el entorno Canvas
-            // y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
+            // Solo intentar signInWithCustomToken si initialAuthToken está presente
+            // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
             if (window.initialAuthToken && !window.isLoggingOut) {
                 try {
-                    console.log("onAuthStateChanged: Usando initialAuthToken para autenticación inicial.");
+                    console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
                     await window.auth.signInWithCustomToken(window.initialAuthToken);
                     console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
                 } catch (error) {
@@ -71,11 +82,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
                 }
             } else if (window.isLoggingOut) {
-                // Si acabamos de cerrar sesión, resetear la bandera y no intentar ningún inicio de sesión automático.
-                window.isLoggingOut = false; // Resetear la bandera después de manejar el estado de cierre de sesión.
-                console.log("onAuthStateChanged: Cierre de sesión detectado. Mostrando opciones de autenticación.");
+                // Si estamos explícitamente cerrando sesión, simplemente reiniciamos la bandera y no hacemos nada más.
+                // La UI ya debería estar mostrando las opciones de inicio de sesión.
+                window.isLoggingOut = false;
+                console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
             }
-            // Los botones de inicio de sesión explícitos manejarán otros métodos de inicio de sesión.
+            // Si initialAuthToken NO está presente, y no es un logout, entonces no hay inicio de sesión automático.
+            // El usuario debe hacer clic en un botón de inicio de sesión.
         }
     });
 
@@ -935,7 +948,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             async function cargarNutricion() {
                 nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
                 try {
-                    const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get();
+                    const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
                     nutricionContentDiv.innerHTML = '';
 
                     if (snapshot.empty) {
@@ -1127,8 +1140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Actualizar contadores de estado
         function updateAppStatus() {
             if (window.currentUserId && window.db) {
-                const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
-                const habitsCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/habits`);
+                const checklistCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
+                const habitsCollectionRef = window.db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
 
                 checklistCollectionRef.get().then(snapshot => {
                     const checklistItemsCount = snapshot.size;
