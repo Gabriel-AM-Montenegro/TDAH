@@ -311,7 +311,7 @@ async function loadAllUserData() {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
                 pomodoroSettingsDocRef.set({ timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() }); // Default: 1 minuto para pruebas
             }
-        }, (error) => { // Corregido: eliminado el '}' extra aquí
+        }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
             window.showTempMessage(`Error al cargar Pomodoro: ${error.message}`, 'error');
         });
@@ -1229,9 +1229,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (loginGoogleBtnElement) {
-        loginGoogleBtnElement.addEventListener('click', () => {
-            window.showTempMessage('Funcionalidad de inicio de sesión con Google no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
-            console.log("Intento de inicio de sesión con Google.");
+        loginGoogleBtnElement.addEventListener('click', async () => {
+            try {
+                // Importar GoogleAuthProvider y signInWithPopup
+                const { GoogleAuthProvider, signInWithPopup } = await import("https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js");
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+                window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+                let errorMessage = error.message;
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
+                }
+                window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
+            }
         });
     }
 }); // End of DOMContentLoaded
