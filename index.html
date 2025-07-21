@@ -22,7 +22,7 @@
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
       <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <div id="user-info-area" style="font-size: 0.8em; color: var(--text-light); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
+      <div id="user-info-area" style="font-size: 0.8em; color: var(--white); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
         <span id="user-display-name">Cargando usuario...</span>
         <div class="auth-buttons-wrapper"> <!-- Nuevo wrapper para los botones -->
             <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
@@ -57,6 +57,7 @@
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
       <button id="btn-nutricion">🍎 Nutrición</button> <!-- Nuevo botón para Nutrición -->
+      <button id="btn-habitos">✅ Hábitos</button> <!-- Nuevo botón para Hábitos -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -101,6 +102,7 @@
       </div>
     </section>
 
+    <!-- Nueva sección del Journal -->
     <section id="journal" class="seccion">
         <h2>📝 Journal</h2>
         <p class="subtitle">Un espacio reflexivo para documentar emociones, actividades y situaciones significativas de tu jornada, fomentando el autoconocimiento y el bienestar.</p>
@@ -128,6 +130,20 @@
             </div>
         <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
     </section>
+
+    <!-- Nueva sección de Hábitos -->
+    <section id="habitos" class="seccion">
+        <h2>✅ Hábitos Diarios</h2>
+        <p class="subtitle">Establece y sigue tus hábitos diarios. ¡La consistencia es clave!</p>
+        <div class="input-group">
+            <input type="text" id="newHabitInput" placeholder="Nuevo hábito (ej. Beber 2L de agua)..." />
+            <button id="add-habit-btn">➕ Añadir Hábito</button>
+        </div>
+        <ul id="habitsList">
+            <!-- Los hábitos se cargarán aquí dinámicamente -->
+        </ul>
+    </section>
+
 
     <section id="config" class="seccion">
       <h2>⚙️ Configuración</h2>
@@ -195,6 +211,21 @@
       <div class="modal-buttons">
         <button id="custom-confirm-yes">Sí</button>
         <button id="custom-confirm-no">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Tour Overlay HTML -->
+  <div id="welcome-tour-overlay" class="custom-modal-overlay" style="display: none;">
+    <div class="custom-modal-content tour-content">
+      <h3 id="tour-title"></h3>
+      <img id="tour-highlight-image" src="" alt="Highlight" style="max-width: 100%; height: auto; margin: 15px auto; display: block; border-radius: 8px;">
+      <p id="tour-description"></p>
+      <div id="tour-dots" style="text-align: center; margin: 15px 0;"></div>
+      <div class="modal-buttons">
+        <button id="tour-back-btn" class="button-secondary">⬅️ Anterior</button>
+        <button id="tour-skip-btn" class="button-danger">Omitir Tour</button>
+        <button id="tour-next-btn" class="button-primary">Siguiente ➡️</button>
       </div>
     </div>
   </div>
@@ -317,6 +348,12 @@
             const yesBtn = document.getElementById('custom-confirm-yes');
             const noBtn = document.getElementById('custom-confirm-no');
 
+            if (!modal || !msgElement || !yesBtn || !noBtn) {
+                console.error("Custom Confirm Modal: Elementos no encontrados. Usando confirm() nativo.");
+                resolve(confirm(message));
+                return;
+            }
+
             msgElement.textContent = message;
             modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
 
@@ -350,9 +387,6 @@
             noBtn.addEventListener('click', onNoClick);
         });
     };
-
-    // Aquí se eliminó el listener DOMContentLoaded y el onAuthStateChanged
-    // para centralizarlo en main.js.
   </script>
 
   <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
