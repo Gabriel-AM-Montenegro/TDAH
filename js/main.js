@@ -24,7 +24,10 @@ async function loadAllUserData() {
     currentUserId = window.currentUserId; // Actualizar la variable local
     const appId = window.appId;
 
-    window.showTempMessage(`Bienvenido, usuario ${currentUserId.substring(0, 8)}...`, 'info');
+    // Obtener el usuario actual para mostrar el nombre
+    const user = auth.currentUser;
+    const userName = user ? (user.displayName || user.email || user.uid.substring(0, 8)) : currentUserId.substring(0, 8);
+    window.showTempMessage(`Bienvenido, usuario ${userName}...`, 'info');
 
     // --- Lógica del Tour de Bienvenida ---
     const tourOverlay = document.getElementById('welcome-tour-overlay');
@@ -1121,12 +1124,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const appId = window.appId;
 
     // Elementos de la UI de autenticación
-    const userIdDisplay = document.getElementById('user-id-display');
+    const userDisplayName = document.getElementById('user-display-name'); // Cambiado de userIdDisplay
     const logoutBtn = document.getElementById('logout-btn');
-    const authOptionsArea = document.getElementById('auth-options-area');
-    const loginAnonBtn = document.getElementById('login-anon-btn');
-    const loginEmailBtn = document.getElementById('login-email-btn');
-    const loginGoogleBtn = document.getElementById('login-google-btn');
+    const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper'); // Cambiado de authOptionsArea
+    const googleSigninBtn = document.getElementById('google-signin-btn'); // Cambiado de loginGoogleBtnElement
+    const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn'); // Cambiado de loginEmailBtnElement
+    const anonymousSigninBtn = document.getElementById('anonymous-signin-btn'); // Cambiado de loginAnonBtnElement
 
     // Firebase Auth State Listener
     window.auth.onAuthStateChanged(async (user) => {
@@ -1135,16 +1138,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (user) {
             window.currentUserId = user.uid;
             console.log("onAuthStateChanged: Usuario autenticado. UID:", window.currentUserId);
-            if (userIdDisplay) {
-                userIdDisplay.textContent = `ID de Usuario: ${window.currentUserId}`;
-                userIdDisplay.style.display = 'block'; // Asegurarse de que sea visible
-            }
-            if (logoutBtn) {
-                logoutBtn.style.display = 'block'; // Mostrar botón de cerrar sesión
-            }
-            if (authOptionsArea) {
-                authOptionsArea.style.display = 'none'; // Ocultar opciones de inicio de sesión
-            }
+
+            // Mostrar información del usuario y botón de cerrar sesión
+            userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+            googleSigninBtn.style.display = 'none';
+            emailSigninToggleBtn.style.display = 'none';
+            anonymousSigninBtn.style.display = 'none';
+            authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones
+            logoutBtn.style.display = 'inline-block';
+
             // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
             if (!window.isLoggingOut) {
                  loadAllUserData(); // Llama a la función globalmente definida
@@ -1157,16 +1159,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else { // Usuario es null (no autenticado)
             window.currentUserId = null;
             console.log("onAuthStateChanged: Usuario no autenticado.");
-            if (userIdDisplay) {
-                userIdDisplay.textContent = 'No autenticado';
-                userIdDisplay.style.display = 'none'; // Ocultar ID de usuario si no está logueado
-            }
-            if (logoutBtn) {
-                logoutBtn.style.display = 'none'; // Ocultar botón de cerrar sesión
-            }
-            if (authOptionsArea) {
-                authOptionsArea.style.display = 'flex'; // Mostrar opciones de inicio de sesión
-            }
+            userDisplayName.textContent = 'Por favor, inicia sesión:';
+            googleSigninBtn.style.display = 'inline-block';
+            emailSigninToggleBtn.style.display = 'inline-block';
+            anonymousSigninBtn.style.display = 'inline-block';
+            authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
+            logoutBtn.style.display = 'none';
 
             // Solo intentar signInWithCustomToken si initialAuthToken está presente
             // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
@@ -1205,12 +1203,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Lógica para los nuevos botones de inicio de sesión
-    const loginAnonBtnElement = document.getElementById('login-anon-btn'); // Renombrado
-    const loginEmailBtnElement = document.getElementById('login-email-btn'); // Renombrado
-    const loginGoogleBtnElement = document.getElementById('login-google-btn'); // Renombrado
+    // Ya están referenciados como googleSigninBtn, emailSigninToggleBtn, anonymousSigninBtn
+    // en el bloque DOMContentLoaded.
 
-    if (loginAnonBtnElement) {
-        loginAnonBtnElement.addEventListener('click', async () => {
+    if (anonymousSigninBtn) {
+        anonymousSigninBtn.addEventListener('click', async () => {
             try {
                 await auth.signInAnonymously();
                 window.showTempMessage('Sesión anónima iniciada.', 'success');
@@ -1221,19 +1218,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if (loginEmailBtnElement) {
-        loginEmailBtnElement.addEventListener('click', () => {
+    if (emailSigninToggleBtn) {
+        emailSigninToggleBtn.addEventListener('click', () => {
             window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
             console.log("Intento de inicio de sesión con Email.");
         });
     }
 
-    if (loginGoogleBtnElement) {
-        loginGoogleBtnElement.addEventListener('click', async () => {
+    if (googleSigninBtn) {
+        googleSigninBtn.addEventListener('click', async () => {
             try {
                 // Usar la API de Firebase v8 (compatibilidad) que ya está cargada globalmente
                 const provider = new firebase.auth.GoogleAuthProvider();
-                await firebase.auth().signInWithPopup(provider);
+                await firebase.auth().signInWithPopup(auth, provider); // Pasar 'auth' como primer argumento
                 window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
             } catch (error) {
                 console.error("Error al iniciar sesión con Google:", error);
