@@ -1231,10 +1231,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (loginGoogleBtnElement) {
         loginGoogleBtnElement.addEventListener('click', async () => {
             try {
-                // Importar GoogleAuthProvider y signInWithPopup
-                const { GoogleAuthProvider, signInWithPopup } = await import("https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js");
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
+                // Usar la API de Firebase v8 (compatibilidad) que ya está cargada globalmente
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await firebase.auth().signInWithPopup(provider);
                 window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
             } catch (error) {
                 console.error("Error al iniciar sesión con Google:", error);
