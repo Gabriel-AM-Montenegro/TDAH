@@ -197,10 +197,15 @@ async function loadAllUserData() {
             console.log("Journal: Recibiendo snapshot de entradas.");
             journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
+                console.log("Journal: Colección vacía.");
                 journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>'; // Mensaje si está vacío
                 return;
             }
-            snapshot.forEach(doc => {
+            console.log(`Journal: ${snapshot.size} entradas encontradas.`);
+            snapshot.forEach((doc, index) => {
+                if (index < 5) { // Log de las primeras 5 entradas para depuración
+                    console.log("Journal: Entrada de muestra:", doc.data());
+                }
                 const entry = doc.data();
                 const listItem = document.createElement('li');
                 const dateSpan = document.createElement('span');
@@ -539,10 +544,15 @@ async function loadAllUserData() {
             console.log("Checklist: Recibiendo snapshot de ítems.");
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
+                console.log("Checklist: Colección vacía.");
                 checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>'; // Mensaje si está vacío
                 return;
             }
-            snapshot.forEach(docSnap => {
+            console.log(`Checklist: ${snapshot.size} ítems encontrados.`);
+            snapshot.forEach((docSnap, index) => {
+                if (index < 5) { // Log de los primeros 5 ítems para depuración
+                    console.log("Checklist: Ítem de muestra:", docSnap.data());
+                }
                 const item = docSnap.data();
                 const itemId = docSnap.id;
                 const listItem = document.createElement('li');
@@ -621,6 +631,7 @@ async function loadAllUserData() {
             console.log("Trello: Recibiendo snapshot de configuración.");
             if (docSnap.exists) {
                 const config = docSnap.data();
+                console.log("Trello: Configuración de Trello encontrada:", config);
                 trelloApiKeyInput.value = config.apiKey || '';
                 trelloTokenInput.value = config.token || '';
                 trelloBoardIdInput.value = config.boardId || '';
@@ -776,13 +787,16 @@ async function loadAllUserData() {
                 });
 
                 if (filteredCards.length > 0) {
-                    filteredCards.forEach(card => {
+                    console.log(`Trello: ${filteredCards.length} tareas encontradas para esta semana.`);
+                    filteredCards.forEach((card, index) => {
+                        if (index < 5) { // Log de las primeras 5 tareas para depuración
+                            console.log("Trello: Tarea de muestra:", card);
+                        }
                         const listItem = document.createElement('li');
                         const dueDate = card.due ? new Date(card.due).toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Sin fecha';
                         listItem.textContent = `${card.name} (Vence: ${dueDate})`;
                         listaTareasUl.appendChild(listItem);
                     });
-                    console.log(`Trello: ${filteredCards.length} tareas cargadas para esta semana.`);
                 } else {
                     listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
                     console.log("Trello: No hay tareas para esta semana.");
@@ -821,9 +835,11 @@ async function loadAllUserData() {
 
                     const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach(async (d) => await d.ref.delete());
+                    console.log("Limpiar Datos: Entradas de Journal eliminadas.");
 
                     const checklistDocs = await checklistCollectionRef.get();
                     checklistDocs.forEach(async (d) => await d.ref.delete());
+                    console.log("Limpiar Datos: Ítems de Checklist eliminados.");
 
                     const pomodoroDocSnap = await pomodoroSettingsDocRef.get();
                     if (pomodoroDocSnap.exists) {
@@ -873,13 +889,15 @@ async function loadAllUserData() {
                 blogContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
+                    console.log("Blog: Colección vacía.");
                     blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún. ¡Añade algunos desde la consola de Firebase!</p>'; // Mensaje si está vacío
-                    console.log("Blog: No hay artículos en Firestore.");
-                    window.showTempMessage('No hay artículos de blog disponibles.', 'info');
                     return;
                 }
-
-                snapshot.forEach(doc => {
+                console.log(`Blog: ${snapshot.size} artículos encontrados.`);
+                snapshot.forEach((doc, index) => {
+                    if (index < 5) { // Log de los primeros 5 artículos para depuración
+                        console.log("Blog: Artículo de muestra:", doc.data());
+                    }
                     const article = doc.data();
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
@@ -921,13 +939,15 @@ async function loadAllUserData() {
                 nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
+                    console.log("Nutrición: Colección vacía.");
                     nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún. ¡Añade algunas recomendaciones!</p>'; // Mensaje si está vacío
-                    console.log("Nutrición: No hay contenido en Firestore.");
-                    window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
                     return;
                 }
-
-                snapshot.forEach(doc => {
+                console.log(`Nutrición: ${snapshot.size} ítems encontrados.`);
+                snapshot.forEach((doc, index) => {
+                    if (index < 5) { // Log de los primeros 5 ítems para depuración
+                        console.log("Nutrición: Ítem de muestra:", doc.data());
+                    }
                     const item = doc.data();
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
@@ -974,11 +994,15 @@ async function loadAllUserData() {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
             habitsListUl.innerHTML = ''; // Limpiar lista existente
             if (snapshot.empty) {
+                console.log("Hábitos: Colección vacía.");
                 habitsListUl.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade un nuevo hábito!</li>'; // Mensaje si está vacío
                 return;
             }
-
-            snapshot.forEach(docSnap => {
+            console.log(`Hábitos: ${snapshot.size} hábitos encontrados.`);
+            snapshot.forEach((docSnap, index) => {
+                if (index < 5) { // Log de los primeros 5 hábitos para depuración
+                    console.log("Hábitos: Hábito de muestra:", docSnap.data());
+                }
                 const habit = docSnap.data();
                 const habitId = docSnap.id;
                 const listItem = document.createElement('li');
