@@ -69,6 +69,11 @@ async function loadAllUserData() {
             image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" // Placeholder image for Journal
         },
         {
+            title: " habitos Diarios",
+            description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!",
+            image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" // Placeholder image for Habits
+        },
+        {
             title: "¡Listo para Empezar!",
             description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!",
             image: "" // No image for outro
@@ -790,6 +795,7 @@ async function loadAllUserData() {
                     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
                     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
                     const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
+                    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
 
                     const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach(async (d) => await d.ref.delete());
@@ -808,6 +814,12 @@ async function loadAllUserData() {
                         await trelloConfigDocRef.delete();
                         console.log("Limpiar Datos: Configuración de Trello eliminada.");
                     }
+
+                    // Eliminar documentos de hábitos
+                    const habitDocs = await habitsCollectionRef.get();
+                    habitDocs.forEach(async (d) => await d.ref.delete());
+                    console.log("Limpiar Datos: Hábitos eliminados.");
+
 
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
                     location.reload();
@@ -919,11 +931,172 @@ async function loadAllUserData() {
         console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
     }
 
+    // --- Lógica de Hábitos ---
+    const newHabitInput = document.getElementById('newHabitInput');
+    const addHabitBtn = document.getElementById('add-habit-btn');
+    const habitsListUl = document.getElementById('habitsList');
+    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
+
+    // Helper para obtener la fecha de hoy en formato YYYY-MM-DD
+    function getTodayDateString() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses son 0-indexados
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Cargar hábitos desde Firestore
+    habitsCollectionRef.orderBy('creationDate', 'asc').onSnapshot((snapshot) => {
+        console.log("Hábitos: Recibiendo snapshot de hábitos.");
+        habitsListUl.innerHTML = ''; // Limpiar lista existente
+        if (snapshot.empty) {
+            habitsListUl.innerHTML = '<li>No hay hábitos registrados aún.</li>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const habit = docSnap.data();
+            const habitId = docSnap.id;
+            const listItem = document.createElement('li');
+            listItem.className = 'habit-item'; // Clase para estilos de hábito
+
+            const habitNameSpan = document.createElement('span');
+            habitNameSpan.textContent = habit.name;
+            habitNameSpan.className = 'habit-name';
+
+            const completionContainer = document.createElement('div');
+            completionContainer.className = 'habit-completion-track';
+
+            // Generar los últimos 7 días
+            const todayDate = new Date();
+            const todayDateString = getTodayDateString();
+
+            for (let i = 6; i >= 0; i--) { // Últimos 7 días, incluyendo hoy
+                const date = new Date(todayDate);
+                date.setDate(todayDate.getDate() - i);
+                const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                
+                const isCompleted = habit.dailyCompletions && habit.dailyCompletions[dateString];
+                
+                const checkboxWrapper = document.createElement('div');
+                checkboxWrapper.className = 'completion-checkbox-wrapper';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `habit-${habitId}-${dateString}`;
+                checkbox.dataset.habitId = habitId;
+                checkbox.dataset.date = dateString;
+                checkbox.checked = isCompleted;
+                checkbox.disabled = (dateString !== todayDateString); // Solo el checkbox de hoy es editable
+
+                const label = document.createElement('label');
+                label.htmlFor = `habit-${habitId}-${dateString}`;
+                label.className = 'completion-label';
+                label.title = date.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                checkboxWrapper.appendChild(checkbox);
+                checkboxWrapper.appendChild(label);
+                completionContainer.appendChild(checkboxWrapper);
+            }
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'button-danger';
+            deleteBtn.textContent = '❌';
+            deleteBtn.dataset.id = habitId; // Usar data-id para el ID del documento
+
+            listItem.appendChild(habitNameSpan);
+            listItem.appendChild(completionContainer);
+            listItem.appendChild(deleteBtn);
+            habitsListUl.appendChild(listItem);
+        });
+    }, (error) => {
+        console.error("Hábitos: Error al escuchar hábitos:", error);
+        window.showTempMessage(`Error al cargar hábitos: ${error.message}`, 'error');
+    });
+
+    // Añadir nuevo hábito
+    if (addHabitBtn) {
+        addHabitBtn.addEventListener('click', async () => {
+            const habitName = newHabitInput.value.trim();
+            if (habitName) {
+                try {
+                    // Micro-interacción: Feedback visual al botón
+                    addHabitBtn.classList.add('button-clicked');
+                    setTimeout(() => {
+                        addHabitBtn.classList.remove('button-clicked');
+                    }, 300);
+
+                    await habitsCollectionRef.add({
+                        name: habitName,
+                        creationDate: new Date().toISOString(),
+                        dailyCompletions: {} // Mapa para almacenar el seguimiento diario
+                    });
+                    newHabitInput.value = '';
+                    window.showTempMessage('Hábito añadido con éxito!', 'success');
+                    console.log("Hábitos: Nuevo hábito añadido.");
+                } catch (error) {
+                    console.error("Hábitos: Error al añadir hábito:", error);
+                    window.showTempMessage(`Error al añadir hábito: ${error.message}`, 'error');
+                }
+            } else {
+                window.showTempMessage('Por favor, escribe el nombre del hábito.', 'warning');
+            }
+        });
+    } else {
+        console.warn("Hábitos: Elementos HTML de Hábitos no encontrados.");
+    }
+
+    // Manejar el toggle de completado de hábito
+    if (habitsListUl) {
+        habitsListUl.addEventListener('change', async (e) => {
+            const target = e.target;
+            if (target.type === 'checkbox' && target.closest('.habit-item')) {
+                const habitId = target.dataset.habitId;
+                const date = target.dataset.date;
+                const isCompleted = target.checked;
+
+                try {
+                    const habitDocRef = habitsCollectionRef.doc(habitId);
+                    await habitDocRef.update({
+                        [`dailyCompletions.${date}`]: isCompleted
+                    });
+                    window.showTempMessage(`Hábito '${target.closest('.habit-item').querySelector('.habit-name').textContent}' ${isCompleted ? 'completado' : 'desmarcado'} para hoy.`, 'success');
+                    console.log(`Hábito ${habitId} actualizado para la fecha ${date}.`);
+                } catch (error) {
+                    console.error("Hábitos: Error al actualizar completado:", error);
+                    window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
+                    target.checked = !isCompleted; // Revert UI on error
+                }
+            }
+        });
+
+        // Manejar la eliminación de hábito
+        habitsListUl.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.classList.contains('button-danger') && target.closest('.habit-item')) {
+                const habitId = target.dataset.id;
+                if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
+                    try {
+                        await habitsCollectionRef.doc(habitId).delete();
+                        window.showTempMessage('Hábito eliminado.', 'info');
+                        console.log(`Hábito ${habitId} eliminado.`);
+                    } catch (error) {
+                        console.error("Hábitos: Error al eliminar hábito:", error);
+                        window.showTempMessage(`Error al eliminar hábito: ${error.message}`, 'error');
+                    }
+                }
+            }
+        });
+    }
+
 
     // Actualizar contadores de estado
     function updateAppStatus() {
         if (window.currentUserId && window.db) {
             const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
+            const habitsCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/habits`); // Referencia a la colección de hábitos
+
             checklistCollectionRef.get().then(snapshot => {
                 const checklistItemsCount = snapshot.size;
                 const tasksCountElement = document.getElementById('tasks-count');
@@ -934,6 +1107,15 @@ async function loadAllUserData() {
             }).catch(error => {
                 console.error("Error getting checklist count:", error);
             });
+
+            // Puedes añadir un contador para hábitos si lo deseas
+            // habitsCollectionRef.get().then(snapshot => {
+            //     const habitsCount = snapshot.size;
+            //     // Actualiza un elemento HTML si tienes uno para el conteo de hábitos
+            // }).catch(error => {
+            //     console.error("Error getting habits count:", error);
+            // });
+
         } else {
             const tasksCountElement = document.getElementById('tasks-count');
             const checklistCountElement = document.getElementById('checklist-count');

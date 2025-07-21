@@ -96,8 +96,9 @@
         document.getElementById('btn-checklist').addEventListener('click', () => window.mostrarSeccion('checklist'));
         document.getElementById('btn-journal').addEventListener('click', () => window.mostrarSeccion('journal'));
         document.getElementById('btn-notas').addEventListener('click', () => window.mostrarSeccion('notas'));
+        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion'));
+        document.getElementById('btn-habitos').addEventListener('click', () => window.mostrarSeccion('habitos')); // Nuevo listener para Hábitos
         document.getElementById('btn-config').addEventListener('click', () => window.mostrarSeccion('config'));
-        document.getElementById('btn-nutricion').addEventListener('click', () => window.mostrarSeccion('nutricion')); // Asegurar que el botón de nutrición tiene listener
         console.log("DOMContentLoaded: Event listeners de navegación adjuntados.");
 
         // Manejar la autenticación
@@ -154,7 +155,8 @@
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-notas">📝 Notas Blog</button>
-      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Botón para la nueva sección de Nutrición -->
+      <button id="btn-nutricion">🍎 Nutrición</button>
+      <button id="btn-habitos"> habitos</button> <!-- Nuevo botón de navegación -->
       <button id="btn-config">⚙️ Configuración</button>
     </div>
 
@@ -224,6 +226,22 @@
             <p>Cargando recomendaciones nutricionales y recetas...</p>
             </div>
         <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
+    </section>
+
+    <!-- Nueva sección de Hábitos -->
+    <section id="habitos" class="seccion">
+      <h2> habitos Diarios</h2>
+      <p class="subtitle">Registra y sigue tus hábitos diarios para construir rutinas saludables y mantener un registro de tu progreso.</p>
+      <div class="input-group">
+        <input type="text" id="newHabitInput" placeholder="Añadir nuevo hábito..." />
+        <button id="add-habit-btn">➕ Añadir Hábito</button>
+      </div>
+      <ul id="habitsList">
+        <!-- Los hábitos se cargarán aquí dinámicamente -->
+      </ul>
+      <div class="help-text">
+        💡 Marca el círculo para indicar que completaste el hábito hoy.
+      </div>
     </section>
 
     <section id="config" class="seccion">
@@ -302,4 +320,3 @@
   <script src="js/main.js"></script> <!-- main.js ahora es un script tradicional -->
 </body>
 </html>
-
