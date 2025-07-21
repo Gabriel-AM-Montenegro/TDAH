@@ -197,7 +197,7 @@ async function loadAllUserData() {
             console.log("Journal: Recibiendo snapshot de entradas.");
             journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
-                journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
+                journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>'; // Mensaje si está vacío
                 return;
             }
             snapshot.forEach(doc => {
@@ -539,7 +539,7 @@ async function loadAllUserData() {
             console.log("Checklist: Recibiendo snapshot de ítems.");
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
-                checkListUl.innerHTML = '<li>No hay ítems en el checklist aún.</li>';
+                checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>'; // Mensaje si está vacío
                 return;
             }
             snapshot.forEach(docSnap => {
@@ -873,7 +873,7 @@ async function loadAllUserData() {
                 blogContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
-                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
+                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún. ¡Añade algunos desde la consola de Firebase!</p>'; // Mensaje si está vacío
                     console.log("Blog: No hay artículos en Firestore.");
                     window.showTempMessage('No hay artículos de blog disponibles.', 'info');
                     return;
@@ -921,7 +921,7 @@ async function loadAllUserData() {
                 nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
-                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
+                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún. ¡Añade algunas recomendaciones!</p>'; // Mensaje si está vacío
                     console.log("Nutrición: No hay contenido en Firestore.");
                     window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
                     return;
@@ -974,7 +974,7 @@ async function loadAllUserData() {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
             habitsListUl.innerHTML = ''; // Limpiar lista existente
             if (snapshot.empty) {
-                habitsListUl.innerHTML = '<li>No hay hábitos registrados aún.</li>';
+                habitsListUl.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade un nuevo hábito!</li>'; // Mensaje si está vacío
                 return;
             }
 
