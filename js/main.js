@@ -132,12 +132,22 @@ async function loadAllUserData() {
             tourSteps.forEach((_, index) => {
                 const dot = document.createElement('span');
                 dot.classList.add('tour-dot');
+                dot.setAttribute('tabindex', '0'); // Hacer el dot tabbable
+                dot.setAttribute('role', 'button'); // Indicar que es interactivo
+                dot.setAttribute('aria-label', `Paso ${index + 1} del tour`); // Etiqueta para lectores de pantalla
+
                 if (index === currentTourStep) {
                     dot.classList.add('active');
                 }
                 dot.addEventListener('click', () => {
                     currentTourStep = index;
                     renderTourStep();
+                });
+                dot.addEventListener('keydown', (e) => { // Manejar Enter para los dots
+                    if (e.key === 'Enter') {
+                        currentTourStep = index;
+                        renderTourStep();
+                    }
                 });
                 tourDotsContainer.appendChild(dot);
             });
@@ -1024,7 +1034,7 @@ async function loadAllUserData() {
                     const dateString = date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
                     const isCompleted = habit.dailyCompletions && habit.dailyCompletions[dateString];
                     return `
-                        <span class="habit-day-dot ${isCompleted ? 'completed' : ''}" data-date="${dateString}" data-habit-id="${habitId}" title="${date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} ${isCompleted ? 'Completado' : 'Pendiente'}"></span>
+                        <span class="habit-day-dot ${isCompleted ? 'completed' : ''}" data-date="${dateString}" data-habit-id="${habitId}" title="${date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} ${isCompleted ? 'Completado' : 'Pendiente'}" tabindex="0" role="button" aria-label="Marcar hábito ${habit.name} para el ${date.toLocaleDateString('es-ES')}"></span>
                     `;
                 }).join('');
 
@@ -1109,6 +1119,39 @@ async function loadAllUserData() {
                 }
             }
         });
+
+        // Manejar eventos de teclado para los habit-day-dot
+        habitsList.addEventListener('keydown', async (e) => {
+            const target = e.target;
+            // Si el elemento enfocado es un habit-day-dot y se presiona Enter o Espacio
+            if (target.classList.contains('habit-day-dot') && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault(); // Prevenir el scroll de la página con Espacio
+                const habitId = target.dataset.habitId;
+                const dateString = target.dataset.date;
+                
+                try {
+                    const habitDocRef = habitsCollectionRef.doc(habitId);
+                    const docSnap = await habitDocRef.get();
+                    if (docSnap.exists) {
+                        const habitData = docSnap.data();
+                        const currentCompletions = habitData.dailyCompletions || {};
+                        const isCurrentlyCompleted = currentCompletions[dateString];
+
+                        currentCompletions[dateString] = !isCurrentlyCompleted; // Toggle state
+
+                        await habitDocRef.update({
+                            dailyCompletions: currentCompletions
+                        });
+                        window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
+                        console.log(`Hábito: ${habitId} actualizado para fecha ${dateString}.`);
+                    }
+                } catch (error) {
+                    console.error("Hábitos: Error al actualizar estado de completado (keydown):", error);
+                    window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
+                }
+            }
+        });
+
     } else {
         console.warn("Hábitos: Elementos HTML de Hábitos no encontrados.");
     }

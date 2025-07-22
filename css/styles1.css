@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(103, 186, 225) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(201, 182, 103) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -639,6 +639,32 @@ input[type="checkbox"] {
     font-style: italic;
 }
 
+/* Estilos para la sección de Hábitos */
+.habit-tracking-dots {
+    display: flex;
+    gap: 5px;
+    margin-left: auto; /* Empuja los puntos a la derecha */
+}
+
+.habit-day-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(--text-light); /* Color para días pendientes */
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0; /* Evita que los puntos se encojan */
+}
+
+.habit-day-dot.completed {
+    background-color: var(--success-dark); /* Color para días completados */
+}
+
+.habit-day-dot:hover {
+    transform: scale(1.1);
+}
+
 
 /* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 768px) {
@@ -972,4 +998,29 @@ input[type="checkbox"] {
 .tour-dot.active {
   background-color: var(--primary-color);
   transform: scale(1.2);
+}
+
+/* Estilos de foco mejorados para accesibilidad */
+/* Aplica a todos los elementos interactivos que pueden recibir foco */
+:focus-visible {
+  outline: none; /* Elimina el outline por defecto del navegador */
+  /* Usa un box-shadow para un anillo de foco más atractivo y visible */
+  box-shadow: 0 0 0 3px var(--info-dark), 0 0 0 6px var(--primary-color);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Asegura que los elementos específicos también tengan este estilo de foco */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+.nav-tabs button:focus-visible,
+.custom-modal-content button:focus-visible,
+.welcome-tour-modal-inner button:focus-visible,
+.tour-dot:focus-visible,
+.completion-checkbox:focus-visible,
+.mit-checkbox:focus-visible,
+.habit-day-dot:focus-visible {
+  outline: none; /* Redundante pero seguro */
+  box-shadow: 0 0 0 3px var(--info-dark), 0 0 0 6px var(--primary-color);
 }
