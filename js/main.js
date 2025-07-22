@@ -42,6 +42,7 @@ async function loadAllUserData() {
     // --- Referencias a colecciones de Firestore específicas del usuario ---
     // Estas referencias ahora se definen DENTRO de loadAllUserData
     // para asegurar que currentUserId ya está establecido.
+    console.log("loadAllUserData: currentUserId al definir colecciones:", currentUserId); // NUEVO LOG
     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
@@ -730,38 +731,70 @@ async function loadAllUserData() {
 
         // Listener para cargar ítems del checklist, ordenando por 'position' y luego 'timestamp'
         checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
-            console.log("Checklist: Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size); // Added log
+            console.log("Checklist (onSnapshot): Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size); // Detailed log for snapshot size
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
-                console.log("Checklist: Colección vacía. Mostrando mensaje de vacío.");
+                console.log("Checklist (onSnapshot): Colección vacía. Mostrando mensaje de vacío.");
                 checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>'; // Mensaje si está vacío
                 return;
             }
-            console.log(`Checklist: ${snapshot.size} ítems encontrados. Renderizando...`);
+            console.log(`Checklist (onSnapshot): ${snapshot.size} ítems encontrados. Renderizando...`);
             snapshot.forEach((docSnap, index) => {
                 const item = docSnap.data();
                 const itemId = docSnap.id;
-                console.log("Checklist: Renderizando ítem:", item.text, "ID:", itemId); // Added log
+                console.log("Checklist (onSnapshot): Procesando ítem:", item.text, "ID:", itemId, "Completed:", item.completed, "MIT:", item.isMIT, "Position:", item.position); // Detailed log for each item
                 const listItem = document.createElement('li');
-                listItem.setAttribute('draggable', 'true'); // Make list item draggable
-                listItem.dataset.id = itemId; // Store Firestore ID on the li element
+                listItem.setAttribute('draggable', 'true');
+                listItem.dataset.id = itemId;
 
-                listItem.innerHTML = `
-                    <input type="checkbox" class="completion-checkbox" id="check-${itemId}" data-item-id="${itemId}" ${item.completed ? 'checked' : ''}>
-                    <label for="check-${itemId}">
-                        <span class="item-text" data-item-id="${itemId}" contenteditable="false">${item.text}</span>
-                    </label>
-                    <div class="mit-controls">
-                        <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''}>
-                        MIT
-                    </div>
-                    <button class="button-danger" data-id="${itemId}">❌</button>
-                `;
+                // Explicitly create elements instead of innerHTML for listItem content
+                const completionCheckbox = document.createElement('input');
+                completionCheckbox.type = 'checkbox';
+                completionCheckbox.className = 'completion-checkbox';
+                completionCheckbox.id = `check-${itemId}`;
+                completionCheckbox.dataset.itemId = itemId;
+                if (item.completed) {
+                    completionCheckbox.checked = true;
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = `check-${itemId}`;
+
+                const itemTextSpan = document.createElement('span');
+                itemTextSpan.className = 'item-text';
+                itemTextSpan.dataset.itemId = itemId;
+                itemTextSpan.contentEditable = 'false';
+                itemTextSpan.textContent = item.text;
+
+                const mitControlsDiv = document.createElement('div');
+                mitControlsDiv.className = 'mit-controls';
+                const mitCheckbox = document.createElement('input');
+                mitCheckbox.type = 'checkbox';
+                mitCheckbox.className = 'mit-checkbox';
+                mitCheckbox.id = `mit-${itemId}`;
+                mitCheckbox.dataset.itemId = itemId;
+                if (item.isMIT) {
+                    mitCheckbox.checked = true;
+                }
+                const mitText = document.createTextNode('MIT');
+                mitControlsDiv.appendChild(mitCheckbox);
+                mitControlsDiv.appendChild(mitText);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'button-danger';
+                deleteButton.dataset.id = itemId;
+                deleteButton.textContent = '❌';
+
+                label.appendChild(itemTextSpan);
+                listItem.appendChild(completionCheckbox);
+                listItem.appendChild(label);
+                listItem.appendChild(mitControlsDiv);
+                listItem.appendChild(deleteButton);
+
                 checkListUl.appendChild(listItem);
-                console.log("Checklist: Ítem añadido al DOM. HTML actual del checklist:", checkListUl.innerHTML); // Added log
+                console.log("Checklist (onSnapshot): Ítem añadido al DOM. HTML del nuevo listItem:", listItem.outerHTML); // Log the actual HTML of the added item
 
                 // Add event listeners for editing the text
-                const itemTextSpan = listItem.querySelector('.item-text');
                 itemTextSpan.addEventListener('dblclick', () => {
                     originalText = itemTextSpan.textContent; // Save original text
                     itemTextSpan.contentEditable = 'true';
