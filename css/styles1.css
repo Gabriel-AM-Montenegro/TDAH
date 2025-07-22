@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(96, 167, 114) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(217, 135, 202) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -461,7 +461,7 @@ li button {
   /* La decoración se maneja en el span para evitar que el botón también se raye */
 }
 
-.task-completed span {
+.task-completed {
   text-decoration: line-through;
   color: var(--text-medium);
 }
@@ -1055,4 +1055,31 @@ a:focus-visible,
 .habit-day-dot:focus-visible {
   outline: none; /* Redundante pero seguro */
   box-shadow: 0 0 0 3px var(--info-dark), 0 0 0 6px var(--primary-color);
+}
+
+/* Estilos para edición de texto del checklist */
+.item-text[contenteditable="true"] {
+    background-color: var(--white);
+    border: 1px solid var(--primary-color);
+    padding: 2px 5px;
+    border-radius: 4px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Estilos para Drag & Drop */
+.dragging {
+    opacity: 0.5;
+    border: 2px dashed var(--primary-color);
+    background-color: var(--light-bg);
+}
+
+.drag-over {
+    border-top: 2px solid var(--secondary-color); /* Indicador visual para dónde se soltará */
+}
+
+/* Asegura que el texto tachado solo afecte al span y no al checkbox */
+.task-completed {
+    text-decoration: line-through;
+    color: var(--text-medium);
 }

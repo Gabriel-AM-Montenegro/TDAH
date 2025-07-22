@@ -544,15 +544,20 @@ async function loadAllUserData() {
     const checkListUl = document.getElementById('checkList');
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
 
+    // Variables para Drag & Drop
+    let draggedItem = null;
+    let originalText = ''; // Para la edición
+
     if (checkItemInput && addCheckItemBtn && checkListUl) {
         console.log("Checklist: Elementos HTML del Checklist encontrados.");
+
         // Event delegation for checklist items
         checkListUl.addEventListener('change', async (e) => {
             const target = e.target;
             const listItem = target.closest('li'); // Get the parent <li> element
             if (!listItem) return; // Not a list item
 
-            const itemId = target.dataset.itemId; // Get the item ID from the target element's dataset
+            const itemId = listItem.dataset.id; // Get the item ID from the listItem's dataset
 
             if (target.classList.contains('completion-checkbox')) {
                 // Handle completion checkbox
@@ -561,11 +566,11 @@ async function loadAllUserData() {
                         completed: target.checked
                     });
                     if (target.checked) {
-                        listItem.querySelector('span').classList.add('task-completed');
+                        listItem.querySelector('.item-text').classList.add('task-completed');
                         document.getElementById('sound-task-done').play().catch(e => console.error("Error playing task done sound:", e));
                         window.showTempMessage('¡Tarea completada!', 'success');
                     } else {
-                        listItem.querySelector('span').classList.remove('task-completed');
+                        listItem.querySelector('.item-text').classList.remove('task-completed');
                     }
                     console.log(`Checklist: Ítem ${itemId} actualizado.`);
                 } catch (error) {
@@ -617,7 +622,7 @@ async function loadAllUserData() {
             if (!listItem) return;
 
             if (target.classList.contains('button-danger')) {
-                const itemToDeleteId = target.dataset.id;
+                const itemToDeleteId = listItem.dataset.id; // Get ID from listItem
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este ítem del checklist?')) {
                     try {
                         await checklistCollectionRef.doc(itemToDeleteId).delete();
@@ -631,8 +636,95 @@ async function loadAllUserData() {
             }
         });
 
+        // Drag & Drop Event Listeners
+        checkListUl.addEventListener('dragstart', (e) => {
+            draggedItem = e.target;
+            // Solo arrastrar elementos li
+            if (draggedItem.tagName !== 'LI') {
+                draggedItem = null;
+                return;
+            }
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', draggedItem.innerHTML); // Data is not strictly needed but good practice
+            draggedItem.classList.add('dragging');
+            console.log("Drag & Drop: Drag start for item:", draggedItem.dataset.id);
+        });
 
-        checklistCollectionRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+        checkListUl.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Crucial to allow dropping
+            const target = e.target.closest('li');
+            if (target && target !== draggedItem) {
+                // Add visual feedback for the drop target
+                target.classList.add('drag-over');
+            }
+        });
+
+        checkListUl.addEventListener('dragleave', (e) => {
+            const target = e.target.closest('li');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        });
+
+        checkListUl.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const dropTarget = e.target.closest('li');
+
+            if (dropTarget && draggedItem && dropTarget !== draggedItem) {
+                dropTarget.classList.remove('drag-over');
+
+                // Determine insertion point
+                const bounding = dropTarget.getBoundingClientRect();
+                const offset = e.clientY - bounding.top;
+                
+                if (offset > bounding.height / 2) {
+                    // Drop after the target
+                    checkListUl.insertBefore(draggedItem, dropTarget.nextSibling);
+                } else {
+                    // Drop before the target
+                    checkListUl.insertBefore(draggedItem, dropTarget);
+                }
+                
+                console.log("Drag & Drop: Item dropped. Updating positions...");
+                await updateItemPositionsInFirestore();
+                window.showTempMessage('Orden de tareas actualizado.', 'info');
+            } else if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
+            }
+        });
+
+        checkListUl.addEventListener('dragend', (e) => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+            }
+            // Clean up any remaining drag-over classes
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            draggedItem = null;
+            console.log("Drag & Drop: Drag end.");
+        });
+
+        // Function to update positions in Firestore after drag and drop
+        async function updateItemPositionsInFirestore() {
+            const listItems = Array.from(checkListUl.children); // Get current DOM order
+            const batch = db.batch(); // Use Firestore batch for multiple updates
+
+            listItems.forEach((item, index) => {
+                const itemId = item.dataset.id;
+                const itemRef = checklistCollectionRef.doc(itemId);
+                batch.update(itemRef, { position: index }); // Set position based on current DOM index
+            });
+
+            try {
+                await batch.commit();
+                console.log("Drag & Drop: Posiciones de ítems actualizadas en Firestore.");
+            } catch (error) {
+                console.error("Drag & Drop: Error al actualizar posiciones en Firestore:", error);
+                window.showTempMessage(`Error al guardar orden: ${error.message}`, 'error');
+            }
+        }
+
+        // Listener para cargar ítems del checklist, ordenando por 'position' y luego 'timestamp'
+        checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
             console.log("Checklist: Recibiendo snapshot de ítems.");
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
@@ -645,22 +737,68 @@ async function loadAllUserData() {
                 const item = docSnap.data();
                 const itemId = docSnap.id;
                 const listItem = document.createElement('li');
+                listItem.setAttribute('draggable', 'true'); // Make list item draggable
+                listItem.dataset.id = itemId; // Store Firestore ID on the li element
+
                 listItem.innerHTML = `
                     <input type="checkbox" class="completion-checkbox" id="check-${itemId}" data-item-id="${itemId}" ${item.completed ? 'checked' : ''}>
-                    <label for="check-${itemId}"><span>${item.text}</span></label>
+                    <label for="check-${itemId}">
+                        <span class="item-text" data-item-id="${itemId}" contenteditable="false">${item.text}</span>
+                    </label>
                     <div class="mit-controls">
-                        <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''} style="display: inline-block !important; width: 25px !important; height: 25px !important; border: 2px solid purple !important;">
+                        <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" data-item-id="${itemId}" ${item.isMIT ? 'checked' : ''}>
                         MIT
                     </div>
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
 
+                // Add event listeners for editing the text
+                const itemTextSpan = listItem.querySelector('.item-text');
+                itemTextSpan.addEventListener('dblclick', () => {
+                    originalText = itemTextSpan.textContent; // Save original text
+                    itemTextSpan.contentEditable = 'true';
+                    itemTextSpan.focus();
+                    itemTextSpan.classList.add('editing');
+                    console.log(`Checklist: Editing item ${itemId}.`);
+                });
+
+                itemTextSpan.addEventListener('blur', async () => {
+                    itemTextSpan.contentEditable = 'false';
+                    itemTextSpan.classList.remove('editing');
+                    const newText = itemTextSpan.textContent.trim();
+                    if (newText !== originalText) {
+                        try {
+                            await checklistCollectionRef.doc(itemId).update({ text: newText });
+                            window.showTempMessage('Tarea actualizada con éxito.', 'success');
+                            console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
+                        } catch (error) {
+                            console.error("Checklist: Error updating item text:", error);
+                            window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
+                            itemTextSpan.textContent = originalText; // Revert on error
+                        }
+                    } else {
+                        console.log(`Checklist: No changes made to item ${itemId}.`);
+                    }
+                });
+
+                itemTextSpan.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Prevent new line
+                        itemTextSpan.blur(); // Trigger blur to save
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault(); // Prevent default escape behavior
+                        itemTextSpan.textContent = originalText; // Revert text
+                        itemTextSpan.blur(); // Exit editing
+                    }
+                });
+
+                // Apply classes based on item state
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
                 }
                 if (item.completed) {
-                    listItem.querySelector('span').classList.add('task-completed');
+                    itemTextSpan.classList.add('task-completed');
                 }
             });
         }, (error) => {
@@ -677,15 +815,20 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
+                    // Get the current highest position to assign a new one
+                    const lastItemSnapshot = await checklistCollectionRef.orderBy('position', 'desc').limit(1).get();
+                    const newPosition = lastItemSnapshot.empty ? 0 : lastItemSnapshot.docs[0].data().position + 1;
+
                     await checklistCollectionRef.add({
                         text: itemText,
                         completed: false,
                         isMIT: false, // New field for MIT
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        position: newPosition // Assign a position
                     });
                     checkItemInput.value = '';
                     window.showTempMessage('Elemento añadido al checklist.', 'success');
-                    console.log("Checklist: Nuevo ítem añadido.");
+                    console.log("Checklist: Nuevo ítem añadido con posición:", newPosition);
                 } catch (error) {
                     console.error("Checklist: Error adding item:", error);
                     window.showTempMessage(`Error al añadir: ${error.message}`, 'error');
