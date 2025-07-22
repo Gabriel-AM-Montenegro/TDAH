@@ -8,11 +8,11 @@ const db = window.db;
 const auth = window.auth;
 let currentUserId = window.currentUserId; // currentUserId puede cambiar con la autenticación
 const appId = window.appId; // appId debería ser constante
+let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
+let notificationPermissionGranted = false; // Variable global para el estado del permiso de notificación
 
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
-
-let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 
 // Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
 async function loadAllUserData() {
@@ -315,6 +315,14 @@ async function loadAllUserData() {
                                 console.error("Error al reproducir sonido de completado (onSnapshot):", e);
                                 window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
                             });
+                            // Notificación del navegador para fin de tiempo de trabajo
+                            if (notificationPermissionGranted) {
+                                new Notification('¡Pomodoro Terminado!', {
+                                    body: '¡Excelente trabajo! Es hora de un descanso.',
+                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P', // Icono de ejemplo
+                                    tag: 'pomodoro-complete' // Para evitar notificaciones duplicadas
+                                });
+                            }
 
                             setTimeout(async () => { // Use async for await showCustomConfirm
                                 console.log("Pomodoro (onSnapshot): Preguntando por descanso...");
@@ -339,6 +347,14 @@ async function loadAllUserData() {
                         } else { // If break time ended
                             console.log("Pomodoro (onSnapshot): Tiempo de descanso terminado. Reiniciando temporizador.");
                             window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
+                            // Notificación del navegador para fin de descanso
+                            if (notificationPermissionGranted) {
+                                new Notification('¡Descanso Terminado!', {
+                                    body: '¡Es hora de volver al trabajo!',
+                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D', // Icono de ejemplo
+                                    tag: 'pomodoro-break' // Para evitar notificaciones duplicadas
+                                });
+                            }
                             resetTimer();
                         }
                     }
@@ -393,6 +409,14 @@ async function loadAllUserData() {
                                 console.error("Error al reproducir sonido de completado (startTimer):", e);
                                 window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
                             });
+                            // Notificación del navegador para fin de tiempo de trabajo
+                            if (notificationPermissionGranted) {
+                                new Notification('¡Pomodoro Terminado!', {
+                                    body: '¡Excelente trabajo! Es hora de un descanso.',
+                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P', // Icono de ejemplo
+                                    tag: 'pomodoro-complete'
+                                });
+                            }
 
                             setTimeout(async () => { // Use async for await showCustomConfirm
                                 console.log("Pomodoro (startTimer): Preguntando por descanso...");
@@ -417,6 +441,14 @@ async function loadAllUserData() {
                         } else { // If break time ended
                             console.log("Pomodoro (startTimer): Tiempo de descanso terminado. Reiniciando temporizador.");
                             window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
+                            // Notificación del navegador para fin de descanso
+                            if (notificationPermissionGranted) {
+                                new Notification('¡Descanso Terminado!', {
+                                    body: '¡Es hora de volver al trabajo!',
+                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D', // Icono de ejemplo
+                                    tag: 'pomodoro-break'
+                                });
+                            }
                             resetTimer();
                         }
                     }
@@ -578,10 +610,6 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
-                console.log(`Checklist: Añadido ítem "${item.text.substring(0, Math.min(item.text.length, 20))}..." a la lista.`);
-
-                // Micro-interacción: Añadir clase para animación de aparición
-                listItem.classList.add('new-item-animation');
 
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
@@ -645,7 +673,6 @@ async function loadAllUserData() {
             console.log("Trello: Recibiendo snapshot de configuración.");
             if (docSnap.exists) {
                 const config = docSnap.data();
-                console.log("Trello: Configuración de Trello encontrada:", config);
                 trelloApiKeyInput.value = config.apiKey || '';
                 trelloTokenInput.value = config.token || '';
                 trelloBoardIdInput.value = config.boardId || '';
@@ -708,11 +735,6 @@ async function loadAllUserData() {
                 console.log("Trello: Configuración incompleta para probar.");
                 return;
             }
-
-            testTrelloBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                testTrelloBtn.classList.remove('button-clicked');
-            }, 300);
 
             try {
                 const response = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${apiKey}&token=${token}`);
@@ -801,14 +823,13 @@ async function loadAllUserData() {
                 });
 
                 if (filteredCards.length > 0) {
-                    console.log(`Trello: ${filteredCards.length} tareas encontradas para esta semana. Renderizando...`);
-                    filteredCards.forEach((card, index) => {
+                    filteredCards.forEach(card => {
                         const listItem = document.createElement('li');
                         const dueDate = card.due ? new Date(card.due).toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Sin fecha';
                         listItem.textContent = `${card.name} (Vence: ${dueDate})`;
                         listaTareasUl.appendChild(listItem);
-                        console.log(`Trello: Añadida tarea "${card.name.substring(0, Math.min(card.name.length, 20))}..." a la lista.`);
                     });
+                    console.log(`Trello: ${filteredCards.length} tareas cargadas para esta semana.`);
                 } else {
                     listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
                     console.log("Trello: No hay tareas para esta semana.");
@@ -823,7 +844,7 @@ async function loadAllUserData() {
         testTrelloBtn.addEventListener('click', probarConexionTrello);
         saveTrelloConfigBtn.addEventListener('click', guardarConfigTrello);
     } else {
-        console.warn("Trello: Elementos HTML de Trello no encontrados. Asegúrate de que tu HTML esté actualizado.");
+        console.warn("Trello: Elementos HTML de Trello no encontrados.");
     }
 
 
@@ -832,48 +853,47 @@ async function loadAllUserData() {
     if (clearDataBtn) {
         console.log("Limpiar Datos: Botón 'clear-data-btn' encontrado.");
         async function limpiarDatos() {
-            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal, Hábitos)? Esta acción es irreversible.')) {
-                clearDataBtn.classList.add('button-clicked');
-                setTimeout(() => {
-                    clearDataBtn.classList.remove('button-clicked');
-                }, 300);
-
+            if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
                     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
                     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
                     const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
-                    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
+                    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
 
+                    // Eliminar documentos de Journal
                     const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach(async (d) => await d.ref.delete());
                     console.log("Limpiar Datos: Entradas de Journal eliminadas.");
 
+                    // Eliminar documentos de Checklist
                     const checklistDocs = await checklistCollectionRef.get();
                     checklistDocs.forEach(async (d) => await d.ref.delete());
                     console.log("Limpiar Datos: Ítems de Checklist eliminados.");
 
+                    // Eliminar documentos de Hábitos
+                    const habitsDocs = await habitsCollectionRef.get();
+                    habitsDocs.forEach(async (d) => await d.ref.delete());
+                    console.log("Limpiar Datos: Hábitos eliminados.");
+
+
+                    // Eliminar documento de configuración de Pomodoro
                     const pomodoroDocSnap = await pomodoroSettingsDocRef.get();
                     if (pomodoroDocSnap.exists) {
                         await pomodoroSettingsDocRef.delete();
                         console.log("Limpiar Datos: Configuración de Pomodoro eliminada.");
                     }
 
+                    // Eliminar documento de configuración de Trello
                     const trelloDocSnap = await trelloConfigDocRef.get();
                     if (trelloDocSnap.exists) {
                         await trelloConfigDocRef.delete();
                         console.log("Limpiar Datos: Configuración de Trello eliminada.");
                     }
 
-                    const habitDocs = await habitsCollectionRef.get();
-                    habitDocs.forEach(async (d) => await d.ref.delete());
-                    console.log("Limpiar Datos: Hábitos eliminados.");
-
-
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
-                    // No recargar la página aquí, dejar que onAuthStateChanged maneje el estado de no autenticado
-                    // o que el usuario elija una opción de inicio de sesión.
+                    location.reload(); // Recargar la página para reflejar los cambios
                 } catch (error) {
                     console.error("Limpiar Datos: Error al limpiar datos:", error);
                     window.showTempMessage(`Error al limpiar datos: ${error.message}`, 'error');
@@ -882,7 +902,7 @@ async function loadAllUserData() {
         }
         clearDataBtn.addEventListener('click', limpiarDatos);
     } else {
-        console.warn("Limpiar Datos: Botón 'clear-data-btn' no encontrado. Asegúrate de que tu HTML esté actualizado.");
+        console.warn("Limpiar Datos: Botón 'clear-data-btn' no encontrado.");
     }
 
 
@@ -891,7 +911,8 @@ async function loadAllUserData() {
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
     // Colección de Firestore para artículos del blog
     // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`);
+    // CAMBIO DE RUTA AQUÍ: Ajustado para que coincida con tu estructura actual en Firestore
+    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         console.log("Blog: Elementos HTML del Blog encontrados.");
@@ -903,12 +924,13 @@ async function loadAllUserData() {
                 blogContentDiv.innerHTML = ''; // Limpiar contenido existente
 
                 if (snapshot.empty) {
-                    console.log("Blog: Colección vacía. Mostrando mensaje de vacío.");
-                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún. ¡Añade algunos desde la consola de Firebase!</p>'; // Mensaje si está vacío
+                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
+                    console.log("Blog: No hay artículos en Firestore.");
+                    window.showTempMessage('No hay artículos de blog disponibles.', 'info');
                     return;
                 }
-                console.log(`Blog: ${snapshot.size} artículos encontrados. Renderizando...`);
-                snapshot.forEach((doc, index) => {
+
+                snapshot.forEach(doc => {
                     const article = doc.data();
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
@@ -919,7 +941,6 @@ async function loadAllUserData() {
                         ${article.url ? `<a href="${article.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     blogContentDiv.appendChild(articleCard);
-                    console.log(`Blog: Añadido artículo "${article.title.substring(0, Math.min(article.title.length, 20))}..." a la lista.`);
                 });
                 window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
                 console.log("Blog: Artículos cargados desde Firestore.");
@@ -932,169 +953,110 @@ async function loadAllUserData() {
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
         cargarNotasBlog(); // Cargar al inicio
     } else {
-        console.warn("Blog: Elementos HTML del Blog no encontrados. Asegúrate de que tu HTML esté actualizado.");
+        console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
 
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
-    // Colección de Firestore para contenido de nutrición
-    // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
-    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`);
-
     if (nutricionContentDiv && refreshNutricionBtn) {
         console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                // Obtener documentos de la colección nutritionContent
-                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
-                nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
-
-                if (snapshot.empty) {
-                    console.log("Nutrición: Colección vacía. Mostrando mensaje de vacío.");
-                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún. ¡Añade algunas recomendaciones!</p>'; // Mensaje si está vacío
-                    return;
-                }
-                console.log(`Nutrición: ${snapshot.size} ítems encontrados. Renderizando...`);
-                snapshot.forEach((doc, index) => {
-                    const item = doc.data();
+                const data = [
+                    { title: "Hidratación Esencial", content: "Beber suficiente agua es crucial para la función cerebral y la energía. Intenta beber 8 vasos al día.", source: "OMS" },
+                    { title: "Omega-3 y Cerebro", content: "Los ácidos grasos Omega-3, encontrados en pescados grasos y nueces, son vitales para la salud cerebral y la concentración.", source: "Harvard Health" },
+                    { title: "Alimentos Integrales", content: "Opta por granos enteros, frutas y verduras para un suministro constante de energía y nutrientes.", source: "Nutrición al Día" }
+                ];
+                nutricionContentDiv.innerHTML = '';
+                data.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
                     card.innerHTML = `
                         <h4>${item.title}</h4>
                         <p>${item.content}</p>
                         <small>Fuente: ${item.source}</small>
-                        ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
-                    console.log(`Nutrición: Añadido ítem "${item.title.substring(0, Math.min(item.title.length, 20))}..." a la lista.`);
                 });
-                window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
-                console.log("Nutrición: Contenido cargado desde Firestore.");
+                window.showTempMessage('Contenido de nutrición actualizado.', 'success');
+                console.log("Nutrición: Contenido cargado.");
             } catch (error) {
                 nutricionContentDiv.innerHTML = '<p>Error al cargar contenido de nutrición.</p>';
-                console.error('Nutrición: Error al cargar nutrición desde Firestore:', error);
-                window.showTempMessage(`Error al cargar contenido de nutrición: ${error.message}`, 'error');
+                console.error('Nutrición: Error al cargar nutrición:', error);
+                window.showTempMessage('Error al cargar contenido de nutrición.', 'error');
             }
         }
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
-        cargarNutricion(); // Cargar al inicio
+        cargarNutricion();
     } else {
-        console.warn("Nutrición: Elementos HTML de Nutrición no encontrados. Asegúrate de que tu HTML esté actualizado.");
+        console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
     }
 
     // --- Lógica de Hábitos ---
     const newHabitInput = document.getElementById('newHabitInput');
     const addHabitBtn = document.getElementById('add-habit-btn');
-    const habitsListUl = document.getElementById('habitsList');
+    const habitsList = document.getElementById('habitsList');
     const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
 
-    // Helper para obtener la fecha de hoy en formato YYYY-MM-DD
-    function getTodayDateString() {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses son 0-indexados
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // Cargar hábitos desde Firestore
-    if (habitsListUl) {
-        console.log("Hábitos: Elemento HTML 'habitsList' encontrado.");
-        habitsCollectionRef.orderBy('creationDate', 'asc').onSnapshot((snapshot) => {
+    if (newHabitInput && addHabitBtn && habitsList) {
+        console.log("Hábitos: Elementos HTML de Hábitos encontrados.");
+        // Listener para cargar hábitos
+        habitsCollectionRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
-            habitsListUl.innerHTML = ''; // Limpiar lista existente
+            habitsList.innerHTML = '';
             if (snapshot.empty) {
                 console.log("Hábitos: Colección vacía. Mostrando mensaje de vacío.");
-                habitsListUl.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade un nuevo hábito!</li>'; // Mensaje si está vacío
+                habitsList.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade tu primer hábito!</li>';
                 return;
             }
             console.log(`Hábitos: ${snapshot.size} hábitos encontrados. Renderizando...`);
-            snapshot.forEach((docSnap, index) => {
-                const habit = docSnap.data();
-                const habitId = docSnap.id;
+            snapshot.forEach(doc => {
+                const habit = doc.data();
+                const habitId = doc.id;
                 const listItem = document.createElement('li');
-                listItem.className = 'habit-item'; // Clase para estilos de hábito
-
-                const habitNameSpan = document.createElement('span');
-                habitNameSpan.textContent = habit.name;
-                habitNameSpan.className = 'habit-name';
-
-                const completionContainer = document.createElement('div');
-                completionContainer.className = 'habit-completion-track';
-
-                // Generar los últimos 7 días
-                const todayDate = new Date();
-                const todayDateString = getTodayDateString();
-
-                for (let i = 6; i >= 0; i--) { // Últimos 7 días, incluyendo hoy
-                    const date = new Date(todayDate);
-                    date.setDate(todayDate.getDate() - i);
-                    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                    
+                // Representar el seguimiento diario (ej. los últimos 7 días)
+                const today = new Date();
+                const dailyTrackingHtml = Array.from({ length: 7 }).map((_, i) => {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - (6 - i)); // Últimos 7 días
+                    const dateString = date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
                     const isCompleted = habit.dailyCompletions && habit.dailyCompletions[dateString];
-                    
-                    const checkboxWrapper = document.createElement('div');
-                    checkboxWrapper.className = 'completion-checkbox-wrapper';
+                    return `
+                        <span class="habit-day-dot ${isCompleted ? 'completed' : ''}" data-date="${dateString}" data-habit-id="${habitId}" title="${date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} ${isCompleted ? 'Completado' : 'Pendiente'}"></span>
+                    `;
+                }).join('');
 
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = `habit-${habitId}-${dateString}`;
-                    checkbox.dataset.habitId = habitId;
-                    checkbox.dataset.date = dateString;
-                    checkbox.checked = isCompleted;
-                    checkbox.disabled = (dateString !== todayDateString); // Solo el checkbox de hoy es editable
-
-                    const label = document.createElement('label');
-                    label.htmlFor = `habit-${habitId}-${dateString}`;
-                    label.className = 'completion-label';
-                    label.title = date.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
-
-                    checkboxWrapper.appendChild(checkbox);
-                    checkboxWrapper.appendChild(label);
-                    completionContainer.appendChild(checkboxWrapper);
-                }
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'button-danger';
-                deleteBtn.textContent = '❌';
-                deleteBtn.dataset.id = habitId; // Usar data-id para el ID del documento
-
-                listItem.appendChild(habitNameSpan);
-                listItem.appendChild(completionContainer);
-                listItem.appendChild(deleteBtn);
-                habitsListUl.appendChild(listItem);
-                console.log(`Hábitos: Añadido hábito "${habit.name.substring(0, Math.min(habit.name.length, 20))}..." a la lista.`);
+                listItem.innerHTML = `
+                    <span>${habit.name}</span>
+                    <div class="habit-tracking-dots">${dailyTrackingHtml}</div>
+                    <button class="button-danger" data-id="${habitId}">❌</button>
+                `;
+                habitsList.appendChild(listItem);
+                console.log(`Hábitos: Añadido hábito "${habit.name}" a la lista.`);
             });
         }, (error) => {
             console.error("Hábitos: Error al escuchar hábitos:", error);
             window.showTempMessage(`Error al cargar hábitos: ${error.message}`, 'error');
         });
-    } else {
-        console.warn("Hábitos: Elemento HTML 'habitsList' no encontrado. Asegúrate de que tu HTML esté actualizado.");
-    }
 
-    // Añadir nuevo hábito
-    if (newHabitInput && addHabitBtn) {
-        console.log("Hábitos: Elementos HTML 'newHabitInput' y 'addHabitBtn' encontrados.");
+        // Añadir nuevo hábito
         addHabitBtn.addEventListener('click', async () => {
             const habitName = newHabitInput.value.trim();
             if (habitName) {
-                // Micro-interacción: Feedback visual al botón
                 addHabitBtn.classList.add('button-clicked');
                 setTimeout(() => {
                     addHabitBtn.classList.remove('button-clicked');
                 }, 300);
-
                 try {
                     await habitsCollectionRef.add({
                         name: habitName,
-                        creationDate: new Date().toISOString(),
-                        dailyCompletions: {} // Mapa para almacenar el seguimiento diario
+                        timestamp: new Date().toISOString(),
+                        dailyCompletions: {} // Mapa para guardar el estado de completado por fecha
                     });
                     newHabitInput.value = '';
-                    window.showTempMessage('Hábito añadido con éxito!', 'success');
+                    window.showTempMessage('Hábito añadido con éxito.', 'success');
                     console.log("Hábitos: Nuevo hábito añadido.");
                 } catch (error) {
                     console.error("Hábitos: Error al añadir hábito:", error);
@@ -1104,44 +1066,42 @@ async function loadAllUserData() {
                 window.showTempMessage('Por favor, escribe el nombre del hábito.', 'warning');
             }
         });
-    } else {
-        console.warn("Hábitos: Elementos HTML 'newHabitInput' o 'addHabitBtn' no encontrados. Asegúrate de que tu HTML esté actualizado.");
-    }
 
-    // Manejar el toggle de completado de hábito
-    if (habitsListUl) {
-        habitsListUl.addEventListener('change', async (e) => {
+        // Marcar hábito como completado/incompleto para un día específico (delegación de eventos)
+        habitsList.addEventListener('click', async (e) => {
             const target = e.target;
-            if (target.type === 'checkbox' && target.closest('.habit-item')) {
+            if (target.classList.contains('habit-day-dot')) {
                 const habitId = target.dataset.habitId;
-                const date = target.dataset.date;
-                const isCompleted = target.checked;
-
+                const dateString = target.dataset.date; // YYYY-MM-DD
+                
                 try {
                     const habitDocRef = habitsCollectionRef.doc(habitId);
-                    await habitDocRef.update({
-                        [`dailyCompletions.${date}`]: isCompleted
-                    });
-                    window.showTempMessage(`Hábito '${target.closest('.habit-item').querySelector('.habit-name').textContent}' ${isCompleted ? 'completado' : 'desmarcado'} para hoy.`, 'success');
-                    console.log(`Hábito ${habitId} actualizado para la fecha ${date}.`);
-                } catch (error) {
-                    console.error("Hábitos: Error al actualizar completado:", error);
-                    window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
-                    target.checked = !isCompleted; // Revert UI on error
-                }
-            }
-        });
+                    const docSnap = await habitDocRef.get();
+                    if (docSnap.exists) {
+                        const habitData = docSnap.data();
+                        const currentCompletions = habitData.dailyCompletions || {};
+                        const isCurrentlyCompleted = currentCompletions[dateString];
 
-        // Manejar la eliminación de hábito
-        habitsListUl.addEventListener('click', async (e) => {
-            const target = e.target;
-            if (target.classList.contains('button-danger') && target.closest('.habit-item')) {
-                const habitId = target.dataset.id;
+                        currentCompletions[dateString] = !isCurrentlyCompleted; // Toggle state
+
+                        await habitDocRef.update({
+                            dailyCompletions: currentCompletions
+                        });
+                        window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
+                        console.log(`Hábito: ${habitId} actualizado para fecha ${dateString}.`);
+                    }
+                } catch (error) {
+                    console.error("Hábitos: Error al actualizar estado de completado:", error);
+                    window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
+                }
+            } else if (target.classList.contains('button-danger')) {
+                // Eliminar hábito
+                const habitIdToDelete = target.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
                     try {
-                        await habitsCollectionRef.doc(habitId).delete();
+                        await habitsCollectionRef.doc(habitIdToDelete).delete();
                         window.showTempMessage('Hábito eliminado.', 'info');
-                        console.log(`Hábito ${habitId} eliminado.`);
+                        console.log(`Hábito: ${habitIdToDelete} eliminado.`);
                     } catch (error) {
                         console.error("Hábitos: Error al eliminar hábito:", error);
                         window.showTempMessage(`Error al eliminar hábito: ${error.message}`, 'error');
@@ -1149,33 +1109,32 @@ async function loadAllUserData() {
                 }
             }
         });
+    } else {
+        console.warn("Hábitos: Elementos HTML de Hábitos no encontrados.");
     }
 
 
     // Actualizar contadores de estado
     function updateAppStatus() {
-        if (currentUserId && db) { // Usar las variables globales
-            const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
-            // const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
+        if (window.currentUserId && window.db) {
+            const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
+            const habitsCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/habits`);
 
             checklistCollectionRef.get().then(snapshot => {
                 const checklistItemsCount = snapshot.size;
-                const tasksCountElement = document.getElementById('tasks-count');
                 const checklistCountElement = document.getElementById('checklist-count');
-
-                if (tasksCountElement) tasksCountElement.textContent = checklistItemsCount;
                 if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
             }).catch(error => {
                 console.error("Error getting checklist count:", error);
             });
 
-            // Puedes añadir un contador para hábitos si lo deseas
-            // habitsCollectionRef.get().then(snapshot => {
-            //     const habitsCount = snapshot.size;
-            //     // Actualiza un elemento HTML si tienes uno para el conteo de hábitos
-            // }).catch(error => {
-            //     console.error("Error getting habits count:", error);
-            // });
+            habitsCollectionRef.get().then(snapshot => {
+                const habitsCount = snapshot.size;
+                const tasksCountElement = document.getElementById('tasks-count'); // Reutilizando tasks-count para hábitos
+                if (tasksCountElement) tasksCountElement.textContent = habitsCount;
+            }).catch(error => {
+                console.error("Error getting habits count:", error);
+            });
 
         } else {
             const tasksCountElement = document.getElementById('tasks-count');
@@ -1186,18 +1145,49 @@ async function loadAllUserData() {
     }
     setInterval(updateAppStatus, 5000);
     updateAppStatus();
+}; // End of loadAllUserData
+
+// Función para solicitar permiso de notificaciones
+async function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+        console.warn("Este navegador no soporta notificaciones de escritorio.");
+        return;
+    }
+
+    if (Notification.permission === "granted") {
+        notificationPermissionGranted = true;
+        console.log("Permiso de notificación ya concedido.");
+        return;
+    }
+
+    if (Notification.permission === "denied") {
+        notificationPermissionGranted = false;
+        console.warn("Permiso de notificación denegado por el usuario.");
+        window.showTempMessage("Las notificaciones están bloqueadas. Habilítalas en la configuración de tu navegador para recibirlas.", 'warning', 7000);
+        return;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            notificationPermissionGranted = true;
+            console.log("Permiso de notificación concedido.");
+            window.showTempMessage("Notificaciones habilitadas. Te avisaremos cuando el Pomodoro termine.", 'info', 5000);
+        } else {
+            notificationPermissionGranted = false;
+            console.warn("Permiso de notificación denegado.");
+            window.showTempMessage("No se pudo habilitar las notificaciones. Puedes activarlas manualmente en la configuración de tu navegador.", 'warning', 7000);
+        }
+    } catch (error) {
+        console.error("Error al solicitar permiso de notificación:", error);
+        notificationPermissionGranted = false;
+        window.showTempMessage(`Error al solicitar permiso de notificación: ${error.message}`, 'error', 7000);
+    }
 }
 
 
 // Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
 document.addEventListener('DOMContentLoaded', async () => {
-    // Acceder a las variables globales de Firebase expuestas en el objeto window
-    // Estas ya están disponibles porque el script inline en index.html las inicializa
-    // NO reasignar db, auth, appId aquí, ya están inicializadas como const/let globales.
-    // db = window.db; // REMOVER
-    // auth = window.auth; // REMOVER
-    // const appId = window.appId; // REMOVER
-
     // Elementos de la UI de autenticación
     const userDisplayName = document.getElementById('user-display-name');
     const logoutBtn = document.getElementById('logout-btn');
@@ -1213,6 +1203,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Podríamos añadir un retry o un mensaje al usuario aquí.
         return;
     }
+
+    // Solicitar permiso de notificación al cargar la aplicación
+    await requestNotificationPermission();
 
     auth.onAuthStateChanged(async (user) => { // Usar la variable global 'auth'
         console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
