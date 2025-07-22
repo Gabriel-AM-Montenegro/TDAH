@@ -281,22 +281,53 @@ async function loadAllUserData() {
     let timer;
     let isRunning = false;
     let timeLeft = 1 * 60; // Default: 1 minuto para pruebas (antes 25 * 60)
+    let totalTimeForPomodoro = 1 * 60; // Duración total del ciclo actual (trabajo o descanso)
     let isBreakTime = false; // Add isBreakTime variable for Pomodoro
     const timerDisplay = document.getElementById('timer');
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
+    const pomodoroProgressCircle = document.querySelector('.pomodoro-progress-ring-progress');
+    const pomodoroProgressRing = document.querySelector('.pomodoro-progress-ring'); // Para cambiar el color del stroke
 
     const startTimerBtn = document.getElementById('start-timer-btn');
     const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
     const resetTimerBtn = document.getElementById('reset-timer-btn');
 
+    // Calcular la circunferencia del círculo para la barra de progreso
+    const radius = pomodoroProgressCircle ? parseFloat(pomodoroProgressCircle.getAttribute('r')) : 90;
+    const circumference = radius * 2 * Math.PI;
+
+    if (pomodoroProgressCircle) {
+        pomodoroProgressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+        pomodoroProgressCircle.style.strokeDashoffset = circumference; // Empieza lleno
+    }
+
+    function setProgress(percent) {
+        if (!pomodoroProgressCircle) return;
+        const offset = circumference - percent * circumference;
+        pomodoroProgressCircle.style.strokeDashoffset = offset;
+    }
+
     function updateTimerDisplay() {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Actualizar la barra de progreso
+        const progressPercent = timeLeft / totalTimeForPomodoro;
+        setProgress(progressPercent);
+
+        // Cambiar color de la barra de progreso según el estado
+        if (pomodoroProgressCircle) {
+            if (isBreakTime) {
+                pomodoroProgressCircle.style.stroke = 'var(--secondary-color)'; // Color para descanso
+            } else {
+                pomodoroProgressCircle.style.stroke = 'var(--primary-color)'; // Color para trabajo
+            }
+        }
     }
 
-    if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn) {
-        console.log("Pomodoro: Elementos HTML del Temporizador encontrados.");
+    if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn && pomodoroProgressCircle) {
+        console.log("Pomodoro: Elementos HTML del Temporizador y SVG encontrados.");
         pomodoroSettingsDocRef.onSnapshot((docSnap) => {
             console.log("Pomodoro: Recibiendo snapshot de settings.");
             if (docSnap.exists) {
@@ -305,6 +336,7 @@ async function loadAllUserData() {
                 timeLeft = settings.timeLeft;
                 isRunning = settings.isRunning;
                 isBreakTime = settings.isBreakTime || false; // Load isBreakTime
+                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60); // Set total time based on state
                 updateTimerDisplay();
                 if (isRunning && settings.lastUpdated) {
                     const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
@@ -340,6 +372,7 @@ async function loadAllUserData() {
                                 if (startBreak) {
                                     console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
                                     timeLeft = 5 * 60; // 5 minutos para descanso
+                                    totalTimeForPomodoro = 5 * 60; // Update total time for break
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime); // Save break state
@@ -434,6 +467,7 @@ async function loadAllUserData() {
                                 if (startBreak) {
                                     console.log("Pomodoro (startTimer): Usuario eligió iniciar descanso.");
                                     timeLeft = 5 * 60; // 5 minutos para descanso
+                                    totalTimeForPomodoro = 5 * 60; // Update total time for break
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime); // Save break state
@@ -483,6 +517,7 @@ async function loadAllUserData() {
             clearInterval(timer);
             isRunning = false;
             timeLeft = 1 * 60; // Always reset to 1 minute work time for testing (before 25 * 60)
+            totalTimeForPomodoro = 1 * 60; // Reset total time to work time
             isBreakTime = false; // Ensure we are not in break time
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);

@@ -63,7 +63,14 @@
 
     <section id="pomodoro" class="seccion active">
       <h2>⏱️ Temporizador Pomodoro</h2>
-      <div id="timer">25:00</div>
+      <div class="pomodoro-timer-container">
+        <div id="timer">25:00</div>
+        <!-- SVG para la barra de progreso circular -->
+        <svg class="pomodoro-progress-ring" width="200" height="200">
+          <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+          <circle class="pomodoro-progress-ring-progress" stroke="#4F46E5" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+        </svg>
+      </div>
       <div class="pomodoro-buttons">
         <button id="start-timer-btn">▶️ Iniciar</button>
         <button id="pause-pomodoro-btn">⏸️ Pausar</button>
@@ -185,7 +192,7 @@
 
       <div class="config-card">
         <h3>📊 Estado de la App</h3>
-        <p><strong>Tareas guardadas:</strong> <span id="tasks-count">0</span></p>
+        <p><strong>Hábitos registrados:</strong> <span id="tasks-count">0</span></p>
         <p><strong>Checklist items:</strong> <span id="checklist-count">0</span></p>
         <p><strong>Última sincronización Trello:</strong> <span id="last-sync">Nunca</span></p>
         

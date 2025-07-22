@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(201, 182, 103) !important; /* Este borde debería desaparecer si el CSS carga */
+  border: 5px solid rgb(96, 167, 114) !important; /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -209,16 +209,48 @@ h3 {
 }
 
 /* ========== TIMER POMODORO ========== */
+.pomodoro-timer-container {
+  position: relative;
+  width: 200px; /* Ancho fijo para el contenedor del timer y SVG */
+  height: 200px; /* Altura fija para el contenedor del timer y SVG */
+  margin: 1em auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #timer {
   font-size: 3em;
   font-weight: bold;
   text-align: center;
-  margin: 1em 0;
+  /* Eliminar márgenes para que se superponga con el SVG */
+  margin: 0;
+  position: absolute; /* Posicionar sobre el SVG */
+  z-index: 10; /* Asegurar que el texto esté por encima del SVG */
   /* Degradado para el texto */
   background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.pomodoro-progress-ring {
+  position: absolute; /* Posicionar SVG detrás del texto del timer */
+  transform: rotate(-90deg); /* Iniciar el progreso desde la parte superior */
+  z-index: 5; /* Asegurar que el SVG esté detrás del texto */
+}
+
+.pomodoro-progress-ring-track {
+  stroke: #e6e6e6; /* Color de la pista de fondo */
+  stroke-width: 10;
+  fill: transparent;
+}
+
+.pomodoro-progress-ring-progress {
+  stroke: var(--primary-color); /* Color de la barra de progreso */
+  stroke-width: 10;
+  fill: transparent;
+  transition: stroke-dashoffset 1s linear; /* Transición suave para la animación */
 }
 
 .pomodoro-buttons {
