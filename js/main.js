@@ -4,8 +4,8 @@
 
 // Inicializar variables globales de Firebase directamente desde window.
 // Esto asume que el script inline en index.html ya las ha definido antes de que main.js se cargue.
-const db = window.db;
-const auth = window.auth;
+let db = window.db;
+let auth = window.auth;
 let currentUserId = window.currentUserId; // currentUserId puede cambiar con la autenticación
 const appId = window.appId; // appId debería ser constante
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
@@ -42,7 +42,7 @@ async function loadAllUserData() {
     // --- Referencias a colecciones de Firestore específicas del usuario ---
     // Estas referencias ahora se definen DENTRO de loadAllUserData
     // para asegurar que currentUserId ya está establecido.
-    console.log("loadAllUserData: currentUserId al definir colecciones:", currentUserId); // NUEVO LOG
+    console.log("loadAllUserData: currentUserId al definir colecciones:", currentUserId); // NUEVO LOG CRÍTICO
     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
@@ -190,7 +190,7 @@ async function loadAllUserData() {
             console.log("Tour: Click en Anterior.");
             if (currentTourStep > 0) {
                 currentTourStep--;
-                renderTourTourStep();
+                renderTourStep(); // Corregido: renderTourTourStep a renderTourStep
             }
         }
 
@@ -744,8 +744,8 @@ async function loadAllUserData() {
                 const itemId = docSnap.id;
                 console.log("Checklist (onSnapshot): Procesando ítem:", item.text, "ID:", itemId, "Completed:", item.completed, "MIT:", item.isMIT, "Position:", item.position); // Detailed log for each item
                 const listItem = document.createElement('li');
-                listItem.setAttribute('draggable', 'true');
-                listItem.dataset.id = itemId;
+                listItem.setAttribute('draggable', 'true'); // Make list item draggable
+                listItem.dataset.id = itemId; // Store Firestore ID on the li element
 
                 // Explicitly create elements instead of innerHTML for listItem content
                 const completionCheckbox = document.createElement('input');
@@ -1189,37 +1189,48 @@ async function loadAllUserData() {
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
+    // Colección de Firestore para contenido de nutrición
+    // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
+    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); // <--- CAMBIO AQUÍ
+
     if (nutricionContentDiv && refreshNutricionBtn) {
         console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                const data = [
-                    { title: "Hidratación Esencial", content: "Beber suficiente agua es crucial para la función cerebral y la energía. Intenta beber 8 vasos al día.", source: "OMS" },
-                    { title: "Omega-3 y Cerebro", content: "Los ácidos grasos Omega-3, encontrados en pescados grasos y nueces, son vitales para la salud cerebral y la concentración.", source: "Harvard Health" },
-                    { title: "Alimentos Integrales", content: "Opta por granos enteros, frutas y verduras para un suministro constante de energía y nutrientes.", source: "Nutrición al Día" }
-                ];
-                nutricionContentDiv.innerHTML = '';
-                data.forEach(item => {
+                // Obtener documentos de la colección nutritionContent
+                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
+                nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
+
+                if (snapshot.empty) {
+                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
+                    console.log("Nutrición: No hay contenido en Firestore.");
+                    window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
                     card.innerHTML = `
                         <h4>${item.title}</h4>
                         <p>${item.content}</p>
                         <small>Fuente: ${item.source}</small>
+                        ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
                     `;
                     nutricionContentDiv.appendChild(card);
                 });
-                window.showTempMessage('Contenido de nutrición actualizado.', 'success');
-                console.log("Nutrición: Contenido cargado.");
+                window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
+                console.log("Nutrición: Contenido cargado desde Firestore.");
             } catch (error) {
                 nutricionContentDiv.innerHTML = '<p>Error al cargar contenido de nutrición.</p>';
-                console.error('Nutrición: Error al cargar nutrición:', error);
-                window.showTempMessage('Error al cargar contenido de nutrición.', 'error');
+                console.error('Nutrición: Error al cargar nutrición desde Firestore:', error);
+                window.showTempMessage(`Error al cargar contenido de nutrición: ${error.message}`, 'error');
             }
         }
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
-        cargarNutricion();
+        cargarNutricion(); // Cargar al inicio
     } else {
         console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
     }
@@ -1455,6 +1466,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const googleSigninBtn = document.getElementById('google-signin-btn');
     const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
     const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
+    const userIdDisplay = document.getElementById('user-id-display');
+
 
     // Firebase Auth State Listener
     // Asegurarse de que auth esté definido antes de añadir el listener
@@ -1481,10 +1494,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (user) {
             currentUserId = user.uid; // Actualizar la variable global currentUserId
+            window.currentUserId = user.uid; // Asegurar que window.currentUserId también se actualice
             console.log("onAuthStateChanged: Usuario autenticado. UID:", currentUserId);
 
             // Mostrar información del usuario y botón de cerrar sesión
             if (userDisplayName) userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+            if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`; // Mostrar ID completo
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones
             if (googleSigninBtn) googleSigninBtn.style.display = 'none'; // Ocultar botón de Google
             if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'none'; // Ocultar botón de Email
@@ -1506,8 +1521,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } else { // Usuario es null (no autenticado)
             currentUserId = null; // Actualizar la variable global currentUserId
+            window.currentUserId = null; // Asegurar que window.currentUserId también se actualice
             console.log("onAuthStateChanged: Usuario no autenticado.");
             if (userDisplayName) userDisplayName.textContent = 'Por favor, inicia sesión:';
+            if (userIdDisplay) userIdDisplay.textContent = ''; // Limpiar ID de usuario
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
             if (googleSigninBtn) googleSigninBtn.style.display = 'inline-block'; // Mostrar botón de Google
             if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón de Email
@@ -1618,11 +1635,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.mostrarSeccion('pomodoro');
         console.log("Sección Pomodoro activa. ClassList:", document.getElementById('pomodoro').classList.value);
     });
-    document.getElementById('btn-tareas').addEventListener('click', () => {
-        window.mostrarSeccion('tareas');
-        console.log("Sección Tareas activa. ClassList:", document.getElementById('tareas').classList.value);
-    });
-    document.getElementById('btn-checklist').addEventListener('click', () => {
+    document.getElementById('btn-checklist').addEventListener('click', () => { // Corregido el ID del botón
         window.mostrarSeccion('checklist');
         console.log("Sección Checklist activa. ClassList:", document.getElementById('checklist').classList.value);
     });
@@ -1630,17 +1643,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.mostrarSeccion('journal');
         console.log("Sección Journal activa. ClassList:", document.getElementById('journal').classList.value);
     });
-    document.getElementById('btn-notas').addEventListener('click', () => {
-        window.mostrarSeccion('notas');
-        console.log("Sección Notas activa. ClassList:", document.getElementById('notas').classList.value);
-    });
-    document.getElementById('btn-nutricion').addEventListener('click', () => {
-        window.mostrarSeccion('nutricion');
-        console.log("Sección Nutrición activa. ClassList:", document.getElementById('nutricion').classList.value);
-    });
     document.getElementById('btn-habitos').addEventListener('click', () => {
         window.mostrarSeccion('habitos');
         console.log("Sección Hábitos activa. ClassList:", document.getElementById('habitos').classList.value);
+    });
+    document.getElementById('btn-tareas').addEventListener('click', () => { // Corregido el ID del botón
+        window.mostrarSeccion('tareas');
+        console.log("Sección Tareas activa. ClassList:", document.getElementById('tareas').classList.value);
+    });
+    document.getElementById('btn-notas').addEventListener('click', () => { // Corregido el ID del botón
+        window.mostrarSeccion('notas');
+        console.log("Sección Notas activa. ClassList:", document.getElementById('notas').classList.value);
+    });
+    document.getElementById('btn-nutricion').addEventListener('click', () => { // Corregido el ID del botón
+        window.mostrarSeccion('nutricion');
+        console.log("Sección Nutrición activa. ClassList:", document.getElementById('nutricion').classList.value);
     });
     document.getElementById('btn-config').addEventListener('click', () => {
         window.mostrarSeccion('config');

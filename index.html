@@ -8,361 +8,389 @@
 
   <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
   <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
   <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
 
+  <style>
+    /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
+    #css-check {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      background-color: red; /* Si ves rojo, el CSS no carga o hay un problema */
+      z-index: 99999;
+    }
+  </style>
 </head>
 <body>
+  <div id="css-check"></div> <!-- Div para verificar carga de CSS -->
+
   <div class="container">
 
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
       <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <div id="user-info-area" style="font-size: 0.8em; color: var(--white); margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap;">
-        <span id="user-display-name">Cargando usuario...</span>
-        <div class="auth-buttons-wrapper"> <!-- Nuevo wrapper para los botones -->
-            <button id="google-signin-btn" class="button-primary auth-btn" style="display: none;">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px;">
-              Iniciar con Google
-            </button>
-            <button id="email-signin-toggle-btn" class="button-secondary auth-btn" style="display: none;">
-              Iniciar con Email
-            </button>
-            <button id="anonymous-signin-btn" class="button-secondary auth-btn" style="display: none;">
-              Continuar como Anónimo
-            </button>
+      <div id="user-info-area">
+        <span id="user-display-name">Cargando...</span>
+        <div class="auth-buttons-wrapper">
+          <button id="google-signin-btn" class="auth-btn">Iniciar con Google</button>
+          <button id="anonymous-signin-btn" class="auth-btn">Iniciar Anónimamente</button>
+          <button id="email-signin-toggle-btn" class="auth-btn">Iniciar con Email</button>
         </div>
-        <button id="logout-btn" class="button-secondary" style="display: none;">Cerrar Sesión</button>
+        <button id="logout-btn" style="display: none;">Cerrar Sesión</button>
+        <!-- ID de usuario para depuración y referencia -->
+        <p id="user-id-display" style="font-size: 0.8em; color: rgba(255,255,255,0.7); margin-top: 5px;"></p>
       </div>
     </header>
 
-    <!-- Formulario de inicio de sesión/registro con Email -->
-    <div id="email-auth-form" class="auth-form-card" style="display: none; margin-top: 20px; padding: 20px; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <h3>Iniciar Sesión / Registrarse con Email</h3>
-      <input type="email" id="email-input" placeholder="Correo electrónico" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
-      <input type="password" id="password-input" placeholder="Contraseña" style="width: calc(100% - 20px); padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-      <button id="email-signup-btn" class="button-primary" style="margin-right: 10px;">Registrarse</button>
-      <button id="email-login-btn" class="button-secondary">Iniciar Sesión</button>
-      <button id="email-form-close-btn" class="button-danger" style="float: right;">X</button>
-    </div>
-
-    <div class="nav-tabs">
+    <nav class="nav-tabs">
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
-      <button id="btn-tareas">📋 Tareas Importantes</button>
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
-      <button id="btn-notas">📝 Notas Blog</button>
-      <button id="btn-nutricion">🍎 Nutrición</button> <!-- Nuevo botón para Nutrición -->
-      <button id="btn-habitos">✅ Hábitos</button> <!-- Nuevo botón para Hábitos -->
+      <button id="btn-habitos">🌱 Hábitos</button>
+      <button id="btn-tareas">📋 Tareas Trello</button>
+      <button id="btn-notas">📚 Notas Blog</button>
+      <button id="btn-nutricion">🍎 Nutrición</button>
       <button id="btn-config">⚙️ Configuración</button>
-    </div>
+    </nav>
 
-    <section id="pomodoro" class="seccion active">
-      <h2>⏱️ Temporizador Pomodoro</h2>
-      <div class="pomodoro-timer-container">
-        <div id="timer">25:00</div>
-        <!-- SVG para la barra de progreso circular -->
-        <svg class="pomodoro-progress-ring" width="200" height="200">
-          <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
-          <circle class="pomodoro-progress-ring-progress" stroke="#4F46E5" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
-        </svg>
-      </div>
-      <div class="pomodoro-buttons">
-        <button id="start-timer-btn">▶️ Iniciar</button>
-        <button id="pause-pomodoro-btn">⏸️ Pausar</button>
-        <button id="reset-timer-btn">🔄 Resetear</button>
-      </div>
-      <div class="help-text">
-        💡 25 min de trabajo concentrado + 5 min de descanso. ¡Perfecto para TDAH!
-      </div>
-    </section>
-
-    <section id="tareas" class="seccion">
-      <h2>📋 Tareas Importantes (Trello)</h2>
-      <div id="trello-status" class="status-indicator status-disconnected">
-        ❌ Trello no conectado
-      </div>
-      <div id="tareas-content">
-        <p>Configura tu conexión a Trello para ver las tareas que vencen hoy.</p>
-        <button id="config-trello-btn">⚙️ Configurar Trello</button>
-      </div>
-      <ul id="listaTareas"></ul>
-    </section>
-
-    <section id="checklist" class="seccion">
-      <h2>✅ Checklist Rápido</h2>
-      <div class="mit-explanation">
-        <p>La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
-        <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
-      </div>
-      <div class="input-group">
-        <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
-        <button id="add-check-item-btn">➕ Agregar</button>
-      </div>
-      <ul id="checkList"></ul>
-      <div class="help-text">
-        💡 Para tareas pequeñas y recordatorios rápidos del día
-      </div>
-    </section>
-
-    <!-- Nueva sección del Journal -->
-    <section id="journal" class="seccion">
-        <h2>📝 Journal</h2>
-        <p class="subtitle">Un espacio reflexivo para documentar emociones, actividades y situaciones significativas de tu jornada, fomentando el autoconocimiento y el bienestar.</p>
-        <textarea id="journalEntry" rows="10" placeholder="Escribe aquí tu entrada del diario..."></textarea>
-        <button id="save-journal-entry-btn">Guardar Entrada</button>
-
-        <h3>Entradas Anteriores:</h3>
-        <ul id="journalEntriesList">
-            <!-- Las entradas del diario se cargarán aquí dinámicamente -->
-        </ul>
-    </section>
-
-    <section id="notas" class="seccion">
-      <h2>📝 Notas de Blog TDAH</h2>
-      <div id="blog-content">
-        <p>Cargando artículos sobre TDAH...</p>
+    <main>
+      <!-- Sección Pomodoro -->
+      <section id="pomodoro" class="seccion active">
+        <h2>⏱️ Temporizador Pomodoro</h2>
+        <p class="subtitle">Enfócate en tus tareas con bloques de tiempo definidos.</p>
+        <div class="pomodoro-timer-container">
+          <svg class="pomodoro-progress-ring" width="200" height="200">
+            <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+            <circle class="pomodoro-progress-ring-progress" stroke="var(--primary-color)" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+          </svg>
+          <p id="timer">25:00</p>
         </div>
-      <button id="refresh-blog-btn">🔄 Actualizar Artículos</button>
-    </section>
+        <div class="pomodoro-buttons">
+          <button id="start-timer-btn">Iniciar</button>
+          <button id="pause-pomodoro-btn">Pausar</button>
+          <button id="reset-timer-btn">Reiniciar</button>
+        </div>
+        <audio id="sound-complete" src="https://www.soundjay.com/buttons/beep-07.mp3" preload="auto"></audio>
+        <audio id="sound-break" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+        <audio id="sound-task-done" src="https://www.soundjay.com/buttons/button-20.mp3" preload="auto"></audio>
+      </section>
 
-    <section id="nutricion" class="seccion">
-        <h2>🍎 Nutrición y Recetas</h2>
-        <div id="nutricion-content">
-            <p>Cargando recomendaciones nutricionales y recetas...</p>
-            </div>
-        <button id="refresh-nutricion-btn">🔄 Actualizar Contenido</button>
-    </section>
-
-    <!-- Nueva sección de Hábitos -->
-    <section id="habitos" class="seccion">
-        <h2>✅ Hábitos Diarios</h2>
-        <p class="subtitle">Establece y sigue tus hábitos diarios. ¡La consistencia es clave!</p>
+      <!-- Sección Checklist Rápido -->
+      <section id="checklist" class="seccion">
+        <h2>✅ Checklist Rápido</h2>
+        <p class="subtitle">La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
+        <div class="mit-explanation">
+          <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
+        </div>
         <div class="input-group">
-            <input type="text" id="newHabitInput" placeholder="Nuevo hábito (ej. Beber 2L de agua)..." />
-            <button id="add-habit-btn">➕ Añadir Hábito</button>
+          <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
+          <button id="add-check-item-btn">➕ Agregar</button>
         </div>
-        <ul id="habitsList">
-            <!-- Los hábitos se cargarán aquí dinámicamente -->
+        <ul id="checkList">
+          <!-- Los ítems del checklist se cargarán aquí -->
         </ul>
-    </section>
+        <p class="help-text">Para tareas pequeñas y recordatorios rápidos del día</p>
+      </section>
 
+      <!-- Sección Journal Personal -->
+      <section id="journal" class="seccion">
+        <h2>📝 Journal Personal</h2>
+        <p class="subtitle">Un espacio para tus pensamientos, reflexiones y logros diarios.</p>
+        <textarea id="journalEntry" placeholder="Escribe aquí tu entrada de hoy..."></textarea>
+        <button id="save-journal-entry-btn">Guardar Entrada</button>
+        <h3>Tus Entradas Anteriores</h3>
+        <ul id="journalEntriesList">
+          <!-- Las entradas del journal se cargarán aquí -->
+        </ul>
+      </section>
 
-    <section id="config" class="seccion">
-      <h2>⚙️ Configuración</h2>
-      
-      <div class="config-card" id="config-card">
-        <h3>🔗 Conectar con Trello</h3>
-        
+      <!-- Sección Hábitos Diarios -->
+      <section id="habitos" class="seccion">
+        <h2>🌱 Hábitos Diarios</h2>
+        <p class="subtitle">Construye rutinas saludables y sigue tu progreso día a día.</p>
+        <div class="input-group">
+          <input type="text" id="newHabitInput" placeholder="Añadir nuevo hábito (ej. Beber 2L de agua)" />
+          <button id="add-habit-btn">➕ Añadir Hábito</button>
+        </div>
+        <h3>Mis Hábitos</h3>
+        <ul id="habitsList">
+          <!-- Los hábitos se cargarán aquí -->
+        </ul>
+      </section>
+
+      <!-- Sección Tareas Trello -->
+      <section id="tareas" class="seccion">
+        <h2>📋 Tareas Trello</h2>
+        <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
+        <div class="config-card">
+          <h3>Estado de Conexión</h3>
+          <p id="trello-status" class="status-indicator status-disconnected">❌ Trello no conectado</p>
+          <p id="trello-success-message" class="success-message" style="display: none;">Conexión exitosa. ¡Tareas cargadas!</p>
+          <button id="test-trello-btn">Probar Conexión</button>
+          <button id="config-trello-btn">Configurar Trello</button>
+        </div>
+        <h3>Tareas para esta semana</h3>
+        <ul id="listaTareas">
+          <li>Cargando tareas de Trello...</li>
+        </ul>
+      </section>
+
+      <!-- Sección Notas Blog -->
+      <section id="notas" class="seccion">
+        <h2>📚 Notas Blog</h2>
+        <p class="subtitle">Artículos y consejos útiles sobre TDAH y productividad.</p>
+        <button id="refresh-blog-btn">Actualizar Artículos</button>
+        <div id="blog-content">
+          <p>Cargando artículos...</p>
+        </div>
+      </section>
+
+      <!-- Sección Nutrición -->
+      <section id="nutricion" class="seccion">
+        <h2>🍎 Nutrición</h2>
+        <p class="subtitle">Recomendaciones nutricionales para apoyar tu bienestar cerebral.</p>
+        <button id="refresh-nutricion-btn">Actualizar Contenido</button>
+        <div id="nutricion-content">
+          <p>Cargando recomendaciones...</p>
+        </div>
+      </section>
+
+      <!-- Sección Configuración -->
+      <section id="config" class="seccion">
+        <h2>⚙️ Configuración</h2>
+        <p class="subtitle">Personaliza tu experiencia y gestiona tus datos.</p>
+
+        <h3>Configuración de Trello API</h3>
         <div class="config-step">
-          <label for="api-key">API Key de Trello:</label>
-          <input type="text" id="api-key" placeholder="Pega aquí tu API Key...">
-          <div class="help-text">
-            📝 Obtén tu API Key en: <a href="https://trello.com/app-key" target="_blank">https://trello.com/app-key</a>
-          </div>
+          <label for="api-key">Trello API Key:</label>
+          <input type="text" id="api-key" placeholder="Tu clave API de Trello" />
+          <p class="help-text">Obtén tu API Key <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a>.</p>
         </div>
-
         <div class="config-step">
-          <label for="token">Token de Trello:</label>
-          <input type="text" id="token" placeholder="Pega aquí tu Token...">
-          <div class="help-text">
-            📝 Genera tu Token clickeando en el link que aparece junto a tu API Key
-          </div>
+          <label for="token">Trello Token:</label>
+          <input type="text" id="token" placeholder="Tu token de Trello" />
+          <p class="help-text">Genera un token <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a> (haz clic en "Token" bajo tu API Key).</p>
         </div>
-
         <div class="config-step">
-          <label for="board-id">ID del Board:</label>
-          <input type="text" id="board-id" placeholder="ID de tu board de Trello...">
-          <div class="help-text">
-            📝 Encuentra el ID en la URL de tu board: trello.com/b/<strong>ID_AQUI</strong>/nombre-board
-          </div>
+          <label for="board-id">Trello Board ID:</label>
+          <input type="text" id="board-id" placeholder="ID de tu tablero de Trello" />
+          <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/<span style="font-weight: bold; color: var(--primary-color);">[BOARD_ID]</span>/tu-tablero</code></p>
         </div>
+        <button id="save-trello-config-btn">Guardar Configuración de Trello</button>
 
-        <button id="test-trello-btn">🔍 Probar Conexión</button>
-        <button id="save-trello-config-btn">💾 Guardar Configuración</button>
-        
-        <div class="success-message" id="trello-success-message">
-          ✅ ¡Conexión exitosa! Ya puedes ver tus tareas de Trello.
-        </div>
+        <h3>Gestión de Datos</h3>
+        <button id="clear-data-btn" class="button-danger">Limpiar Todos los Datos</button>
+        <p class="help-text">Esto eliminará todos tus datos (Pomodoro, Checklist, Journal, Trello Config, Hábitos) de forma permanente.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 TDAH Helper App. Todos los derechos reservados.</p>
+      <div class="status-counts">
+        <span>Tareas: <span id="tasks-count">0</span></span>
+        <span>Checklist: <span id="checklist-count">0</span></span>
       </div>
-
-      <div class="config-card">
-        <h3>📊 Estado de la App</h3>
-        <p><strong>Hábitos registrados:</strong> <span id="tasks-count">0</span></p>
-        <p><strong>Checklist items:</strong> <span id="checklist-count">0</span></p>
-        <p><strong>Última sincronización Trello:</strong> <span id="last-sync">Nunca</span></p>
-        
-        <button id="clear-data-btn" style="background: #ef4444;">🗑️ Limpiar Todos los Datos</button>
-      </div>
-    </section>
+    </footer>
   </div>
 
-  <div id="confetti-container"></div> <!-- Contenedor para el confeti -->
+  <!-- Contenedor para mensajes temporales -->
   <div id="temp-message-container"></div>
-  <!-- Añadir onerror para depurar problemas de carga de audio -->
-  <audio id="sound-complete" src="sounds/complete.mp3" preload="auto" onerror="console.error('Error cargando sound-complete.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de finalización.', 'error', 5000);"></audio>
-  <audio id="sound-break" src="sounds/break.mp3" preload="auto" onerror="console.error('Error cargando sound-break.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de descanso.', 'error', 5000);"></audio>
-  <audio id="sound-task-done" src="sounds/task-done.mp3" preload="auto" onerror="console.error('Error cargando sound-task-done.mp3'); window.showTempMessage('Error: No se pudo cargar el sonido de tarea completada.', 'error', 5000);"></audio>
 
-  <!-- Div de prueba para verificar si el CSS se carga correctamente -->
-  <div id="css-check" style="position: fixed; top: 10px; right: 10px; width: 20px; height: 20px; background-color: red; border-radius: 50%;"></div>
+  <!-- Contenedor para el confeti -->
+  <div id="confetti-container"></div>
 
-  <!-- Custom Confirmation Modal HTML -->
-  <div id="custom-confirm-modal" class="custom-modal-overlay" style="display: none;">
+  <!-- Custom Confirmation Modal -->
+  <div id="custom-modal-overlay" class="custom-modal-overlay">
     <div class="custom-modal-content">
-      <p id="custom-confirm-message"></p>
+      <p id="custom-modal-message">¿Estás seguro?</p>
       <div class="modal-buttons">
-        <button id="custom-confirm-yes">Sí</button>
-        <button id="custom-confirm-no">No</button>
+        <button id="custom-modal-yes-btn">Sí</button>
+        <button id="custom-modal-no-btn" class="button-danger">No</button>
       </div>
     </div>
   </div>
 
-  <!-- Welcome Tour Overlay HTML -->
-  <!-- Se eliminó custom-modal-overlay y se añadió welcome-tour-modal-inner para el contenido -->
+  <!-- Welcome Tour Overlay -->
   <div id="welcome-tour-overlay">
-    <div class="welcome-tour-modal-inner tour-content">
-      <h3 id="tour-title"></h3>
-      <img id="tour-highlight-image" src="" alt="Highlight" style="max-width: 100%; height: auto; margin: 15px auto; display: block; border-radius: 8px;">
-      <p id="tour-description"></p>
-      <div id="tour-dots" style="text-align: center; margin: 15px 0;"></div>
-      <div class="modal-buttons">
-        <button id="tour-back-btn" class="button-secondary">⬅️ Anterior</button>
-        <button id="tour-skip-btn" class="button-danger">Omitir Tour</button>
-        <button id="tour-next-btn" class="button-primary">Siguiente ➡️</button>
+    <div class="welcome-tour-modal-inner">
+      <div class="welcome-tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+        <div class="tour-highlight-image-container">
+          <img id="tour-highlight-image" src="" alt="Highlight Image" class="tour-highlight-image" style="display: none;">
+        </div>
+      </div>
+      <div class="welcome-tour-navigation">
+        <button id="tour-back-btn" class="tour-nav-btn">⬅️ Anterior</button>
+        <div id="tour-dots" class="tour-dots"></div>
+        <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
+        <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
       </div>
     </div>
   </div>
 
 
-  <!-- Script de inicialización de Firebase y autenticación -->
-  <!-- Este script se ejecuta después de que los SDK de Firebase se han cargado (en el head) -->
-  <!-- y antes de main.js, asegurando que 'firebase' esté definido. -->
-  <script>
-    console.log("Script inline en body: Iniciando configuración de Firebase.");
-    // Configuración de Firebase proporcionada por el usuario
-    // ¡IMPORTANTE! Reemplaza estos valores con los de TU proyecto de Firebase
-    // Encuéntralos en la Consola de Firebase > Configuración del proyecto > Tus apps (aplicación web)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaC7FvY_9bDHBvl36YWAIIO9qXyvqZrUw", // <--- VERIFICA ESTE VALOR
-        authDomain: "tdah-app-efca9.firebaseapp.com",    // <--- VERIFICA ESTE VALOR
-        projectId: "tdah-app-efca9",                     // <--- VERIFICA ESTE VALOR
-        storageBucket: "tdah-app-efca9.firebasestorage.app",
-        messagingSenderId: "765424031369",
-        appId: "1:765424031369:web:838eca686f68f21daa5858",
-        measurementId: "G-QY7X98XZZV"
-    };
-
-    // Inicializar Firebase y exponer a window para main.js
-    // Usamos las funciones de la API global de Firebase (v8 compat)
-    window.firebaseApp = firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); // Acceder a Firestore
-    window.auth = firebase.auth();   // Acceder a Auth
-
-    // Asegurarse de usar el appId de la configuración de Firebase
-    window.appId = firebaseConfig.appId;
-    // __initial_auth_token es una variable global proporcionada por el entorno Canvas
+  <script type="text/javascript">
+    // Exponer variables globales para que main.js pueda acceder a ellas
+    // Estas variables son proporcionadas por el entorno de Canvas.
+    window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
     window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    console.log("Script inline en body: Firebase inicializado y variables expuestas.");
 
-    // Funciones globales que main.js también podría necesitar o que el HTML llama directamente
-    // Definirlas aquí para asegurar que estén disponibles cuando DOMContentLoaded se dispare.
-    window.mostrarSeccion = function(idSeccion) {
-        console.log(`Intentando mostrar sección: ${idSeccion}`);
-        document.querySelectorAll('.seccion').forEach(seccion => {
-            seccion.classList.remove('active');
-        });
-        document.querySelectorAll('.nav-tabs button').forEach(button => {
-            button.classList.remove('active');
-        });
+    // Inicializar Firebase una vez que las variables globales estén disponibles
+    let app;
+    let db;
+    let auth;
 
-        const seccionActiva = document.getElementById(idSeccion);
-        if (seccionActiva) {
-            seccionActiva.classList.add('active');
-            console.log(`Sección ${idSeccion} activada.`);
+    try {
+        app = firebase.initializeApp(window.firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        console.log("Firebase inicializado con éxito.");
+
+        // Exponer instancias de Firebase globalmente para main.js
+        window.db = db;
+        window.auth = auth;
+
+        // Si hay un token de autenticación inicial, intentar iniciar sesión con él
+        // Esto se hace aquí para que main.js pueda depender de un usuario autenticado
+        // o al menos de que el proceso de autenticación haya comenzado.
+        if (window.initialAuthToken) {
+            auth.signInWithCustomToken(window.initialAuthToken)
+                .then((userCredential) => {
+                    console.log("Inicio de sesión con CustomToken exitoso:", userCredential.user.uid);
+                    window.currentUserId = userCredential.user.uid;
+                    if (window.loadAllUserData) {
+                        window.loadAllUserData(); // Cargar datos una vez que el usuario esté autenticado
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error al iniciar sesión con CustomToken:", error);
+                    // Si falla el token, intentar iniciar sesión anónimamente
+                    auth.signInAnonymously()
+                        .then((userCredential) => {
+                            console.log("Inicio de sesión anónima exitoso:", userCredential.user.uid);
+                            window.currentUserId = userCredential.user.uid;
+                            if (window.loadAllUserData) {
+                                window.loadAllUserData();
+                            }
+                        })
+                        .catch((anonError) => {
+                            console.error("Error al iniciar sesión anónima:", anonError);
+                            window.showTempMessage(`Error de autenticación: ${anonError.message}`, 'error');
+                        });
+                });
         } else {
-            console.warn(`Sección con ID ${idSeccion} no encontrada.`);
+            // Si no hay token inicial, intentar iniciar sesión anónimamente por defecto
+            auth.signInAnonymously()
+                .then((userCredential) => {
+                    console.log("Inicio de sesión anónima exitoso (sin token inicial):", userCredential.user.uid);
+                    window.currentUserId = userCredential.user.uid;
+                    if (window.loadAllUserData) {
+                        window.loadAllUserData();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error al iniciar sesión anónima (sin token inicial):", error);
+                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
+                });
         }
-        const botonActivo = document.getElementById(`btn-${idSeccion}`);
-        if (botonActivo) {
-            botonActivo.classList.add('active');
-            console.log(`Botón ${idSeccion} activado.`);
-        } else {
-            console.warn(`Botón con ID btn-${idSeccion} no encontrado.`);
+
+    } catch (e) {
+        console.error("Error al inicializar Firebase:", e);
+        document.addEventListener('DOMContentLoaded', () => {
+            window.showTempMessage(`Error crítico: Firebase no pudo inicializarse. ${e.message}`, 'error', 10000);
+        });
+    }
+
+    // Función para mostrar/ocultar secciones
+    window.mostrarSeccion = function(idSeccion) {
+      document.querySelectorAll('.seccion').forEach(seccion => {
+        seccion.classList.remove('active');
+      });
+      document.getElementById(idSeccion).classList.add('active');
+
+      // Actualizar el estado de los botones de navegación
+      document.querySelectorAll('.nav-tabs button').forEach(button => {
+        button.classList.remove('active');
+      });
+      document.getElementById(`btn-${idSeccion}`).classList.add('active');
+
+      // Actualizar el título de la página
+      document.title = `App TDAH - ${idSeccion.charAt(0).toUpperCase() + idSeccion.slice(1)}`;
+    };
+
+    // Función para disparar confeti
+    window.triggerConfetti = function() {
+        const confettiContainer = document.getElementById('confetti-container');
+        if (!confettiContainer) return;
+
+        const colors = ['#4F46E5', '#7C3AED', '#FFD700', '#FF69B4', '#00FFFF'];
+        for (let i = 0; i < 50; i++) {
+            const piece = document.createElement('div');
+            piece.classList.add('confetti-piece');
+            piece.style.left = Math.random() * 100 + 'vw';
+            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.animationDuration = Math.random() * 3 + 2 + 's'; // 2 to 5 seconds
+            piece.style.animationDelay = Math.random() * 0.5 + 's';
+            piece.style.transform = `translateY(-${Math.random() * 20}px) rotateZ(${Math.random() * 360}deg)`;
+            confettiContainer.appendChild(piece);
+
+            // Eliminar la pieza después de que termine la animación
+            piece.addEventListener('animationend', () => {
+                piece.remove();
+            });
         }
     };
 
+    // Función para mostrar mensajes temporales
     window.showTempMessage = function(message, type = 'info', duration = 3000) {
-        console.log(`Mostrar mensaje temporal: [${type}] ${message}`);
-        const tempMessageContainer = document.getElementById('temp-message-container');
-        if (!tempMessageContainer) {
-            console.error("Contenedor de mensajes temporales no encontrado.");
+        const container = document.getElementById('temp-message-container');
+        if (!container) {
+            console.warn('Contenedor de mensajes temporales no encontrado. Mensaje:', message);
             return;
         }
-        const msgElement = document.createElement('div');
-        msgElement.className = `temp-message ${type}`;
-        msgElement.textContent = message;
-        tempMessageContainer.appendChild(msgElement);
 
-        msgElement.offsetHeight;
-        msgElement.classList.add('show');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('temp-message', type);
+        messageDiv.textContent = message;
+        container.appendChild(messageDiv);
+
+        // Forzar reflow para que la transición de opacidad funcione
+        void messageDiv.offsetWidth;
+        messageDiv.classList.add('show');
 
         setTimeout(() => {
-            msgElement.classList.remove('show');
-            msgElement.classList.add('hide');
-            msgElement.addEventListener('transitionend', () => msgElement.remove(), { once: true });
+            messageDiv.classList.remove('show');
+            messageDiv.classList.add('hide'); // Iniciar la transición de ocultamiento
+            messageDiv.addEventListener('transitionend', () => {
+                messageDiv.remove();
+            }, { once: true });
         }, duration);
     };
 
-    // Función para disparar el efecto de confeti
-    window.triggerConfetti = function() {
-        let confettiContainer = document.getElementById('confetti-container');
-        if (!confettiContainer) {
-            confettiContainer = document.createElement('div');
-            confettiContainer.id = 'confetti-container';
-            document.body.appendChild(confettiContainer);
-        }
-
-        const colors = ['var(--primary-color)', 'var(--secondary-color)', '#FFD700', '#FF69B4', '#00FFFF']; // Colores para el confeti
-        const numConfetti = 50; // Número de piezas de confeti
-
-        for (let i = 0; i < numConfetti; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'confetti-piece';
-            piece.style.left = `${Math.random() * 100}vw`; // Posición horizontal aleatoria
-            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.animationDuration = `${Math.random() * 2 + 3}s`; // Duración aleatoria entre 3-5s
-            piece.style.animationDelay = `${Math.random() * 0.5}s`; // Ligero retraso para efecto escalonado
-            piece.style.width = `${Math.random() * 8 + 5}px`; // Tamaño aleatorio
-            piece.style.height = piece.style.width;
-            confettiContainer.appendChild(piece);
-        }
-
-        // Limpiar el confeti después de la animación
-        setTimeout(() => {
-            confettiContainer.innerHTML = ''; // Eliminar todas las piezas
-        }, 5000); // Coincide con la duración más larga de la animación
-    };
-
-    // Custom Confirmation Modal
+    // Función para el modal de confirmación personalizado
     window.showCustomConfirm = function(message) {
         return new Promise((resolve) => {
-            const modal = document.getElementById('custom-confirm-modal');
-            const msgElement = document.getElementById('custom-confirm-message');
-            const yesBtn = document.getElementById('custom-confirm-yes');
-            const noBtn = document.getElementById('custom-confirm-no');
+            const modal = document.getElementById('custom-modal-overlay');
+            const messageEl = document.getElementById('custom-modal-message');
+            const yesBtn = document.getElementById('custom-modal-yes-btn');
+            const noBtn = document.getElementById('custom-modal-no-btn');
 
-            if (!modal || !msgElement || !yesBtn || !noBtn) {
-                console.error("Custom Confirm Modal: Elementos no encontrados. Usando confirm() nativo.");
+            if (!modal || !messageEl || !yesBtn || !noBtn) {
+                console.error("Elementos del modal de confirmación no encontrados. Usando confirm() por defecto.");
                 resolve(confirm(message));
                 return;
             }
 
-            msgElement.textContent = message;
+            messageEl.textContent = message;
             modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
 
             // Force reflow to ensure display:flex is applied before adding 'show' class

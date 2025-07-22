@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-  border: 5px solid rgb(217, 135, 202) !important; /* Este borde debería desaparecer si el CSS carga */
+   border: 5px solid rgb(115, 188, 176) !important;  /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {
@@ -347,6 +347,18 @@ button:active {
   background: #dc2626 !important;
 }
 
+/* Animación de click para botones */
+.button-clicked {
+  animation: buttonClick 0.3s ease-out;
+}
+
+@keyframes buttonClick {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+
 /* ========== INPUTS Y TEXTAREA ========== */
 input[type="text"], textarea {
   width: 100%;
@@ -428,18 +440,6 @@ li button {
     font-size: 0.9em;
     color: var(--text-medium);
     margin-left: var(--spacing-sm); /* Espacio entre el texto de la tarea y el control MIT */
-    /* Estilos de depuración para ver si el div está presente */
-    /* border: 1px solid blue; */
-}
-
-.mit-controls input[type="checkbox"] {
-    margin-right: 0; /* Eliminar margen extra */
-    /* Estilos de depuración para forzar visibilidad del checkbox */
-    /* display: inline-block !important; */
-    /* opacity: 1 !important; */
-    /* width: 25px !important; */
-    /* height: 25px !important; */
-    /* border: 2px solid purple !important; */
 }
 
 /* Estilo para las tareas marcadas como MIT */
@@ -955,7 +955,7 @@ input[type="checkbox"] {
     opacity: 0;
     transition: transform 0.3s ease, opacity 0.3s ease;
     /* Reglas de depuración */
-    border: 5px solid red !important; /* Un borde rojo para que sea muy visible */
+    /* border: 5px solid red !important; */ /* Un borde rojo para que sea muy visible */
 }
 
 #welcome-tour-overlay.active .welcome-tour-modal-inner {
