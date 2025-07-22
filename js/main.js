@@ -39,6 +39,17 @@ async function loadAllUserData() {
     }
     window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info'); // Usar userName aquí también
 
+    // --- Referencias a colecciones de Firestore específicas del usuario ---
+    // Estas referencias ahora se definen DENTRO de loadAllUserData
+    // para asegurar que currentUserId ya está establecido.
+    const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
+    const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
+    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
+    const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
+    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
+    const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+
+
     // --- Lógica del Tour de Bienvenida ---
     const tourOverlay = document.getElementById('welcome-tour-overlay');
     const tourTitle = document.getElementById('tour-title');
@@ -86,7 +97,6 @@ async function loadAllUserData() {
     if (tourOverlay && tourTitle && tourDescription && tourHighlightImage && tourBackBtn && tourNextBtn && tourSkipBtn && tourDotsContainer) {
         console.log("Tour: Todos los elementos HTML del Tour de Bienvenida encontrados.");
         async function showWelcomeTour() {
-            const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
             try {
                 const doc = await userSettingsRef.get();
                 console.log("Tour: Documento de configuración de usuario para el tour:", doc.exists ? doc.data() : "No existe");
@@ -179,13 +189,12 @@ async function loadAllUserData() {
             console.log("Tour: Click en Anterior.");
             if (currentTourStep > 0) {
                 currentTourStep--;
-                renderTourStep();
+                renderTourTourStep();
             }
         }
 
         async function completeTour() {
             console.log("Tour: Completando tour.");
-            const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
             try {
                 await userSettingsRef.set({ tourCompleted: true }, { merge: true });
                 console.log("Tour: Estado de tour completado guardado en Firestore.");
@@ -215,7 +224,6 @@ async function loadAllUserData() {
 
     if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
         console.log("Journal: Elementos HTML del Journal encontrados.");
-        const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
         journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
             journalEntriesList.innerHTML = ''; // Limpiar la lista antes de añadir nuevos elementos
@@ -284,15 +292,9 @@ async function loadAllUserData() {
     let totalTimeForPomodoro = 1 * 60; // Duración total del ciclo actual (trabajo o descanso)
     let isBreakTime = false; // Add isBreakTime variable for Pomodoro
     const timerDisplay = document.getElementById('timer');
-    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
     const pomodoroProgressCircle = document.querySelector('.pomodoro-progress-ring-progress');
     const pomodoroProgressRing = document.querySelector('.pomodoro-progress-ring'); // Para cambiar el color del stroke
 
-    const startTimerBtn = document.getElementById('start-timer-btn');
-    const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
-    const resetTimerBtn = document.getElementById('reset-timer-btn');
-
-    // Calcular la circunferencia del círculo para la barra de progreso
     const radius = pomodoroProgressCircle ? parseFloat(pomodoroProgressCircle.getAttribute('r')) : 90;
     const circumference = radius * 2 * Math.PI;
 
@@ -325,6 +327,10 @@ async function loadAllUserData() {
             }
         }
     }
+
+    const startTimerBtn = document.getElementById('start-timer-btn');
+    const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
+    const resetTimerBtn = document.getElementById('reset-timer-btn');
 
     if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn && pomodoroProgressCircle) {
         console.log("Pomodoro: Elementos HTML del Temporizador y SVG encontrados.");
@@ -542,7 +548,6 @@ async function loadAllUserData() {
     const checkItemInput = document.getElementById('checkItem');
     const addCheckItemBtn = document.getElementById('add-check-item-btn');
     const checkListUl = document.getElementById('checkList');
-    const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
 
     // Variables para Drag & Drop
     let draggedItem = null;
@@ -725,7 +730,7 @@ async function loadAllUserData() {
 
         // Listener para cargar ítems del checklist, ordenando por 'position' y luego 'timestamp'
         checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
-            console.log("Checklist: Recibiendo snapshot de ítems.");
+            console.log("Checklist: Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size); // Added log
             checkListUl.innerHTML = ''; // Clear existing list items
             if (snapshot.empty) {
                 console.log("Checklist: Colección vacía. Mostrando mensaje de vacío.");
@@ -736,6 +741,7 @@ async function loadAllUserData() {
             snapshot.forEach((docSnap, index) => {
                 const item = docSnap.data();
                 const itemId = docSnap.id;
+                console.log("Checklist: Renderizando ítem:", item.text, "ID:", itemId); // Added log
                 const listItem = document.createElement('li');
                 listItem.setAttribute('draggable', 'true'); // Make list item draggable
                 listItem.dataset.id = itemId; // Store Firestore ID on the li element
@@ -752,6 +758,7 @@ async function loadAllUserData() {
                     <button class="button-danger" data-id="${itemId}">❌</button>
                 `;
                 checkListUl.appendChild(listItem);
+                console.log("Checklist: Ítem añadido al DOM. HTML actual del checklist:", checkListUl.innerHTML); // Added log
 
                 // Add event listeners for editing the text
                 const itemTextSpan = listItem.querySelector('.item-text');
@@ -849,7 +856,6 @@ async function loadAllUserData() {
     const trelloBoardIdInput = document.getElementById('board-id');
     const trelloStatusDiv = document.getElementById('trello-status');
     const trelloSuccessMessage = document.getElementById('trello-success-message');
-    const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
 
     const configTrelloBtn = document.getElementById('config-trello-btn');
     const testTrelloBtn = document.getElementById('test-trello-btn');
@@ -1044,12 +1050,7 @@ async function loadAllUserData() {
             if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
-                    const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
-                    const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
-                    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
-                    const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
-                    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`); // Referencia a la colección de hábitos
-
+                    // Las referencias a las colecciones ya están definidas arriba en loadAllUserData
                     // Eliminar documentos de Journal
                     const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach(async (d) => await d.ref.delete());
@@ -1079,6 +1080,14 @@ async function loadAllUserData() {
                         await trelloConfigDocRef.delete();
                         console.log("Limpiar Datos: Configuración de Trello eliminada.");
                     }
+                    
+                    // Eliminar documento de user settings (tourCompleted)
+                    const userSettingsDocSnap = await userSettingsRef.get();
+                    if (userSettingsDocSnap.exists) {
+                        await userSettingsRef.delete();
+                        console.log("Limpiar Datos: Configuración de usuario (tourCompleted) eliminada.");
+                    }
+
 
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
                     location.reload(); // Recargar la página para reflejar los cambios
@@ -1186,7 +1195,6 @@ async function loadAllUserData() {
     const newHabitInput = document.getElementById('newHabitInput');
     const addHabitBtn = document.getElementById('add-habit-btn');
     const habitsList = document.getElementById('habitsList');
-    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
 
     if (newHabitInput && addHabitBtn && habitsList) {
         console.log("Hábitos: Elementos HTML de Hábitos encontrados.");
@@ -1338,9 +1346,7 @@ async function loadAllUserData() {
     // Actualizar contadores de estado
     function updateAppStatus() {
         if (window.currentUserId && window.db) {
-            const checklistCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/checklistItems`);
-            const habitsCollectionRef = window.db.collection(`artifacts/${window.appId}/users/${window.currentUserId}/habits`);
-
+            // Usar las referencias a las colecciones que ya están definidas en loadAllUserData
             checklistCollectionRef.get().then(snapshot => {
                 const checklistItemsCount = snapshot.size;
                 const checklistCountElement = document.getElementById('checklist-count');
