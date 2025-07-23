@@ -6,12 +6,15 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, co
 // Inicializar variables globales de Firebase
 let app;
 let db;
-let auth;
+//let auth;
 let currentUserId; // currentUserId puede cambiar con la autenticación
 const appId = window.appId; // appId debería ser constante, viene de window.appId
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 let notificationPermissionGranted = false; // Variable global para el estado del permiso de notificación
-
+const auth = getAuth(firebaseApp);
+onAuthStateChanged(auth, user => {
+  // Check for user status
+});
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
 
