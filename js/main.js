@@ -1,54 +1,200 @@
-// Las importaciones de Firebase SDK se eliminan de aquí porque se cargan globalmente en index.html
-// Las variables globales db, auth, currentUserId, appId, initialAuthToken
-// se acceden a través del objeto window, ya que se exponen en el script de index.html.
+// Importaciones de Firebase SDKs como módulos ES6
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, writeBatch, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// Inicializar variables globales de Firebase directamente desde window.
-// Esto asume que el script inline en index.html ya las ha definido antes de que main.js se cargue.
-let db = window.db;
-let auth = window.auth;
-let currentUserId = window.currentUserId; // currentUserId puede cambiar con la autenticación
-const appId = window.appId; // appId debería ser constante
+// Inicializar variables globales de Firebase
+let app;
+let db;
+let auth;
+let currentUserId; // currentUserId puede cambiar con la autenticación
+const appId = window.appId; // appId debería ser constante, viene de window.appId
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
 let notificationPermissionGranted = false; // Variable global para el estado del permiso de notificación
 
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
 
-// Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo
+// Función para inicializar Firebase y autenticar
+async function initializeFirebaseAndAuth() {
+    try {
+        app = initializeApp(window.firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        console.log("Firebase inicializado con éxito en main.js.");
+
+        // Listener de estado de autenticación
+        onAuthStateChanged(auth, async (user) => {
+            console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
+
+            const userDisplayNameElement = document.getElementById('user-display-name');
+            const logoutBtn = document.getElementById('logout-btn');
+            const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
+            const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
+            const userIdDisplay = document.getElementById('user-id-display');
+            const userInfoArea = document.getElementById('user-info-area');
+
+            if (user) {
+                currentUserId = user.uid;
+                console.log("onAuthStateChanged: Usuario autenticado. UID:", currentUserId);
+
+                if (userDisplayNameElement) userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+                if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`;
+                if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
+                if (googleSigninBtn) googleSigninBtn.style.display = 'none';
+                if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'none';
+                if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+                if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
+
+                if (!isLoggingOut) {
+                    loadAllUserData();
+                } else {
+                    console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
+                    isLoggingOut = false;
+                    loadAllUserData();
+                }
+
+            } else { // Usuario es null (no autenticado)
+                currentUserId = null;
+                console.log("onAuthStateChanged: Usuario no autenticado.");
+                if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
+                if (userIdDisplay) userIdDisplay.textContent = '';
+                if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
+                if (googleSigninBtn) googleSigninBtn.style.display = 'inline-block';
+                if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'inline-block';
+                if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
+
+                if (window.initialAuthToken && !isLoggingOut) {
+                    try {
+                        console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
+                        await signInWithCustomToken(auth, window.initialAuthToken);
+                        console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
+                    } catch (error) {
+                        console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
+                        window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
+                    }
+                } else if (!isLoggingOut) { // Si no hay token inicial y no estamos cerrando sesión, iniciar anónimamente
+                    try {
+                        console.log("onAuthStateChanged: No hay token inicial, intentando signInAnonymously.");
+                        await signInAnonymously(auth);
+                        console.log("onAuthStateChanged: signInAnonymously exitoso.");
+                    } catch (error) {
+                        console.error("onAuthStateChanged: Error al iniciar sesión anónima:", error);
+                        window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+                    }
+                } else if (isLoggingOut) {
+                    isLoggingOut = false;
+                    console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
+                }
+            }
+        });
+
+        // Lógica para el botón de cerrar sesión
+        const logoutButton = document.getElementById('logout-btn');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', async () => {
+                try {
+                    isLoggingOut = true;
+                    await signOut(auth);
+                    window.showTempMessage('Sesión cerrada correctamente.', 'info');
+                } catch (error) {
+                    console.error("Error al cerrar sesión:", error);
+                    window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+                    isLoggingOut = false;
+                }
+            });
+        }
+
+        // Lógica para los nuevos botones de inicio de sesión
+        const anonymousSigninButton = document.getElementById('anonymous-signin-btn');
+        if (anonymousSigninButton) {
+            anonymousSigninButton.addEventListener('click', async () => {
+                anonymousSigninButton.classList.add('button-clicked');
+                setTimeout(() => { anonymousSigninButton.classList.remove('button-clicked'); }, 300);
+                try {
+                    await signInAnonymously(auth);
+                    window.showTempMessage('Sesión anónima iniciada.', 'success');
+                } catch (error) {
+                    window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+                    console.error("Error al iniciar sesión anónima:", error);
+                }
+            });
+        }
+
+        const emailSigninToggleButton = document.getElementById('email-signin-toggle-btn');
+        if (emailSigninToggleButton) {
+            emailSigninToggleButton.addEventListener('click', () => {
+                emailSigninToggleButton.classList.add('button-clicked');
+                setTimeout(() => { emailSigninToggleButton.classList.remove('button-clicked'); }, 300);
+                window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
+                console.log("Intento de inicio de sesión con Email.");
+            });
+        }
+
+        const googleSigninButton = document.getElementById('google-signin-btn');
+        if (googleSigninButton) {
+            googleSigninButton.addEventListener('click', async () => {
+                googleSigninButton.classList.add('button-clicked');
+                setTimeout(() => { googleSigninButton.classList.remove('button-clicked'); }, 300);
+                try {
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                    window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
+                } catch (error) {
+                    console.error("Error al iniciar sesión con Google:", error);
+                    let errorMessage = error.message;
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
+                    } else if (error.code === 'auth/cancelled-popup-request') {
+                        errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
+                    } else if (error.code === 'auth/auth-domain-config-error') {
+                        errorMessage = 'Error de configuración del dominio de autenticación. Asegúrate de que tu dominio esté autorizado en la consola de Firebase.';
+                    }
+                    window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
+                }
+            });
+        }
+
+    } catch (e) {
+        console.error("Error crítico al inicializar Firebase en main.js:", e);
+        document.addEventListener('DOMContentLoaded', () => {
+            window.showTempMessage(`Error crítico: Firebase no pudo inicializarse. ${e.message}`, 'error', 10000);
+        });
+    }
+}
+
+
+// Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo y el usuario autenticado
 async function loadAllUserData() {
     console.log("loadAllUserData: Iniciando carga de datos del usuario...");
     
-    // Las variables db, auth, currentUserId, appId ya están inicializadas globalmente
-    // por lo que no necesitamos reasignarlas aquí desde window.
-    
-    // Si Firebase no está completamente inicializado o el usuario no está autenticado, no cargamos los datos.
-    // onAuthStateChanged se encargará de llamar a loadAllUserData cuando sea apropiado.
     if (!db || !auth || !currentUserId) {
         console.warn("loadAllUserData: Firebase o currentUserId no disponibles. No se cargarán los datos del usuario.");
         return;
     }
 
     console.log("loadAllUserData: Firebase y Usuario Autenticado. UID:", currentUserId);
-    // Obtener el usuario actual para mostrar el nombre
-    const user = auth.currentUser; // Usar la variable global 'auth'
+    const user = auth.currentUser;
     const userDisplayNameElement = document.getElementById('user-display-name');
     if (userDisplayNameElement) {
         userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
     } else {
         console.error("loadAllUserData: Elemento 'user-display-name' no encontrado.");
     }
-    window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info'); // Usar userName aquí también
+    window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info');
 
     // --- Referencias a colecciones de Firestore específicas del usuario ---
-    // Estas referencias ahora se definen DENTRO de loadAllUserData
-    // para asegurar que currentUserId ya está establecido.
-    console.log("loadAllUserData: currentUserId al definir colecciones:", currentUserId); // NUEVO LOG CRÍTICO
-    const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
-    const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
-    const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
-    const trelloConfigDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/trelloConfig`).doc('settings');
-    const habitsCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/habits`);
-    const userSettingsRef = db.collection(`artifacts/${appId}/users/${currentUserId}/settings`).doc('appSettings');
+    const journalCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/journalEntries`);
+    const checklistCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/checklistItems`);
+    const pomodoroSettingsDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pomodoroSettings`, 'current');
+    const trelloConfigDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/trelloConfig`, 'settings');
+    const habitsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/habits`);
+    const userSettingsRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings`, 'appSettings');
 
 
     // --- Lógica del Tour de Bienvenida ---
@@ -99,15 +245,14 @@ async function loadAllUserData() {
         console.log("Tour: Todos los elementos HTML del Tour de Bienvenida encontrados.");
         async function showWelcomeTour() {
             try {
-                const doc = await userSettingsRef.get();
-                console.log("Tour: Documento de configuración de usuario para el tour:", doc.exists ? doc.data() : "No existe");
-                if (doc.exists && doc.data().tourCompleted) {
+                const docSnap = await getDoc(userSettingsRef);
+                console.log("Tour: Documento de configuración de usuario para el tour:", docSnap.exists() ? docSnap.data() : "No existe");
+                if (docSnap.exists() && docSnap.data().tourCompleted) {
                     console.log("Tour: Ya completado para este usuario. No se mostrará.");
-                    return; // No mostrar el tour si ya fue completado
+                    return;
                 }
             } catch (error) {
                 console.error("Tour: Error al verificar estado del tour en Firestore:", error);
-                // Si hay un error, por seguridad, mostramos el tour
             }
 
             console.log("Tour: Mostrando overlay del tour. Añadiendo 'active' a welcome-tour-overlay.");
@@ -132,7 +277,7 @@ async function loadAllUserData() {
 
             tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
             tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
-            tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block'; // Hide skip on last step
+            tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block';
 
             updateTourDots();
             console.log(`Tour: Renderizando paso ${currentTourStep + 1}/${tourSteps.length}: ${step.title}`);
@@ -143,9 +288,9 @@ async function loadAllUserData() {
             tourSteps.forEach((_, index) => {
                 const dot = document.createElement('span');
                 dot.classList.add('tour-dot');
-                dot.setAttribute('tabindex', '0'); // Hacer el dot tabbable
-                dot.setAttribute('role', 'button'); // Indicar que es interactivo
-                dot.setAttribute('aria-label', `Paso ${index + 1} del tour`); // Etiqueta para lectores de pantalla
+                dot.setAttribute('tabindex', '0');
+                dot.setAttribute('role', 'button');
+                dot.setAttribute('aria-label', `Paso ${index + 1} del tour`);
 
                 if (index === currentTourStep) {
                     dot.classList.add('active');
@@ -154,7 +299,7 @@ async function loadAllUserData() {
                     currentTourStep = index;
                     renderTourStep();
                 });
-                dot.addEventListener('keydown', (e) => { // Manejar Enter para los dots
+                dot.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         currentTourStep = index;
                         renderTourStep();
@@ -190,14 +335,14 @@ async function loadAllUserData() {
             console.log("Tour: Click en Anterior.");
             if (currentTourStep > 0) {
                 currentTourStep--;
-                renderTourStep(); // Corregido: renderTourTourStep a renderTourStep
+                renderTourStep();
             }
         }
 
         async function completeTour() {
             console.log("Tour: Completando tour.");
             try {
-                await userSettingsRef.set({ tourCompleted: true }, { merge: true });
+                await setDoc(userSettingsRef, { tourCompleted: true }, { merge: true });
                 console.log("Tour: Estado de tour completado guardado en Firestore.");
             } catch (error) {
                 console.error("Tour: Error al guardar estado de tour completado:", error);
@@ -209,9 +354,8 @@ async function loadAllUserData() {
 
         tourNextBtn.addEventListener('click', nextTourStep);
         tourBackBtn.addEventListener('click', prevTourStep);
-        tourSkipBtn.addEventListener('click', completeTour); // Skip also completes the tour
+        tourSkipBtn.addEventListener('click', completeTour);
 
-        // Llamar al tour de bienvenida después de que todo lo demás esté cargado
         showWelcomeTour();
     } else {
         console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados. Asegúrate de que tu HTML esté actualizado con los IDs correctos.");
@@ -225,17 +369,17 @@ async function loadAllUserData() {
 
     if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
         console.log("Journal: Elementos HTML del Journal encontrados.");
-        journalCollectionRef.orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+        onSnapshot(query(journalCollectionRef, orderBy('timestamp', 'desc')), (snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
-            journalEntriesList.innerHTML = ''; // Limpiar la lista antes de añadir nuevos elementos
+            journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
                 console.log("Journal: Colección vacía. Mostrando mensaje de vacío.");
-                journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>'; // Mensaje si está vacío
+                journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún. ¡Escribe tu primera entrada!</li>';
                 return;
             }
             console.log(`Journal: ${snapshot.size} entradas encontradas. Renderizando...`);
-            snapshot.forEach((doc, index) => {
-                const entry = doc.data();
+            snapshot.forEach((docSnap) => {
+                const entry = docSnap.data();
                 const listItem = document.createElement('li');
                 const dateSpan = document.createElement('span');
                 dateSpan.className = 'journal-date';
@@ -266,7 +410,7 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    await journalCollectionRef.add({
+                    await addDoc(journalCollectionRef, {
                         text: entryText,
                         timestamp: new Date().toISOString()
                     });
@@ -294,14 +438,14 @@ async function loadAllUserData() {
     let isBreakTime = false; // Add isBreakTime variable for Pomodoro
     const timerDisplay = document.getElementById('timer');
     const pomodoroProgressCircle = document.querySelector('.pomodoro-progress-ring-progress');
-    const pomodoroProgressRing = document.querySelector('.pomodoro-progress-ring'); // Para cambiar el color del stroke
+    const pomodoroProgressRing = document.querySelector('.pomodoro-progress-ring');
 
     const radius = pomodoroProgressCircle ? parseFloat(pomodoroProgressCircle.getAttribute('r')) : 90;
     const circumference = radius * 2 * Math.PI;
 
     if (pomodoroProgressCircle) {
         pomodoroProgressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-        pomodoroProgressCircle.style.strokeDashoffset = circumference; // Empieza lleno
+        pomodoroProgressCircle.style.strokeDashoffset = circumference;
     }
 
     function setProgress(percent) {
@@ -315,16 +459,14 @@ async function loadAllUserData() {
         const seconds = timeLeft % 60;
         timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
-        // Actualizar la barra de progreso
         const progressPercent = timeLeft / totalTimeForPomodoro;
         setProgress(progressPercent);
 
-        // Cambiar color de la barra de progreso según el estado
         if (pomodoroProgressCircle) {
             if (isBreakTime) {
-                pomodoroProgressCircle.style.stroke = 'var(--secondary-color)'; // Color para descanso
+                pomodoroProgressCircle.style.stroke = 'var(--secondary-color)';
             } else {
-                pomodoroProgressCircle.style.stroke = 'var(--primary-color)'; // Color para trabajo
+                pomodoroProgressCircle.style.stroke = 'var(--primary-color)';
             }
         }
     }
@@ -335,15 +477,15 @@ async function loadAllUserData() {
 
     if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn && pomodoroProgressCircle) {
         console.log("Pomodoro: Elementos HTML del Temporizador y SVG encontrados.");
-        pomodoroSettingsDocRef.onSnapshot((docSnap) => {
+        onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
             console.log("Pomodoro: Recibiendo snapshot de settings.");
-            if (docSnap.exists) {
+            if (docSnap.exists()) {
                 const settings = docSnap.data();
                 console.log("Pomodoro: Configuración de Pomodoro encontrada:", settings);
                 timeLeft = settings.timeLeft;
                 isRunning = settings.isRunning;
-                isBreakTime = settings.isBreakTime || false; // Load isBreakTime
-                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60); // Set total time based on state
+                isBreakTime = settings.isBreakTime || false;
+                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60);
                 updateTimerDisplay();
                 if (isRunning && settings.lastUpdated) {
                     const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
@@ -353,56 +495,54 @@ async function loadAllUserData() {
                     } else if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        savePomodoroState(0, false, isBreakTime); // Save state on completion
+                        setDoc(pomodoroSettingsDocRef, { timeLeft: 0, isRunning: false, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
 
                         console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
 
-                        if (!isBreakTime) { // If work time ended
+                        if (!isBreakTime) {
                             console.log("Pomodoro (onSnapshot): Tiempo de trabajo terminado. Activando confeti y sonido.");
                             window.triggerConfetti();
                             document.getElementById('sound-complete').play().catch(e => {
                                 console.error("Error al reproducir sonido de completado (onSnapshot):", e);
                                 window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
                             });
-                            // Notificación del navegador para fin de tiempo de trabajo
                             if (notificationPermissionGranted) {
                                 new Notification('¡Pomodoro Terminado!', {
                                     body: '¡Excelente trabajo! Es hora de un descanso.',
-                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P', // Icono de ejemplo
-                                    tag: 'pomodoro-complete' // Para evitar notificaciones duplicadas
+                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P',
+                                    tag: 'pomodoro-complete'
                                 });
                             }
 
-                            setTimeout(async () => { // Use async for await showCustomConfirm
+                            setTimeout(async () => {
                                 console.log("Pomodoro (onSnapshot): Preguntando por descanso...");
                                 const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
                                     console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
-                                    timeLeft = 5 * 60; // 5 minutos para descanso
-                                    totalTimeForPomodoro = 5 * 60; // Update total time for break
+                                    timeLeft = 5 * 60;
+                                    totalTimeForPomodoro = 5 * 60;
                                     isBreakTime = true;
                                     updateTimerDisplay();
-                                    savePomodoroState(timeLeft, true, isBreakTime); // Save break state
+                                    setDoc(pomodoroSettingsDocRef, { timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
                                     document.getElementById('sound-break').play().catch(e => {
                                         console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
                                         window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
                                     });
                                     window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                    startTimer(); // Start the break timer
+                                    startTimer();
                                 } else {
                                     console.log("Pomodoro (onSnapshot): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
                                     resetTimer();
                                 }
-                            }, 1000); // Small delay to allow messages/confetti to show
-                        } else { // If break time ended
+                            }, 1000);
+                        } else {
                             console.log("Pomodoro (onSnapshot): Tiempo de descanso terminado. Reiniciando temporizador.");
-                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
-                            // Notificación del navegador para fin de descanso
+                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000);
                             if (notificationPermissionGranted) {
                                 new Notification('¡Descanso Terminado!', {
                                     body: '¡Es hora de volver al trabajo!',
-                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D', // Icono de ejemplo
-                                    tag: 'pomodoro-break' // Para evitar notificaciones duplicadas
+                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D',
+                                    tag: 'pomodoro-break'
                                 });
                             }
                             resetTimer();
@@ -411,7 +551,7 @@ async function loadAllUserData() {
                 }
             } else {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
-                pomodoroSettingsDocRef.set({ timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() }); // Default: 1 minuto para pruebas
+                setDoc(pomodoroSettingsDocRef, { timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
             }
         }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
@@ -420,10 +560,10 @@ async function loadAllUserData() {
 
         async function savePomodoroState(newTimeLeft, newIsRunning, newIsBreakTime) {
             try {
-                await pomodoroSettingsDocRef.set({
+                await setDoc(pomodoroSettingsDocRef, {
                     timeLeft: newTimeLeft,
                     isRunning: newIsRunning,
-                    isBreakTime: newIsBreakTime, // Save isBreakTime
+                    isBreakTime: newIsBreakTime,
                     lastUpdated: new Date().toISOString()
                 });
                 console.log("Pomodoro: Estado guardado en Firestore.");
@@ -448,55 +588,53 @@ async function loadAllUserData() {
                     if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        savePomodoroState(0, false, isBreakTime); // Save state on completion
+                        savePomodoroState(0, false, isBreakTime);
                         
                         console.log("Pomodoro (startTimer): Tiempo terminado. isBreakTime:", isBreakTime);
 
-                        if (!isBreakTime) { // If work time ended
+                        if (!isBreakTime) {
                             console.log("Pomodoro (startTimer): Tiempo de trabajo terminado. Activando confeti y sonido.");
                             window.triggerConfetti();
                             document.getElementById('sound-complete').play().catch(e => {
                                 console.error("Error al reproducir sonido de completado (startTimer):", e);
                                 window.showTempMessage('Error: No se pudo reproducir el sonido de finalización.', 'error', 5000);
                             });
-                            // Notificación del navegador para fin de tiempo de trabajo
                             if (notificationPermissionGranted) {
                                 new Notification('¡Pomodoro Terminado!', {
                                     body: '¡Excelente trabajo! Es hora de un descanso.',
-                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P', // Icono de ejemplo
+                                    icon: 'https://placehold.co/48x48/4F46E5/FFFFFF?text=P',
                                     tag: 'pomodoro-complete'
                                 });
                             }
 
-                            setTimeout(async () => { // Use async for await showCustomConfirm
+                            setTimeout(async () => {
                                 console.log("Pomodoro (startTimer): Preguntando por descanso...");
                                 const startBreak = await window.showCustomConfirm('¡Excelente trabajo! ¿Quieres comenzar tu descanso de 5 minutos?');
                                 if (startBreak) {
                                     console.log("Pomodoro (startTimer): Usuario eligió iniciar descanso.");
-                                    timeLeft = 5 * 60; // 5 minutos para descanso
-                                    totalTimeForPomodoro = 5 * 60; // Update total time for break
+                                    timeLeft = 5 * 60;
+                                    totalTimeForPomodoro = 5 * 60;
                                     isBreakTime = true;
                                     updateTimerDisplay();
-                                    savePomodoroState(timeLeft, true, isBreakTime); // Save break state
+                                    savePomodoroState(timeLeft, true, isBreakTime);
                                     document.getElementById('sound-break').play().catch(e => {
                                         console.error("Error al reproducir sonido de descanso (startTimer):", e);
                                         window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
                                     });
                                     window.showTempMessage('¡Disfruta tu descanso!', 'info', 4000);
-                                    startTimer(); // Start the break timer
+                                    startTimer();
                                 } else {
                                     console.log("Pomodoro (startTimer): Usuario eligió NO iniciar descanso. Reiniciando temporizador.");
                                     resetTimer();
                                 }
-                            }, 1000); // Small delay to allow messages/confetti to show
-                        } else { // If break time ended
+                            }, 1000);
+                        } else {
                             console.log("Pomodoro (startTimer): Tiempo de descanso terminado. Reiniciando temporizador.");
-                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000); // Motivational message
-                            // Notificación del navegador para fin de descanso
+                            window.showTempMessage('¡Descanso terminado! ¡Has recargado energías! Es hora de volver a concentrarte y darlo todo. ¡A por ello!', 'info', 7000);
                             if (notificationPermissionGranted) {
                                 new Notification('¡Descanso Terminado!', {
                                     body: '¡Es hora de volver al trabajo!',
-                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D', // Icono de ejemplo
+                                    icon: 'https://placehold.co/48x48/7C3AED/FFFFFF?text=D',
                                     tag: 'pomodoro-break'
                                 });
                             }
@@ -523,9 +661,9 @@ async function loadAllUserData() {
         function resetTimer() {
             clearInterval(timer);
             isRunning = false;
-            timeLeft = 1 * 60; // Always reset to 1 minute work time for testing (before 25 * 60)
-            totalTimeForPomodoro = 1 * 60; // Reset total time to work time
-            isBreakTime = false; // Ensure we are not in break time
+            timeLeft = 1 * 60;
+            totalTimeForPomodoro = 1 * 60;
+            isBreakTime = false;
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
             resetTimerBtn.classList.add('button-clicked');
@@ -536,7 +674,6 @@ async function loadAllUserData() {
             console.log("Pomodoro: Temporizador reiniciado.");
         }
 
-        // Adjuntar event listeners a los botones de Pomodoro
         startTimerBtn.addEventListener('click', startTimer);
         pausePomodoroBtn.addEventListener('click', pausarPomodoro);
         resetTimerBtn.addEventListener('click', resetTimer);
@@ -550,25 +687,22 @@ async function loadAllUserData() {
     const addCheckItemBtn = document.getElementById('add-check-item-btn');
     const checkListUl = document.getElementById('checkList');
 
-    // Variables para Drag & Drop
     let draggedItem = null;
-    let originalText = ''; // Para la edición
+    let originalText = '';
 
     if (checkItemInput && addCheckItemBtn && checkListUl) {
         console.log("Checklist: Elementos HTML del Checklist encontrados.");
 
-        // Event delegation for checklist items
         checkListUl.addEventListener('change', async (e) => {
             const target = e.target;
-            const listItem = target.closest('li'); // Get the parent <li> element
-            if (!listItem) return; // Not a list item
+            const listItem = target.closest('li');
+            if (!listItem) return;
 
-            const itemId = listItem.dataset.id; // Get the item ID from the listItem's dataset
+            const itemId = listItem.dataset.id;
 
             if (target.classList.contains('completion-checkbox')) {
-                // Handle completion checkbox
                 try {
-                    await checklistCollectionRef.doc(itemId).update({
+                    await updateDoc(doc(checklistCollectionRef, itemId), {
                         completed: target.checked
                     });
                     if (target.checked) {
@@ -584,18 +718,18 @@ async function loadAllUserData() {
                     window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
                 }
             } else if (target.classList.contains('mit-checkbox')) {
-                // Handle MIT checkbox
                 const newIsMIT = target.checked;
                 console.log(`MIT checkbox clicked for item ${itemId}. Intended state: ${newIsMIT}`);
 
                 if (newIsMIT) {
                     try {
-                        const mitSnapshot = await checklistCollectionRef.where('isMIT', '==', true).get();
+                        const q = query(checklistCollectionRef, where('isMIT', '==', true));
+                        const mitSnapshot = await getDocs(q);
                         const currentMitCount = mitSnapshot.size;
                         console.log(`Current MIT count from Firestore: ${currentMitCount}`);
 
                         if (currentMitCount >= 3) {
-                            target.checked = false; // Revert UI
+                            target.checked = false;
                             window.showTempMessage('Solo puedes seleccionar hasta 3 MITs a la vez.', 'warning');
                             console.log(`MIT limit exceeded. Reverting checkbox for ${itemId}. Current Firestore MITs: ${currentMitCount}`);
                             return;
@@ -603,35 +737,34 @@ async function loadAllUserData() {
                     } catch (error) {
                         console.error("Checklist: Error counting MITs from Firestore:", error);
                         window.showTempMessage(`Error al verificar MITs: ${error.message}`, 'error');
-                        target.checked = false; // Revert checkbox on error
+                        target.checked = false;
                         return;
                     }
                 }
 
                 try {
-                    await checklistCollectionRef.doc(itemId).update({
+                    await updateDoc(doc(checklistCollectionRef, itemId), {
                         isMIT: newIsMIT
                     });
                     console.log(`Checklist: Ítem ${itemId} MIT updated to ${newIsMIT} in Firestore.`);
                 } catch (error) {
                     console.error("Checklist: Error updating MIT:", error);
                     window.showTempMessage(`Error al actualizar MIT: ${error.message}`, 'error');
-                    target.checked = !newIsMIT; // Revert to previous state
+                    target.checked = !newIsMIT;
                 }
             }
         });
 
-        // Event delegation for click events (e.g., delete button)
         checkListUl.addEventListener('click', async (e) => {
             const target = e.target;
             const listItem = target.closest('li');
             if (!listItem) return;
 
             if (target.classList.contains('button-danger')) {
-                const itemToDeleteId = listItem.dataset.id; // Get ID from listItem
+                const itemToDeleteId = listItem.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este ítem del checklist?')) {
                     try {
-                        await checklistCollectionRef.doc(itemToDeleteId).delete();
+                        await deleteDoc(doc(checklistCollectionRef, itemToDeleteId));
                         window.showTempMessage('Elemento eliminado del checklist.', 'info');
                         console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
                     } catch (error) {
@@ -642,25 +775,22 @@ async function loadAllUserData() {
             }
         });
 
-        // Drag & Drop Event Listeners
         checkListUl.addEventListener('dragstart', (e) => {
             draggedItem = e.target;
-            // Solo arrastrar elementos li
             if (draggedItem.tagName !== 'LI') {
                 draggedItem = null;
                 return;
             }
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', draggedItem.innerHTML); // Data is not strictly needed but good practice
+            e.dataTransfer.setData('text/html', draggedItem.innerHTML);
             draggedItem.classList.add('dragging');
             console.log("Drag & Drop: Drag start for item:", draggedItem.dataset.id);
         });
 
         checkListUl.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Crucial to allow dropping
+            e.preventDefault();
             const target = e.target.closest('li');
             if (target && target !== draggedItem) {
-                // Add visual feedback for the drop target
                 target.classList.add('drag-over');
             }
         });
@@ -679,15 +809,12 @@ async function loadAllUserData() {
             if (dropTarget && draggedItem && dropTarget !== draggedItem) {
                 dropTarget.classList.remove('drag-over');
 
-                // Determine insertion point
                 const bounding = dropTarget.getBoundingClientRect();
                 const offset = e.clientY - bounding.top;
                 
                 if (offset > bounding.height / 2) {
-                    // Drop after the target
                     checkListUl.insertBefore(draggedItem, dropTarget.nextSibling);
                 } else {
-                    // Drop before the target
                     checkListUl.insertBefore(draggedItem, dropTarget);
                 }
                 
@@ -703,21 +830,19 @@ async function loadAllUserData() {
             if (draggedItem) {
                 draggedItem.classList.remove('dragging');
             }
-            // Clean up any remaining drag-over classes
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             draggedItem = null;
             console.log("Drag & Drop: Drag end.");
         });
 
-        // Function to update positions in Firestore after drag and drop
         async function updateItemPositionsInFirestore() {
-            const listItems = Array.from(checkListUl.children); // Get current DOM order
-            const batch = db.batch(); // Use Firestore batch for multiple updates
+            const listItems = Array.from(checkListUl.children);
+            const batch = writeBatch(db);
 
             listItems.forEach((item, index) => {
                 const itemId = item.dataset.id;
-                const itemRef = checklistCollectionRef.doc(itemId);
-                batch.update(itemRef, { position: index }); // Set position based on current DOM index
+                const itemRef = doc(checklistCollectionRef, itemId);
+                batch.update(itemRef, { position: index });
             });
 
             try {
@@ -729,25 +854,23 @@ async function loadAllUserData() {
             }
         }
 
-        // Listener para cargar ítems del checklist, ordenando por 'position' y luego 'timestamp'
-        checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
-            console.log("Checklist (onSnapshot): Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size); // Detailed log for snapshot size
-            checkListUl.innerHTML = ''; // Clear existing list items
+        onSnapshot(query(checklistCollectionRef, orderBy('position', 'asc'), orderBy('timestamp', 'asc')), (snapshot) => {
+            console.log("Checklist (onSnapshot): Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size);
+            checkListUl.innerHTML = '';
             if (snapshot.empty) {
                 console.log("Checklist (onSnapshot): Colección vacía. Mostrando mensaje de vacío.");
-                checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>'; // Mensaje si está vacío
+                checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>';
                 return;
             }
             console.log(`Checklist (onSnapshot): ${snapshot.size} ítems encontrados. Renderizando...`);
-            snapshot.forEach((docSnap, index) => {
+            snapshot.forEach((docSnap) => {
                 const item = docSnap.data();
                 const itemId = docSnap.id;
-                console.log("Checklist (onSnapshot): Procesando ítem:", item.text, "ID:", itemId, "Completed:", item.completed, "MIT:", item.isMIT, "Position:", item.position); // Detailed log for each item
+                console.log("Checklist (onSnapshot): Procesando ítem:", item.text, "ID:", itemId, "Completed:", item.completed, "MIT:", item.isMIT, "Position:", item.position);
                 const listItem = document.createElement('li');
-                listItem.setAttribute('draggable', 'true'); // Make list item draggable
-                listItem.dataset.id = itemId; // Store Firestore ID on the li element
+                listItem.setAttribute('draggable', 'true');
+                listItem.dataset.id = itemId;
 
-                // Explicitly create elements instead of innerHTML for listItem content
                 const completionCheckbox = document.createElement('input');
                 completionCheckbox.type = 'checkbox';
                 completionCheckbox.className = 'completion-checkbox';
@@ -792,11 +915,10 @@ async function loadAllUserData() {
                 listItem.appendChild(deleteButton);
 
                 checkListUl.appendChild(listItem);
-                console.log("Checklist (onSnapshot): Ítem añadido al DOM. HTML del nuevo listItem:", listItem.outerHTML); // Log the actual HTML of the added item
+                console.log("Checklist (onSnapshot): Ítem añadido al DOM. HTML del nuevo listItem:", listItem.outerHTML);
 
-                // Add event listeners for editing the text
                 itemTextSpan.addEventListener('dblclick', () => {
-                    originalText = itemTextSpan.textContent; // Save original text
+                    originalText = itemTextSpan.textContent;
                     itemTextSpan.contentEditable = 'true';
                     itemTextSpan.focus();
                     itemTextSpan.classList.add('editing');
@@ -809,13 +931,13 @@ async function loadAllUserData() {
                     const newText = itemTextSpan.textContent.trim();
                     if (newText !== originalText) {
                         try {
-                            await checklistCollectionRef.doc(itemId).update({ text: newText });
+                            await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
                             window.showTempMessage('Tarea actualizada con éxito.', 'success');
                             console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
                         } catch (error) {
                             console.error("Checklist: Error updating item text:", error);
                             window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
-                            itemTextSpan.textContent = originalText; // Revert on error
+                            itemTextSpan.textContent = originalText;
                         }
                     } else {
                         console.log(`Checklist: No changes made to item ${itemId}.`);
@@ -824,16 +946,15 @@ async function loadAllUserData() {
 
                 itemTextSpan.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
-                        e.preventDefault(); // Prevent new line
-                        itemTextSpan.blur(); // Trigger blur to save
+                        e.preventDefault();
+                        itemTextSpan.blur();
                     } else if (e.key === 'Escape') {
-                        e.preventDefault(); // Prevent default escape behavior
-                        itemTextSpan.textContent = originalText; // Revert text
-                        itemTextSpan.blur(); // Exit editing
+                        e.preventDefault();
+                        itemTextSpan.textContent = originalText;
+                        itemTextSpan.blur();
                     }
                 });
 
-                // Apply classes based on item state
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
                 }
@@ -855,16 +976,15 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    // Get the current highest position to assign a new one
-                    const lastItemSnapshot = await checklistCollectionRef.orderBy('position', 'desc').limit(1).get();
+                    const lastItemSnapshot = await getDocs(query(checklistCollectionRef, orderBy('position', 'desc'), limit(1)));
                     const newPosition = lastItemSnapshot.empty ? 0 : lastItemSnapshot.docs[0].data().position + 1;
 
-                    await checklistCollectionRef.add({
+                    await addDoc(checklistCollectionRef, {
                         text: itemText,
                         completed: false,
-                        isMIT: false, // New field for MIT
+                        isMIT: false,
                         timestamp: new Date().toISOString(),
-                        position: newPosition // Assign a position
+                        position: newPosition
                     });
                     checkItemInput.value = '';
                     window.showTempMessage('Elemento añadido al checklist.', 'success');
@@ -896,9 +1016,9 @@ async function loadAllUserData() {
 
     if (trelloApiKeyInput && trelloTokenInput && trelloBoardIdInput && trelloStatusDiv && trelloSuccessMessage && configTrelloBtn && testTrelloBtn && saveTrelloConfigBtn) {
         console.log("Trello: Elementos HTML de Trello encontrados.");
-        trelloConfigDocRef.onSnapshot((docSnap) => {
+        onSnapshot(trelloConfigDocRef, (docSnap) => {
             console.log("Trello: Recibiendo snapshot de configuración.");
-            if (docSnap.exists) {
+            if (docSnap.exists()) {
                 const config = docSnap.data();
                 trelloApiKeyInput.value = config.apiKey || '';
                 trelloTokenInput.value = config.token || '';
@@ -930,7 +1050,7 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    await trelloConfigDocRef.set({ apiKey, token, boardId });
+                    await setDoc(trelloConfigDocRef, { apiKey, token, boardId });
                     window.showTempMessage('Configuración de Trello guardada.', 'success');
                     probarConexionTrello();
                     console.log("Trello: Configuración guardada.");
@@ -945,8 +1065,8 @@ async function loadAllUserData() {
 
         async function probarConexionTrello() {
             console.log("Trello: Probando conexión...");
-            const configSnap = await trelloConfigDocRef.get();
-            if (!configSnap.exists) {
+            const configSnap = await getDoc(trelloConfigDocRef);
+            if (!configSnap.exists()) {
                 trelloStatusDiv.textContent = '❌ Trello no conectado';
                 trelloStatusDiv.className = 'status-indicator status-disconnected';
                 trelloSuccessMessage.style.display = 'none';
@@ -996,8 +1116,8 @@ async function loadAllUserData() {
 
         async function cargarTareasTrello() {
             console.log("Trello: Cargando tareas...");
-            const configSnap = await trelloConfigDocRef.get();
-            if (!configSnap.exists) {
+            const configSnap = await getDoc(trelloConfigDocRef);
+            if (!configSnap.exists()) {
                 console.log("Trello: No hay configuración de Trello para cargar tareas.");
                 return;
             }
@@ -1025,25 +1145,22 @@ async function loadAllUserData() {
                     allCards = allCards.concat(cards);
                 }
 
-                // Filtrar tareas para la semana actual (lunes a viernes)
                 const today = new Date();
-                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                const dayOfWeek = today.getDay();
 
-                // Calculate Monday of the current week
                 const monday = new Date(today);
-                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // Adjust for Sunday
+                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
                 monday.setHours(0, 0, 0, 0);
 
-                // Calculate Friday of the current week
                 const friday = new Date(monday);
-                friday.setDate(monday.getDate() + 4); // Monday + 4 days = Friday
+                friday.setDate(monday.getDate() + 4);
                 friday.setHours(23, 59, 59, 999);
 
                 console.log(`Trello: Filtrando tareas entre ${monday.toISOString()} y ${friday.toISOString()}`);
 
                 const filteredCards = allCards.filter(card => {
                     if (!card.due || card.dueComplete) {
-                        return false; // Exclude cards without due date or already completed
+                        return false;
                     }
                     const cardDueDate = new Date(card.due);
                     return cardDueDate >= monday && cardDueDate <= friday;
@@ -1083,45 +1200,46 @@ async function loadAllUserData() {
             if (await window.showCustomConfirm('¿Estás seguro de que quieres limpiar TODOS los datos guardados (Pomodoro, Checklist, Trello Config, Journal)? Esta acción es irreversible.')) {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
-                    // Las referencias a las colecciones ya están definidas arriba en loadAllUserData
+                    
+                    const batch = writeBatch(db); // Usar un batch para eliminaciones
+
                     // Eliminar documentos de Journal
-                    const journalDocs = await journalCollectionRef.get();
-                    journalDocs.forEach(async (d) => await d.ref.delete());
-                    console.log("Limpiar Datos: Entradas de Journal eliminadas.");
+                    const journalDocs = await getDocs(journalCollectionRef);
+                    journalDocs.forEach((d) => batch.delete(d.ref));
+                    console.log("Limpiar Datos: Entradas de Journal marcadas para eliminación.");
 
                     // Eliminar documentos de Checklist
-                    const checklistDocs = await checklistCollectionRef.get();
-                    checklistDocs.forEach(async (d) => await d.ref.delete());
-                    console.log("Limpiar Datos: Ítems de Checklist eliminados.");
+                    const checklistDocs = await getDocs(checklistCollectionRef);
+                    checklistDocs.forEach((d) => batch.delete(d.ref));
+                    console.log("Limpiar Datos: Ítems de Checklist marcados para eliminación.");
 
                     // Eliminar documentos de Hábitos
-                    const habitsDocs = await habitsCollectionRef.get();
-                    habitsDocs.forEach(async (d) => await d.ref.delete());
-                    console.log("Limpiar Datos: Hábitos eliminados.");
-
+                    const habitsDocs = await getDocs(habitsCollectionRef);
+                    habitsDocs.forEach((d) => batch.delete(d.ref));
+                    console.log("Limpiar Datos: Hábitos marcados para eliminación.");
 
                     // Eliminar documento de configuración de Pomodoro
-                    const pomodoroDocSnap = await pomodoroSettingsDocRef.get();
-                    if (pomodoroDocSnap.exists) {
-                        await pomodoroSettingsDocRef.delete();
-                        console.log("Limpiar Datos: Configuración de Pomodoro eliminada.");
+                    const pomodoroDocSnap = await getDoc(pomodoroSettingsDocRef);
+                    if (pomodoroDocSnap.exists()) {
+                        batch.delete(pomodoroSettingsDocRef);
+                        console.log("Limpiar Datos: Configuración de Pomodoro marcada para eliminación.");
                     }
 
                     // Eliminar documento de configuración de Trello
-                    const trelloDocSnap = await trelloConfigDocRef.get();
-                    if (trelloDocSnap.exists) {
-                        await trelloConfigDocRef.delete();
-                        console.log("Limpiar Datos: Configuración de Trello eliminada.");
+                    const trelloDocSnap = await getDoc(trelloConfigDocRef);
+                    if (trelloDocSnap.exists()) {
+                        batch.delete(trelloConfigDocRef);
+                        console.log("Limpiar Datos: Configuración de Trello marcada para eliminación.");
                     }
                     
                     // Eliminar documento de user settings (tourCompleted)
-                    const userSettingsDocSnap = await userSettingsRef.get();
-                    if (userSettingsDocSnap.exists) {
-                        await userSettingsRef.delete();
-                        console.log("Limpiar Datos: Configuración de usuario (tourCompleted) eliminada.");
+                    const userSettingsDocSnap = await getDoc(userSettingsRef);
+                    if (userSettingsDocSnap.exists()) {
+                        batch.delete(userSettingsRef);
+                        console.log("Limpiar Datos: Configuración de usuario (tourCompleted) marcada para eliminación.");
                     }
 
-
+                    await batch.commit(); // Ejecutar todas las eliminaciones en un solo batch
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
                     location.reload(); // Recargar la página para reflejar los cambios
                 } catch (error) {
@@ -1139,19 +1257,15 @@ async function loadAllUserData() {
     // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    // Colección de Firestore para artículos del blog
-    // Usaremos la colección pública para que todos los usuarios vean los mismos artículos curados
-    // CAMBIO DE RUTA AQUÍ: Ajustado para que coincida con tu estructura actual en Firestore
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
+    const blogArticlesCollectionRef = collection(db, `artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         console.log("Blog: Elementos HTML del Blog encontrados.");
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                // Obtener documentos de la colección blogArticles
-                const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get();
-                blogContentDiv.innerHTML = ''; // Limpiar contenido existente
+                const snapshot = await getDocs(query(blogArticlesCollectionRef, orderBy('timestamp', 'desc')));
+                blogContentDiv.innerHTML = '';
 
                 if (snapshot.empty) {
                     blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
@@ -1160,8 +1274,8 @@ async function loadAllUserData() {
                     return;
                 }
 
-                snapshot.forEach(doc => {
-                    const article = doc.data();
+                snapshot.forEach(docSnap => {
+                    const article = docSnap.data();
                     const articleCard = document.createElement('div');
                     articleCard.className = 'blog-article-card';
                     articleCard.innerHTML = `
@@ -1181,7 +1295,7 @@ async function loadAllUserData() {
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog(); // Cargar al inicio
+        cargarNotasBlog();
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
@@ -1189,18 +1303,15 @@ async function loadAllUserData() {
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
-    // Colección de Firestore para contenido de nutrición
-    // Usaremos la colección pública para que todos los usuarios vean el mismo contenido curado
-    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); // <--- CAMBIO AQUÍ
+    const nutricionCollectionRef = collection(db, `artifacts/${appId}/public/data/nutritionContent`);
 
     if (nutricionContentDiv && refreshNutricionBtn) {
         console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                // Obtener documentos de la colección nutritionContent
-                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Ordenar por timestamp
-                nutricionContentDiv.innerHTML = ''; // Limpiar contenido existente
+                const snapshot = await getDocs(query(nutricionCollectionRef, orderBy('timestamp', 'desc')));
+                nutricionContentDiv.innerHTML = '';
 
                 if (snapshot.empty) {
                     nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
@@ -1209,8 +1320,8 @@ async function loadAllUserData() {
                     return;
                 }
 
-                snapshot.forEach(doc => {
-                    const item = doc.data();
+                snapshot.forEach(docSnap => {
+                    const item = docSnap.data();
                     const card = document.createElement('div');
                     card.className = 'nutricion-card';
                     card.innerHTML = `
@@ -1230,7 +1341,7 @@ async function loadAllUserData() {
             }
         }
         refreshNutricionBtn.addEventListener('click', cargarNutricion);
-        cargarNutricion(); // Cargar al inicio
+        cargarNutricion();
     } else {
         console.warn("Nutrición: Elementos HTML de Nutrición no encontrados.");
     }
@@ -1242,8 +1353,7 @@ async function loadAllUserData() {
 
     if (newHabitInput && addHabitBtn && habitsList) {
         console.log("Hábitos: Elementos HTML de Hábitos encontrados.");
-        // Listener para cargar hábitos
-        habitsCollectionRef.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+        onSnapshot(query(habitsCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
             habitsList.innerHTML = '';
             if (snapshot.empty) {
@@ -1252,16 +1362,15 @@ async function loadAllUserData() {
                 return;
             }
             console.log(`Hábitos: ${snapshot.size} hábitos encontrados. Renderizando...`);
-            snapshot.forEach(doc => {
-                const habit = doc.data();
-                const habitId = doc.id;
+            snapshot.forEach(docSnap => {
+                const habit = docSnap.data();
+                const habitId = docSnap.id;
                 const listItem = document.createElement('li');
-                // Representar el seguimiento diario (ej. los últimos 7 días)
                 const today = new Date();
                 const dailyTrackingHtml = Array.from({ length: 7 }).map((_, i) => {
                     const date = new Date(today);
-                    date.setDate(today.getDate() - (6 - i)); // Últimos 7 días
-                    const dateString = date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+                    date.setDate(today.getDate() - (6 - i));
+                    const dateString = date.toISOString().split('T')[0];
                     const isCompleted = habit.dailyCompletions && habit.dailyCompletions[dateString];
                     return `
                         <span class="habit-day-dot ${isCompleted ? 'completed' : ''}" data-date="${dateString}" data-habit-id="${habitId}" title="${date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} ${isCompleted ? 'Completado' : 'Pendiente'}" tabindex="0" role="button" aria-label="Marcar hábito ${habit.name} para el ${date.toLocaleDateString('es-ES')}"></span>
@@ -1281,7 +1390,6 @@ async function loadAllUserData() {
             window.showTempMessage(`Error al cargar hábitos: ${error.message}`, 'error');
         });
 
-        // Añadir nuevo hábito
         addHabitBtn.addEventListener('click', async () => {
             const habitName = newHabitInput.value.trim();
             if (habitName) {
@@ -1290,10 +1398,10 @@ async function loadAllUserData() {
                     addHabitBtn.classList.remove('button-clicked');
                 }, 300);
                 try {
-                    await habitsCollectionRef.add({
+                    await addDoc(habitsCollectionRef, {
                         name: habitName,
                         timestamp: new Date().toISOString(),
-                        dailyCompletions: {} // Mapa para guardar el estado de completado por fecha
+                        dailyCompletions: {}
                     });
                     newHabitInput.value = '';
                     window.showTempMessage('Hábito añadido con éxito.', 'success');
@@ -1307,24 +1415,23 @@ async function loadAllUserData() {
             }
         });
 
-        // Marcar hábito como completado/incompleto para un día específico (delegación de eventos)
         habitsList.addEventListener('click', async (e) => {
             const target = e.target;
             if (target.classList.contains('habit-day-dot')) {
                 const habitId = target.dataset.habitId;
-                const dateString = target.dataset.date; // YYYY-MM-DD
+                const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = habitsCollectionRef.doc(habitId);
-                    const docSnap = await habitDocRef.get();
-                    if (docSnap.exists) {
+                    const habitDocRef = doc(habitsCollectionRef, habitId);
+                    const docSnap = await getDoc(habitDocRef);
+                    if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
                         const isCurrentlyCompleted = currentCompletions[dateString];
 
-                        currentCompletions[dateString] = !isCurrentlyCompleted; // Toggle state
+                        currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await habitDocRef.update({
+                        await updateDoc(habitDocRef, {
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1335,11 +1442,10 @@ async function loadAllUserData() {
                     window.showTempMessage(`Error al actualizar hábito: ${error.message}`, 'error');
                 }
             } else if (target.classList.contains('button-danger')) {
-                // Eliminar hábito
                 const habitIdToDelete = target.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
                     try {
-                        await habitsCollectionRef.doc(habitIdToDelete).delete();
+                        await deleteDoc(doc(habitsCollectionRef, habitIdToDelete));
                         window.showTempMessage('Hábito eliminado.', 'info');
                         console.log(`Hábito: ${habitIdToDelete} eliminado.`);
                     } catch (error) {
@@ -1350,26 +1456,24 @@ async function loadAllUserData() {
             }
         });
 
-        // Manejar eventos de teclado para los habit-day-dot
         habitsList.addEventListener('keydown', async (e) => {
             const target = e.target;
-            // Si el elemento enfocado es un habit-day-dot y se presiona Enter o Espacio
             if (target.classList.contains('habit-day-dot') && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault(); // Prevenir el scroll de la página con Espacio
+                e.preventDefault();
                 const habitId = target.dataset.habitId;
                 const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = habitsCollectionRef.doc(habitId);
-                    const docSnap = await habitDocRef.get();
-                    if (docSnap.exists) {
+                    const habitDocRef = doc(habitsCollectionRef, habitId);
+                    const docSnap = await getDoc(habitDocRef);
+                    if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
                         const isCurrentlyCompleted = currentCompletions[dateString];
 
-                        currentCompletions[dateString] = !isCurrentlyCompleted; // Toggle state
+                        currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await habitDocRef.update({
+                        await updateDoc(habitDocRef, {
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1389,9 +1493,8 @@ async function loadAllUserData() {
 
     // Actualizar contadores de estado
     function updateAppStatus() {
-        if (window.currentUserId && window.db) {
-            // Usar las referencias a las colecciones que ya están definidas en loadAllUserData
-            checklistCollectionRef.get().then(snapshot => {
+        if (currentUserId && db) {
+            getDocs(checklistCollectionRef).then(snapshot => {
                 const checklistItemsCount = snapshot.size;
                 const checklistCountElement = document.getElementById('checklist-count');
                 if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
@@ -1399,9 +1502,9 @@ async function loadAllUserData() {
                 console.error("Error getting checklist count:", error);
             });
 
-            habitsCollectionRef.get().then(snapshot => {
+            getDocs(habitsCollectionRef).then(snapshot => {
                 const habitsCount = snapshot.size;
-                const tasksCountElement = document.getElementById('tasks-count'); // Reutilizando tasks-count para hábitos
+                const tasksCountElement = document.getElementById('tasks-count');
                 if (tasksCountElement) tasksCountElement.textContent = habitsCount;
             }).catch(error => {
                 console.error("Error getting habits count:", error);
@@ -1459,172 +1562,11 @@ async function requestNotificationPermission() {
 
 // Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
 document.addEventListener('DOMContentLoaded', async () => {
-    // Elementos de la UI de autenticación
-    const userDisplayName = document.getElementById('user-display-name');
-    const logoutBtn = document.getElementById('logout-btn');
-    const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
-    const googleSigninBtn = document.getElementById('google-signin-btn');
-    const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
-    const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
-    const userIdDisplay = document.getElementById('user-id-display');
-
-
-    // Firebase Auth State Listener
-    // Asegurarse de que auth esté definido antes de añadir el listener
-    if (!auth) {
-        console.error("DOMContentLoaded: Firebase Auth no está inicializado. No se puede configurar el listener onAuthStateChanged.");
-        // Podríamos añadir un retry o un mensaje al usuario aquí.
-        return;
-    }
+    // Inicializar Firebase y la autenticación primero
+    await initializeFirebaseAndAuth();
 
     // Solicitar permiso de notificación al cargar la aplicación
     await requestNotificationPermission();
-
-    auth.onAuthStateChanged(async (user) => { // Usar la variable global 'auth'
-        console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
-
-        // Comprobaciones defensivas para asegurar que los elementos existen
-        if (!userDisplayName) console.error("onAuthStateChanged: Elemento 'user-display-name' no encontrado en el DOM.");
-        if (!logoutBtn) console.error("onAuthStateChanged: Elemento 'logout-btn' no encontrado en el DOM.");
-        if (!authButtonsWrapper) console.error("onAuthStateChanged: Elemento '.auth-buttons-wrapper' no encontrado en el DOM.");
-        if (!googleSigninBtn) console.error("onAuthStateChanged: Elemento 'google-signin-btn' no encontrado en el DOM.");
-        if (!emailSigninToggleBtn) console.error("onAuthStateChanged: Elemento 'email-signin-toggle-btn' no encontrado en el DOM.");
-        if (!anonymousSigninBtn) console.error("onAuthStateChanged: Elemento 'anonymous-signin-btn' no encontrado en el DOM.");
-
-
-        if (user) {
-            currentUserId = user.uid; // Actualizar la variable global currentUserId
-            window.currentUserId = user.uid; // Asegurar que window.currentUserId también se actualice
-            console.log("onAuthStateChanged: Usuario autenticado. UID:", currentUserId);
-
-            // Mostrar información del usuario y botón de cerrar sesión
-            if (userDisplayName) userDisplayName.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
-            if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`; // Mostrar ID completo
-            if (authButtonsWrapper) authButtonsWrapper.style.display = 'none'; // Ocultar el wrapper de botones
-            if (googleSigninBtn) googleSigninBtn.style.display = 'none'; // Ocultar botón de Google
-            if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'none'; // Ocultar botón de Email
-            if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'none'; // Ocultar botón de Anónimo
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-            // Asegurarse de que el user-info-area no esté en modo centrado si el usuario está logueado
-            const userInfoArea = document.getElementById('user-info-area');
-            if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
-
-
-            // Cargar datos del usuario solo si no estamos en el proceso de cierre de sesión
-            if (!isLoggingOut) { // Usar la variable global isLoggingOut
-                 loadAllUserData(); // Llama a la función globalmente definida
-            } else {
-                console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
-                isLoggingOut = false; // Usar la variable global isLoggingOut
-                loadAllUserData(); // Cargar datos incluso si se reautentica por initialAuthToken
-            }
-
-        } else { // Usuario es null (no autenticado)
-            currentUserId = null; // Actualizar la variable global currentUserId
-            window.currentUserId = null; // Asegurar que window.currentUserId también se actualice
-            console.log("onAuthStateChanged: Usuario no autenticado.");
-            if (userDisplayName) userDisplayName.textContent = 'Por favor, inicia sesión:';
-            if (userIdDisplay) userIdDisplay.textContent = ''; // Limpiar ID de usuario
-            if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex'; // Mostrar el wrapper de botones
-            if (googleSigninBtn) googleSigninBtn.style.display = 'inline-block'; // Mostrar botón de Google
-            if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'inline-block'; // Mostrar botón de Email
-            if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'inline-block'; // Mostrar botón de Anónimo
-            if (logoutBtn) logoutBtn.style.display = 'none';
-            // Asegurarse de que el user-info-area esté en modo centrado si no hay usuario
-            const userInfoArea = document.getElementById('user-info-area');
-            if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
-
-            // Solo intentar signInWithCustomToken si initialAuthToken está presente
-            // Y no hay usuario actualmente autenticado Y no estamos explícitamente cerrando sesión.
-            if (window.initialAuthToken && !isLoggingOut) { // Usar la variable global isLoggingOut
-                try {
-                    console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
-                    await auth.signInWithCustomToken(window.initialAuthToken); // Usar la variable global 'auth'
-                    console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
-                    window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
-                }
-            } else if (isLoggingOut) { // Usar la variable global isLoggingOut
-                // Si estamos explícitamente cerrando sesión, simplemente reiniciamos la bandera y no hacemos nada más.
-                isLoggingOut = false; // Usar la variable global isLoggingOut
-                console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
-            }
-        }
-    });
-
-    // Lógica para el botón de cerrar sesión
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                isLoggingOut = true; // Establecer la bandera antes de cerrar sesión
-                await auth.signOut(); // Usar la variable global 'auth'
-                window.showTempMessage('Sesión cerrada correctamente.', 'info');
-                // onAuthStateChanged manejará las actualizaciones de la UI
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
-                isLoggingOut = false; // Resetear la bandera si el cierre de sesión falla
-            }
-        });
-    }
-
-    // Lógica para los nuevos botones de inicio de sesión
-    if (anonymousSigninBtn) {
-        anonymousSigninBtn.addEventListener('click', async () => {
-            anonymousSigninBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                anonymousSigninBtn.classList.remove('button-clicked');
-            }, 300);
-
-            try {
-                await auth.signInAnonymously(); // Usar la variable global 'auth'
-                window.showTempMessage('Sesión anónima iniciada.', 'success');
-            } catch (error) {
-                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-                console.error("Error al iniciar sesión anónima:", error);
-            }
-        });
-    }
-
-    if (emailSigninToggleBtn) {
-        emailSigninToggleBtn.addEventListener('click', () => {
-            emailSigninToggleBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                emailSigninToggleBtn.classList.remove('button-clicked');
-            }, 300);
-            window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
-            console.log("Intento de inicio de sesión con Email.");
-        });
-    }
-
-    if (googleSigninBtn) {
-        googleSigninBtn.addEventListener('click', async () => {
-            googleSigninBtn.classList.add('button-clicked');
-            setTimeout(() => {
-                googleSigninBtn.classList.remove('button-clicked');
-            }, 300);
-
-            try {
-                // Usar la API de Firebase v8 (compatibilidad) que ya está cargada globalmente
-                const provider = new firebase.auth.GoogleAuthProvider();
-                // CORRECCIÓN: Llamar signInWithPopup con UN SOLO argumento (el proveedor)
-                await firebase.auth().signInWithPopup(provider);
-                window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
-            } catch (error) {
-                console.error("Error al iniciar sesión con Google:", error);
-                let errorMessage = error.message;
-                if (error.code === 'auth/popup-closed-by-user') {
-                    errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
-                } else if (error.code === 'auth/cancelled-popup-request') {
-                    errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
-                } else if (error.code === 'auth/auth-domain-config-error') {
-                    errorMessage = 'Error de configuración del dominio de autenticación. Asegúrate de que tu dominio esté autorizado en la consola de Firebase.';
-                }
-                window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
-            }
-        });
-    }
 
     // Inicializar la sección Pomodoro al cargar la página
     console.log("DOMContentLoaded: Llamando a mostrarSeccion('pomodoro').");
@@ -1635,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.mostrarSeccion('pomodoro');
         console.log("Sección Pomodoro activa. ClassList:", document.getElementById('pomodoro').classList.value);
     });
-    document.getElementById('btn-checklist').addEventListener('click', () => { // Corregido el ID del botón
+    document.getElementById('btn-checklist').addEventListener('click', () => {
         window.mostrarSeccion('checklist');
         console.log("Sección Checklist activa. ClassList:", document.getElementById('checklist').classList.value);
     });
@@ -1647,15 +1589,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.mostrarSeccion('habitos');
         console.log("Sección Hábitos activa. ClassList:", document.getElementById('habitos').classList.value);
     });
-    document.getElementById('btn-tareas').addEventListener('click', () => { // Corregido el ID del botón
+    document.getElementById('btn-tareas').addEventListener('click', () => {
         window.mostrarSeccion('tareas');
         console.log("Sección Tareas activa. ClassList:", document.getElementById('tareas').classList.value);
     });
-    document.getElementById('btn-notas').addEventListener('click', () => { // Corregido el ID del botón
+    document.getElementById('btn-notas').addEventListener('click', () => {
         window.mostrarSeccion('notas');
         console.log("Sección Notas activa. ClassList:", document.getElementById('notas').classList.value);
     });
-    document.getElementById('btn-nutricion').addEventListener('click', () => { // Corregido el ID del botón
+    document.getElementById('btn-nutricion').addEventListener('click', () => {
         window.mostrarSeccion('nutricion');
         console.log("Sección Nutrición activa. ClassList:", document.getElementById('nutricion').classList.value);
     });

@@ -6,13 +6,13 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
-  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs: Cargados como módulos ES6 para evitar el error 'export' -->
+  <!-- Las URLs son las mismas, pero ahora se cargan como módulos -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
   <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
+  <!-- <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
 
   <style>
     /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
@@ -244,72 +244,6 @@
     window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
     window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    // Inicializar Firebase una vez que las variables globales estén disponibles
-    let app;
-    let db;
-    let auth;
-
-    try {
-        app = firebase.initializeApp(window.firebaseConfig);
-        db = firebase.firestore();
-        auth = firebase.auth();
-        console.log("Firebase inicializado con éxito.");
-
-        // Exponer instancias de Firebase globalmente para main.js
-        window.db = db;
-        window.auth = auth;
-
-        // Si hay un token de autenticación inicial, intentar iniciar sesión con él
-        // Esto se hace aquí para que main.js pueda depender de un usuario autenticado
-        // o al menos de que el proceso de autenticación haya comenzado.
-        if (window.initialAuthToken) {
-            auth.signInWithCustomToken(window.initialAuthToken)
-                .then((userCredential) => {
-                    console.log("Inicio de sesión con CustomToken exitoso:", userCredential.user.uid);
-                    window.currentUserId = userCredential.user.uid;
-                    if (window.loadAllUserData) {
-                        window.loadAllUserData(); // Cargar datos una vez que el usuario esté autenticado
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error al iniciar sesión con CustomToken:", error);
-                    // Si falla el token, intentar iniciar sesión anónimamente
-                    auth.signInAnonymously()
-                        .then((userCredential) => {
-                            console.log("Inicio de sesión anónima exitoso:", userCredential.user.uid);
-                            window.currentUserId = userCredential.user.uid;
-                            if (window.loadAllUserData) {
-                                window.loadAllUserData();
-                            }
-                        })
-                        .catch((anonError) => {
-                            console.error("Error al iniciar sesión anónima:", anonError);
-                            window.showTempMessage(`Error de autenticación: ${anonError.message}`, 'error');
-                        });
-                });
-        } else {
-            // Si no hay token inicial, intentar iniciar sesión anónimamente por defecto
-            auth.signInAnonymously()
-                .then((userCredential) => {
-                    console.log("Inicio de sesión anónima exitoso (sin token inicial):", userCredential.user.uid);
-                    window.currentUserId = userCredential.user.uid;
-                    if (window.loadAllUserData) {
-                        window.loadAllUserData();
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error al iniciar sesión anónima (sin token inicial):", error);
-                    window.showTempMessage(`Error de autenticación: ${error.message}`, 'error');
-                });
-        }
-
-    } catch (e) {
-        console.error("Error al inicializar Firebase:", e);
-        document.addEventListener('DOMContentLoaded', () => {
-            window.showTempMessage(`Error crítico: Firebase no pudo inicializarse. ${e.message}`, 'error', 10000);
-        });
-    }
-
     // Función para mostrar/ocultar secciones
     window.mostrarSeccion = function(idSeccion) {
       document.querySelectorAll('.seccion').forEach(seccion => {
@@ -426,6 +360,7 @@
   </script>
 
   <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
-  <script src="js/main.js"></script>
+  <!-- Importante: main.js también debe ser un módulo para importar Firebase -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
