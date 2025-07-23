@@ -18,6 +18,19 @@ window.loadAllUserData = loadAllUserData;
 // Función para inicializar Firebase y autenticar
 async function initializeFirebaseAndAuth() {
     try {
+        // **NUEVA VERIFICACIÓN: Asegurarse de que projectId esté presente en la configuración de Firebase**
+        if (!window.firebaseConfig || !window.firebaseConfig.projectId) {
+            const errorMessage = "Error de configuración de Firebase: 'projectId' no proporcionado. Asegúrate de que la variable de entorno '__firebase_config' esté correctamente configurada con tu Project ID de Firebase.";
+            console.error(errorMessage);
+            // Mostrar un mensaje de error crítico en la UI para el usuario
+            document.body.innerHTML = `<div style="text-align: center; padding: 50px; color: var(--error-dark); background-color: var(--error-light); border-radius: var(--border-radius-md); margin: 50px auto; max-width: 600px; box-shadow: var(--glass-shadow);">
+                <h1 style="color: var(--error-dark);">Error Crítico de Configuración</h1>
+                <p style="font-size: 1.1em; margin-bottom: 20px;">${errorMessage}</p>
+                <p style="font-size: 0.9em; color: var(--text-medium);">Por favor, revisa la configuración de tu entorno o contacta al soporte.</p>
+            </div>`;
+            return; // Detener la inicialización si la configuración es inválida
+        }
+
         app = initializeApp(window.firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
