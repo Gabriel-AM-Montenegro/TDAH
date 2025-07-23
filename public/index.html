@@ -1,89 +1,301 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App TDAH</title>
+  <link rel="stylesheet" href="css/styles1.css">
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/11.9.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/11.9.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/11.9.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
+  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+  <!-- Si usas Analytics, descomenta la línea de abajo -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+  <style>
+    /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
+    #css-check {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      background-color: red; /* Si este color no es visible, el CSS no está cargando */
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🧠 TDAH Helper App</h1>
+      <p>Tu asistente personal para organización y productividad</p>
+      <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
+      <div id="user-info-area" style="text-align: center;">
+        <div id="user-display" style="display: none;">
+          <span id="user-email"></span>
+          <button id="logout-button" class="btn btn-secondary">Cerrar Sesión</button>
+        </div>
+        <div id="auth-buttons" style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+          <button id="google-signin-button" class="btn btn-primary">Iniciar con Google</button>
+          <button id="anonymous-signin-button" class="btn btn-secondary">Iniciar Anónimamente</button>
+          <button id="email-signin-button" class="btn btn-tertiary">Iniciar con Email</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de navegación principal -->
+    <nav class="main-nav">
+      <button id="btn-pomodoro" class="nav-btn active">
+        <span class="icon">⏰</span> Pomodoro
+      </button>
+      <button id="btn-checklist" class="nav-btn">
+        <span class="icon">✅</span> Checklist Rápido
+      </button>
+      <button id="btn-journal" class="nav-btn">
+        <span class="icon">✍️</span> Journal
+      </button>
+      <button id="btn-habitos" class="nav-btn">
+        <span class="icon">🎯</span> Hábitos
+      </button>
+      <button id="btn-tareas" class="nav-btn">
+        <span class="icon">📋</span> Tareas Trello
+      </button>
+      <button id="btn-notas" class="nav-btn">
+        <span class="icon">📝</span> Notas Blog
+      </button>
+      <button id="btn-nutricion" class="nav-btn">
+        <span class="icon">🍎</span> Nutrición
+      </button>
+      <button id="btn-config" class="nav-btn">
+        <span class="icon">⚙️</span> Configuración
+      </button>
+    </nav>
+
+    <main class="content-area">
+      <!-- Sección Pomodoro -->
+      <section id="pomodoro" class="content-section active">
+        <h2>Temporizador Pomodoro</h2>
+        <div class="pomodoro-timer">
+          <span id="minutes">25</span>:<span id="seconds">00</span>
+        </div>
+        <div class="pomodoro-controls">
+          <button id="start-pomodoro" class="btn btn-primary">Iniciar</button>
+          <button id="pause-pomodoro" class="btn btn-secondary">Pausar</button>
+          <button id="reset-pomodoro" class="btn btn-tertiary">Reiniciar</button>
+        </div>
+        <p id="pomodoro-message" class="message"></p>
+      </section>
+
+      <!-- Sección Checklist Rápido -->
+      <section id="checklist" class="content-section">
+        <h2>Checklist Rápido</h2>
+        <div class="input-group">
+          <input type="text" id="new-checklist-item" placeholder="Nueva tarea del checklist" />
+          <button id="add-checklist-item" class="btn btn-primary">Agregar</button>
+        </div>
+        <ul id="checklist-items" class="item-list">
+          <!-- Los ítems del checklist se cargarán aquí -->
+        </ul>
+      </section>
+
+      <!-- Sección Journal -->
+      <section id="journal" class="content-section">
+        <h2>Journal</h2>
+        <div class="journal-entry">
+          <textarea id="journal-text" placeholder="Escribe tus pensamientos aquí..."></textarea>
+          <button id="save-journal-entry" class="btn btn-primary">Guardar Entrada</button>
+        </div>
+        <div id="journal-entries" class="item-list">
+          <!-- Las entradas del journal se cargarán aquí -->
+        </div>
+      </section>
+
+      <!-- Sección Hábitos -->
+      <section id="habitos" class="content-section">
+        <h2>Hábitos</h2>
+        <div class="input-group">
+          <input type="text" id="new-habit-name" placeholder="Nuevo hábito" />
+          <button id="add-habit" class="btn btn-primary">Agregar Hábito</button>
+        </div>
+        <ul id="habit-list" class="item-list">
+          <!-- Los hábitos se cargarán aquí -->
+        </ul>
+      </section>
+
+      <!-- Sección Tareas Trello (o similar) -->
+      <section id="tareas" class="content-section">
+        <h2>Tareas</h2>
+        <p>Aquí podrás integrar o gestionar tus tareas.</p>
+        <div class="input-group">
+          <input type="text" id="new-task-input" placeholder="Añadir nueva tarea" />
+          <button id="add-task-btn" class="btn btn-primary">Añadir</button>
+        </div>
+        <ul id="task-list" class="item-list">
+          <!-- Las tareas se cargarán aquí -->
+        </ul>
+      </section>
+
+      <!-- Sección Notas Blog -->
+      <section id="notas" class="content-section">
+        <h2>Notas</h2>
+        <div class="input-group">
+          <input type="text" id="new-note-title" placeholder="Título de la nota" />
+          <textarea id="new-note-content" placeholder="Contenido de la nota..."></textarea>
+          <button id="add-note" class="btn btn-primary">Guardar Nota</button>
+        </div>
+        <div id="notes-list" class="item-list">
+          <!-- Las notas se cargarán aquí -->
+        </div>
+      </section>
+
+      <!-- Sección Nutrición -->
+      <section id="nutricion" class="content-section">
+        <h2>Nutrición</h2>
+        <p>Aquí podrás registrar tus comidas y objetivos nutricionales.</p>
+        <div class="input-group">
+          <input type="text" id="new-food-item" placeholder="Alimento consumido" />
+          <button id="add-food-item" class="btn btn-primary">Registrar</button>
+        </div>
+        <ul id="food-log" class="item-list">
+          <!-- El registro de alimentos se cargará aquí -->
+        </ul>
+      </section>
+
+      <!-- Sección Configuración -->
+      <section id="config" class="content-section">
+        <h2>Configuración</h2>
+        <p>Ajustes de la aplicación.</p>
+        <div class="config-options">
+          <button id="request-notification-permission" class="btn btn-primary">
+            Solicitar Permiso de Notificaciones
+          </button>
+          <p id="notification-status">Estado de las notificaciones: Desconocido</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal de confirmación personalizado -->
+  <div id="custom-confirm-modal" class="custom-modal-overlay">
+    <div class="custom-modal-content">
+      <p id="custom-confirm-message"></p>
+      <div class="modal-buttons">
+        <button id="custom-confirm-yes" class="btn btn-primary">Sí</button>
+        <button id="custom-confirm-no" class="btn btn-secondary">No</button>
+      </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+  </div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+  <script>
+    // Inicialización de Firebase (asegúrate de que __firebase_config esté definido en tu entorno Canvas)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+    // Si firebaseConfig está vacío, o no tiene projectId, esto podría indicar un problema de configuración en Canvas
+    if (!firebaseConfig.projectId) {
+        console.error("Firebase: projectId no encontrado en __firebase_config. Asegúrate de que la variable de entorno esté configurada correctamente.");
+        // Opcional: Mostrar un mensaje al usuario en la UI
+        document.addEventListener('DOMContentLoaded', () => {
+            const authButtons = document.getElementById('auth-buttons');
+            if (authButtons) {
+                authButtons.innerHTML = '<p style="color: red;">Error: Configuración de Firebase incompleta. Contacta al soporte.</p>';
+            }
+        });
+    }
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+    const auth = firebase.auth(app);
+
+    // Exponer variables globales para main.js
+    window.app = app;
+    window.db = db;
+    window.auth = auth;
+    window.appId = appId;
+
+    // Autenticación inicial con token personalizado o anónima
+    window.currentUserId = null; // Inicialmente nulo
+
+    // Manejar el estado de autenticación
+    firebase.auth().onAuthStateChanged(async (user) => {
+        const userDisplay = document.getElementById('user-display');
+        const authButtons = document.getElementById('auth-buttons');
+        const userEmailSpan = document.getElementById('user-email');
+
+        if (user) {
+            window.currentUserId = user.uid;
+            userEmailSpan.textContent = user.email || 'Usuario Anónimo';
+            userDisplay.style.display = 'block';
+            authButtons.style.display = 'none';
+            console.log("Usuario autenticado:", user.uid);
+
+            // Cargar datos del usuario solo si no estamos en proceso de cierre de sesión
+            if (!window.isLoggingOut) {
+                await window.loadAllUserData();
+            }
+        } else {
+            window.currentUserId = null;
+            userDisplay.style.display = 'none';
+            authButtons.style.display = 'flex';
+            console.log("Usuario no autenticado.");
+            // Si no hay usuario, limpiar la UI o mostrar un estado predeterminado
+            // Por ejemplo, ocultar las secciones de contenido o mostrar un mensaje
+            document.querySelectorAll('.content-section').forEach(section => {
+                if (section.id !== 'pomodoro') { // Mantener Pomodoro visible si es una sección pública
+                    section.classList.remove('active');
+                }
+            });
+             document.getElementById('pomodoro').classList.add('active'); // Asegurarse de que Pomodoro esté activo
         }
-      });
-    </script>
-  </body>
+    });
+
+    // Función de confirmación personalizada
+    window.customConfirm = (message) => {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-confirm-modal');
+            const messageEl = document.getElementById('custom-confirm-message');
+            const yesBtn = document.getElementById('custom-confirm-yes');
+            const noBtn = document.getElementById('custom-confirm-no');
+
+            messageEl.textContent = message;
+            modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
+
+            // Force reflow to ensure display:flex is applied before adding 'show' class
+            // This is crucial for CSS transitions to work from display:none to display:flex
+            void modal.offsetWidth;
+
+            modal.classList.add('show'); // Now add the class that applies opacity and transform
+
+            const cleanup = () => {
+                modal.classList.remove('show'); // Start hide transition
+                // Wait for the transition to finish before setting display to 'none'
+                modal.addEventListener('transitionend', () => {
+                    modal.style.display = 'none';
+                }, { once: true });
+                yesBtn.removeEventListener('click', onYesClick);
+                noBtn.removeEventListener('click', onNoClick);
+            };
+
+            const onYesClick = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const onNoClick = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            yesBtn.addEventListener('click', onYesClick);
+            noBtn.addEventListener('click', onNoClick);
+        });
+    };
+  </script>
+
+  <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
+  <script src="js/main.js"></script>
+</body>
 </html>

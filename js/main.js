@@ -3,17 +3,10 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, writeBatch, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-
-const auth = getAuth(firebaseApp);
-onAuthStateChanged(auth, user => {
-  // Check for user status
-});
 // Inicializar variables globales de Firebase
 let app;
 let db;
-//let auth;
+let auth;
 let currentUserId; // currentUserId puede cambiar con la autenticación
 const appId = window.appId; // appId debería ser constante, viene de window.appId
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
@@ -795,6 +788,55 @@ async function loadAllUserData() {
             }
         });
 
+        checkListUl.addEventListener('dblclick', (e) => {
+            const target = e.target;
+            if (target.classList.contains('item-text')) {
+                originalText = target.textContent;
+                target.contentEditable = 'true';
+                target.focus();
+                target.classList.add('editing');
+                console.log(`Checklist: Editing item ${target.dataset.itemId}.`);
+            }
+        });
+
+        checkListUl.addEventListener('blur', async (e) => {
+            const target = e.target;
+            if (target.classList.contains('item-text') && target.contentEditable === 'true') {
+                target.contentEditable = 'false';
+                target.classList.remove('editing');
+                const newText = target.textContent.trim();
+                const itemId = target.dataset.itemId;
+                if (newText !== originalText) {
+                    try {
+                        await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
+                        window.showTempMessage('Tarea actualizada con éxito.', 'success');
+                        console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
+                    } catch (error) {
+                        console.error("Checklist: Error updating item text:", error);
+                        window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
+                        target.textContent = originalText; // Revert on error
+                    }
+                } else {
+                    console.log(`Checklist: No changes made to item ${itemId}.`);
+                }
+            }
+        }, true); // Use capture phase for blur event
+
+        checkListUl.addEventListener('keydown', (e) => {
+            const target = e.target;
+            if (target.classList.contains('item-text') && target.contentEditable === 'true') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    target.blur();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    target.textContent = originalText;
+                    target.blur();
+                }
+            }
+        });
+
+
         checkListUl.addEventListener('dragstart', (e) => {
             draggedItem = e.target;
             if (draggedItem.tagName !== 'LI') {
@@ -879,7 +921,7 @@ async function loadAllUserData() {
             checkListUl.innerHTML = '';
             if (snapshot.empty) {
                 console.log("Checklist (onSnapshot): Colección vacía. Mostrando mensaje de vacío.");
-                checkListUl.innerHTML = '<li>No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>';
+                checkListUl.innerHTML = '<li class="empty-section-message">No hay ítems en el checklist aún. ¡Añade tu primera tarea!</li>';
                 return;
             }
             console.log(`Checklist (onSnapshot): ${snapshot.size} ítems encontrados. Renderizando...`);
@@ -936,44 +978,6 @@ async function loadAllUserData() {
 
                 checkListUl.appendChild(listItem);
                 console.log("Checklist (onSnapshot): Ítem añadido al DOM. HTML del nuevo listItem:", listItem.outerHTML);
-
-                itemTextSpan.addEventListener('dblclick', () => {
-                    originalText = itemTextSpan.textContent;
-                    itemTextSpan.contentEditable = 'true';
-                    itemTextSpan.focus();
-                    itemTextSpan.classList.add('editing');
-                    console.log(`Checklist: Editing item ${itemId}.`);
-                });
-
-                itemTextSpan.addEventListener('blur', async () => {
-                    itemTextSpan.contentEditable = 'false';
-                    itemTextSpan.classList.remove('editing');
-                    const newText = itemTextSpan.textContent.trim();
-                    if (newText !== originalText) {
-                        try {
-                            await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
-                            window.showTempMessage('Tarea actualizada con éxito.', 'success');
-                            console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
-                        } catch (error) {
-                            console.error("Checklist: Error updating item text:", error);
-                            window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
-                            itemTextSpan.textContent = originalText;
-                        }
-                    } else {
-                        console.log(`Checklist: No changes made to item ${itemId}.`);
-                    }
-                });
-
-                itemTextSpan.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        itemTextSpan.blur();
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        itemTextSpan.textContent = originalText;
-                        itemTextSpan.blur();
-                    }
-                });
 
                 if (item.isMIT) {
                     listItem.classList.add('mit-task');
@@ -1147,7 +1151,7 @@ async function loadAllUserData() {
             listaTareasUl.innerHTML = '';
 
             if (!apiKey || !token || !boardId) {
-                listaTareasUl.innerHTML = '<p>Configura Trello para ver tus tareas.</p>';
+                listaTareasUl.innerHTML = '<p class="empty-section-message">Configura Trello para ver tus tareas.</p>';
                 return;
             }
 
@@ -1195,12 +1199,12 @@ async function loadAllUserData() {
                     });
                     console.log(`Trello: ${filteredCards.length} tareas cargadas para esta semana.`);
                 } else {
-                    listaTareasUl.innerHTML = '<li>No hay tareas que venzan esta semana en tu board de Trello.</li>';
+                    listaTareasUl.innerHTML = '<li class="empty-section-message">No hay tareas que venzan esta semana en tu board de Trello.</li>';
                     console.log("Trello: No hay tareas para esta semana.");
                 }
             } catch (error) {
                 console.error('Trello: Error al cargar tareas:', error);
-                listaTareasUl.innerHTML = `<li>Error al cargar tareas: ${error.message}</li>`;
+                listaTareasUl.innerHTML = `<li class="empty-section-message">Error al cargar tareas: ${error.message}</li>`;
                 window.showTempMessage(`Error al cargar tareas de Trello: ${error.message}`, 'error');
             }
         }
@@ -1274,7 +1278,7 @@ async function loadAllUserData() {
     }
 
 
-    // --- Lógica de Notas de Blog y Nutrición (ahora usan DB) ---
+    // --- Lógica de Notas de Blog ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
     const blogArticlesCollectionRef = collection(db, `artifacts/${appId}/blogArticles`); 
@@ -1285,10 +1289,10 @@ async function loadAllUserData() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
                 const snapshot = await getDocs(query(blogArticlesCollectionRef, orderBy('timestamp', 'desc')));
-                blogContentDiv.innerHTML = '';
+                blogContentDiv.innerHTML = ''; 
 
                 if (snapshot.empty) {
-                    blogContentDiv.innerHTML = '<p>No hay artículos de blog disponibles aún.</p>';
+                    blogContentDiv.innerHTML = '<p class="empty-section-message">No hay artículos de blog disponibles aún.</p>';
                     console.log("Blog: No hay artículos en Firestore.");
                     window.showTempMessage('No hay artículos de blog disponibles.', 'info');
                     return;
@@ -1309,13 +1313,13 @@ async function loadAllUserData() {
                 window.showTempMessage('Artículos del blog actualizados desde Firestore.', 'success');
                 console.log("Blog: Artículos cargados desde Firestore.");
             } catch (error) {
-                blogContentDiv.innerHTML = '<p>Error al cargar artículos del blog.</p>';
+                blogContentDiv.innerHTML = '<p class="empty-section-message">Error al cargar artículos del blog.</p>';
                 console.error('Blog: Error al cargar notas de blog desde Firestore:', error);
                 window.showTempMessage(`Error al cargar artículos del blog: ${error.message}`, 'error');
             }
         }
         refreshBlogBtn.addEventListener('click', cargarNotasBlog);
-        cargarNotasBlog();
+        cargarNotasBlog(); 
     } else {
         console.warn("Blog: Elementos HTML del Blog no encontrados.");
     }
@@ -1334,7 +1338,7 @@ async function loadAllUserData() {
                 nutricionContentDiv.innerHTML = '';
 
                 if (snapshot.empty) {
-                    nutricionContentDiv.innerHTML = '<p>No hay contenido de nutrición disponible aún.</p>';
+                    nutricionContentDiv.innerHTML = '<p class="empty-section-message">No hay contenido de nutrición disponible aún.</p>';
                     console.log("Nutrición: No hay contenido en Firestore.");
                     window.showTempMessage('No hay contenido de nutrición disponible.', 'info');
                     return;
@@ -1355,7 +1359,7 @@ async function loadAllUserData() {
                 window.showTempMessage('Contenido de nutrición actualizado desde Firestore.', 'success');
                 console.log("Nutrición: Contenido cargado desde Firestore.");
             } catch (error) {
-                nutricionContentDiv.innerHTML = '<p>Error al cargar contenido de nutrición.</p>';
+                nutricionContentDiv.innerHTML = '<p class="empty-section-message">Error al cargar contenido de nutrición.</p>';
                 console.error('Nutrición: Error al cargar nutrición desde Firestore:', error);
                 window.showTempMessage(`Error al cargar contenido de nutrición: ${error.message}`, 'error');
             }
@@ -1378,7 +1382,7 @@ async function loadAllUserData() {
             habitsList.innerHTML = '';
             if (snapshot.empty) {
                 console.log("Hábitos: Colección vacía. Mostrando mensaje de vacío.");
-                habitsList.innerHTML = '<li>No hay hábitos registrados aún. ¡Añade tu primer hábito!</li>';
+                habitsList.innerHTML = '<li class="empty-section-message">No hay hábitos registrados aún. ¡Añade tu primer hábito!</li>';
                 return;
             }
             console.log(`Hábitos: ${snapshot.size} hábitos encontrados. Renderizando...`);
