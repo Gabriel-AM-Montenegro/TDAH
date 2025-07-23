@@ -6,13 +6,13 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados como módulos ES6 para evitar el error 'export' -->
-  <!-- Las URLs son las mismas, pero ahora se cargan como módulos -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs: Cargados como scripts tradicionales (NO type="module") -->
+  <!-- Esto los expone globalmente como 'firebase' y sus sub-namespaces -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
   <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script type="module" src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
 
   <style>
     /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
@@ -236,7 +236,6 @@
     </div>
   </div>
 
-
   <script type="text/javascript">
     // Exponer variables globales para que main.js pueda acceder a ellas
     // Estas variables son proporcionadas por el entorno de Canvas.
@@ -244,18 +243,117 @@
     window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
     window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+    // ** Inicialización de Firebase aquí **
+    // Asegúrate de que firebaseConfig tenga projectId
+    if (!window.firebaseConfig || !window.firebaseConfig.projectId) {
+        console.error("Firebase: projectId no encontrado en __firebase_config. Asegúrate de que la variable de entorno esté configurada correctamente.");
+        document.addEventListener('DOMContentLoaded', () => {
+            const authButtons = document.querySelector('.auth-buttons-wrapper');
+            if (authButtons) {
+                authButtons.innerHTML = '<p style="color: var(--error-dark); font-weight: bold;">Error: Configuración de Firebase incompleta.</p>';
+            }
+        });
+    }
+
+    // Inicializar Firebase App y servicios
+    window.app = firebase.initializeApp(window.firebaseConfig);
+    window.db = firebase.firestore(window.app);
+    window.auth = firebase.auth(window.app);
+
+    // Bandera para controlar el estado de cierre de sesión
+    window.isLoggingOut = false;
+
+    // Listener de estado de autenticación (aquí en index.html)
+    firebase.auth().onAuthStateChanged(async (user) => {
+        console.log("onAuthStateChanged (index.html): Estado de autenticación cambiado. User:", user ? user.uid : "null");
+
+        const userDisplayNameElement = document.getElementById('user-display-name');
+        const logoutBtn = document.getElementById('logout-btn');
+        const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const userInfoArea = document.getElementById('user-info-area');
+
+        if (user) {
+            window.currentUserId = user.uid;
+            console.log("onAuthStateChanged (index.html): Usuario autenticado. UID:", window.currentUserId);
+
+            if (userDisplayNameElement) userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+            if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`;
+            if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
+
+            // Solo cargar datos si no estamos en proceso de cierre de sesión
+            if (typeof window.loadAllUserData === 'function' && !window.isLoggingOut) {
+                await window.loadAllUserData();
+            } else if (window.isLoggingOut) {
+                console.log("onAuthStateChanged (index.html): Usuario reautenticado después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
+                window.isLoggingOut = false;
+                if (typeof window.loadAllUserData === 'function') {
+                    await window.loadAllUserData();
+                }
+            }
+
+        } else { // Usuario es null (no autenticado)
+            window.currentUserId = null;
+            console.log("onAuthStateChanged (index.html): Usuario no autenticado.");
+            if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
+            if (userIdDisplay) userIdDisplay.textContent = '';
+            if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
+
+            // Intentar autenticar con token inicial o anónimamente si no estamos cerrando sesión
+            if (window.initialAuthToken && !window.isLoggingOut) {
+                try {
+                    console.log("onAuthStateChanged (index.html): Intentando signInWithCustomToken con initialAuthToken.");
+                    await firebase.auth().signInWithCustomToken(window.initialAuthToken);
+                    console.log("onAuthStateChanged (index.html): signInWithCustomToken exitoso.");
+                } catch (error) {
+                    console.error("onAuthStateChanged (index.html): Error al iniciar sesión con CustomToken:", error);
+                    window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
+                }
+            } else if (!window.isLoggingOut) {
+                try {
+                    console.log("onAuthStateChanged (index.html): No hay token inicial, intentando signInAnonymously.");
+                    await firebase.auth().signInAnonymously();
+                    console.log("onAuthStateChanged (index.html): signInAnonymously exitoso.");
+                } catch (error) {
+                    console.error("onAuthStateChanged (index.html): Error al iniciar sesión anónima:", error);
+                    window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+                }
+            } else if (window.isLoggingOut) {
+                window.isLoggingOut = false;
+                console.log("onAuthStateChanged (index.html): Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
+            }
+        }
+    });
+
+
     // Función para mostrar/ocultar secciones
     window.mostrarSeccion = function(idSeccion) {
+      // Asegurarse de que los elementos existan antes de intentar acceder a ellos
+      const targetSection = document.getElementById(idSeccion);
+      if (!targetSection) {
+        console.error(`Error: La sección con ID '${idSeccion}' no fue encontrada en el DOM.`);
+        return;
+      }
+
       document.querySelectorAll('.seccion').forEach(seccion => {
         seccion.classList.remove('active');
       });
-      document.getElementById(idSeccion).classList.add('active');
+      targetSection.classList.add('active');
 
       // Actualizar el estado de los botones de navegación
       document.querySelectorAll('.nav-tabs button').forEach(button => {
         button.classList.remove('active');
       });
-      document.getElementById(`btn-${idSeccion}`).classList.add('active');
+      const navButton = document.getElementById(`btn-${idSeccion}`);
+      if (navButton) {
+        navButton.classList.add('active');
+      } else {
+        console.warn(`Botón de navegación para la sección '${idSeccion}' no encontrado.`);
+      }
 
       // Actualizar el título de la página
       document.title = `App TDAH - ${idSeccion.charAt(0).toUpperCase() + idSeccion.slice(1)}`;
@@ -360,7 +458,7 @@
   </script>
 
   <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
-  <!-- Importante: main.js también debe ser un módulo para importar Firebase -->
-  <script type="module" src="js/main.js"></script>
+  <!-- Importante: main.js NO debe ser un módulo si Firebase se carga globalmente -->
+  <script src="js/main.js"></script>
 </body>
 </html>

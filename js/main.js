@@ -1,195 +1,32 @@
-// Importaciones de Firebase SDKs como módulos ES6
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, writeBatch, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+// Las importaciones de Firebase SDK se eliminan de aquí porque se cargan globalmente en index.html
+// Las variables globales db, auth, currentUserId, appId, initialAuthToken
+// se acceden a través del objeto window, ya que se exponen en el script de index.html.
 
-// Inicializar variables globales de Firebase
-let app;
-let db;
-let auth;
-let currentUserId; // currentUserId puede cambiar con la autenticación
-const appId = window.appId; // appId debería ser constante, viene de window.appId
-let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
+// Inicializar variables globales de Firebase directamente desde window.
+// Esto asume que el script inline en index.html ya las ha definido antes de que main.js se cargue.
+let db = window.db;
+let auth = window.auth;
+let currentUserId = window.currentUserId; // currentUserId puede cambiar con la autenticación
+const appId = window.appId; // appId debería ser constante
 let notificationPermissionGranted = false; // Variable global para el estado del permiso de notificación
 
 // Exponer loadAllUserData globalmente para que el script inline de index.html pueda llamarla
 window.loadAllUserData = loadAllUserData;
 
-// Función para inicializar Firebase y autenticar
-async function initializeFirebaseAndAuth() {
-    try {
-        // **NUEVA VERIFICACIÓN: Asegurarse de que projectId esté presente en la configuración de Firebase**
-        if (!window.firebaseConfig || !window.firebaseConfig.projectId) {
-            const errorMessage = "Error de configuración de Firebase: 'projectId' no proporcionado. Asegúrate de que la variable de entorno '__firebase_config' esté correctamente configurada con tu Project ID de Firebase.";
-            console.error(errorMessage);
-            // Mostrar un mensaje de error crítico en la UI para el usuario
-            document.body.innerHTML = `<div style="text-align: center; padding: 50px; color: var(--error-dark); background-color: var(--error-light); border-radius: var(--border-radius-md); margin: 50px auto; max-width: 600px; box-shadow: var(--glass-shadow);">
-                <h1 style="color: var(--error-dark);">Error Crítico de Configuración</h1>
-                <p style="font-size: 1.1em; margin-bottom: 20px;">${errorMessage}</p>
-                <p style="font-size: 0.9em; color: var(--text-medium);">Por favor, revisa la configuración de tu entorno o contacta al soporte.</p>
-            </div>`;
-            return; // Detener la inicialización si la configuración es inválida
-        }
-
-        app = initializeApp(window.firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-        console.log("Firebase inicializado con éxito en main.js.");
-
-        // Listener de estado de autenticación
-        onAuthStateChanged(auth, async (user) => {
-            console.log("onAuthStateChanged: Estado de autenticación cambiado. User:", user ? user.uid : "null");
-
-            const userDisplayNameElement = document.getElementById('user-display-name');
-            const logoutBtn = document.getElementById('logout-btn');
-            const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-            const emailSigninToggleBtn = document.getElementById('email-signin-toggle-btn');
-            const anonymousSigninBtn = document.getElementById('anonymous-signin-btn');
-            const userIdDisplay = document.getElementById('user-id-display');
-            const userInfoArea = document.getElementById('user-info-area');
-
-            if (user) {
-                currentUserId = user.uid;
-                console.log("onAuthStateChanged: Usuario autenticado. UID:", currentUserId);
-
-                if (userDisplayNameElement) userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
-                if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`;
-                if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
-                if (googleSigninBtn) googleSigninBtn.style.display = 'none';
-                if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'none';
-                if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'none';
-                if (logoutBtn) logoutBtn.style.display = 'inline-block';
-                if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
-
-                if (!isLoggingOut) {
-                    loadAllUserData();
-                } else {
-                    console.log("onAuthStateChanged: Usuario reautenticado por initialAuthToken después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
-                    isLoggingOut = false;
-                    loadAllUserData();
-                }
-
-            } else { // Usuario es null (no autenticado)
-                currentUserId = null;
-                console.log("onAuthStateChanged: Usuario no autenticado.");
-                if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
-                if (userIdDisplay) userIdDisplay.textContent = '';
-                if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
-                if (googleSigninBtn) googleSigninBtn.style.display = 'inline-block';
-                if (emailSigninToggleBtn) emailSigninToggleBtn.style.display = 'inline-block';
-                if (anonymousSigninBtn) anonymousSigninBtn.style.display = 'inline-block';
-                if (logoutBtn) logoutBtn.style.display = 'none';
-                if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
-
-                if (window.initialAuthToken && !isLoggingOut) {
-                    try {
-                        console.log("onAuthStateChanged: Intentando signInWithCustomToken con initialAuthToken.");
-                        await signInWithCustomToken(auth, window.initialAuthToken);
-                        console.log("onAuthStateChanged: signInWithCustomToken exitoso.");
-                    } catch (error) {
-                        console.error("onAuthStateChanged: Error al iniciar sesión con CustomToken:", error);
-                        window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
-                    }
-                } else if (!isLoggingOut) { // Si no hay token inicial y no estamos cerrando sesión, iniciar anónimamente
-                    try {
-                        console.log("onAuthStateChanged: No hay token inicial, intentando signInAnonymously.");
-                        await signInAnonymously(auth);
-                        console.log("onAuthStateChanged: signInAnonymously exitoso.");
-                    } catch (error) {
-                        console.error("onAuthStateChanged: Error al iniciar sesión anónima:", error);
-                        window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-                    }
-                } else if (isLoggingOut) {
-                    isLoggingOut = false;
-                    console.log("onAuthStateChanged: Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
-                }
-            }
-        });
-
-        // Lógica para el botón de cerrar sesión
-        const logoutButton = document.getElementById('logout-btn');
-        if (logoutButton) {
-            logoutButton.addEventListener('click', async () => {
-                try {
-                    isLoggingOut = true;
-                    await signOut(auth);
-                    window.showTempMessage('Sesión cerrada correctamente.', 'info');
-                } catch (error) {
-                    console.error("Error al cerrar sesión:", error);
-                    window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
-                    isLoggingOut = false;
-                }
-            });
-        }
-
-        // Lógica para los nuevos botones de inicio de sesión
-        const anonymousSigninButton = document.getElementById('anonymous-signin-btn');
-        if (anonymousSigninButton) {
-            anonymousSigninButton.addEventListener('click', async () => {
-                anonymousSigninButton.classList.add('button-clicked');
-                setTimeout(() => { anonymousSigninButton.classList.remove('button-clicked'); }, 300);
-                try {
-                    await signInAnonymously(auth);
-                    window.showTempMessage('Sesión anónima iniciada.', 'success');
-                } catch (error) {
-                    window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-                    console.error("Error al iniciar sesión anónima:", error);
-                }
-            });
-        }
-
-        const emailSigninToggleButton = document.getElementById('email-signin-toggle-btn');
-        if (emailSigninToggleButton) {
-            emailSigninToggleButton.addEventListener('click', () => {
-                emailSigninToggleButton.classList.add('button-clicked');
-                setTimeout(() => { emailSigninToggleButton.classList.remove('button-clicked'); }, 300);
-                window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
-                console.log("Intento de inicio de sesión con Email.");
-            });
-        }
-
-        const googleSigninButton = document.getElementById('google-signin-btn');
-        if (googleSigninButton) {
-            googleSigninButton.addEventListener('click', async () => {
-                googleSigninButton.classList.add('button-clicked');
-                setTimeout(() => { googleSigninButton.classList.remove('button-clicked'); }, 300);
-                try {
-                    const provider = new GoogleAuthProvider();
-                    await signInWithPopup(auth, provider);
-                    window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
-                } catch (error) {
-                    console.error("Error al iniciar sesión con Google:", error);
-                    let errorMessage = error.message;
-                    if (error.code === 'auth/popup-closed-by-user') {
-                        errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
-                    } else if (error.code === 'auth/cancelled-popup-request') {
-                        errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
-                    } else if (error.code === 'auth/auth-domain-config-error') {
-                        errorMessage = 'Error de configuración del dominio de autenticación. Asegúrate de que tu dominio esté autorizado en la consola de Firebase.';
-                    }
-                    window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
-                }
-            });
-        }
-
-    } catch (e) {
-        console.error("Error crítico al inicializar Firebase en main.js:", e);
-        document.addEventListener('DOMContentLoaded', () => {
-            window.showTempMessage(`Error crítico: Firebase no pudo inicializarse. ${e.message}`, 'error', 10000);
-        });
-    }
-}
-
-
 // Lógica principal de la aplicación que se ejecuta una vez que Firebase está listo y el usuario autenticado
 async function loadAllUserData() {
     console.log("loadAllUserData: Iniciando carga de datos del usuario...");
     
-    if (!db || !auth || !currentUserId) {
+    // Asegurarse de que db, auth, y currentUserId estén disponibles
+    if (!window.db || !window.auth || !window.currentUserId) {
         console.warn("loadAllUserData: Firebase o currentUserId no disponibles. No se cargarán los datos del usuario.");
         return;
     }
+
+    // Reasignar las variables locales para mayor claridad, ya que ahora vienen de window
+    db = window.db;
+    auth = window.auth;
+    currentUserId = window.currentUserId;
 
     console.log("loadAllUserData: Firebase y Usuario Autenticado. UID:", currentUserId);
     const user = auth.currentUser;
@@ -369,7 +206,15 @@ async function loadAllUserData() {
         tourBackBtn.addEventListener('click', prevTourStep);
         tourSkipBtn.addEventListener('click', completeTour);
 
-        showWelcomeTour();
+        // Llamar a showWelcomeTour solo si el usuario actual no es null
+        // Esto se ejecutará una vez que onAuthStateChanged en index.html determine el user
+        if (currentUserId) {
+            showWelcomeTour();
+        } else {
+            // Si el usuario no está autenticado inicialmente, esperamos a que onAuthStateChanged lo haga
+            // La lógica de onAuthStateChanged en index.html llamará a loadAllUserData, que a su vez llamará a showWelcomeTour
+            console.log("Tour: Esperando autenticación de usuario para mostrar el tour.");
+        }
     } else {
         console.warn("Tour: Algunos elementos HTML del Tour de Bienvenida no encontrados. Asegúrate de que tu HTML esté actualizado con los IDs correctos.");
     }
@@ -498,7 +343,7 @@ async function loadAllUserData() {
                 timeLeft = settings.timeLeft;
                 isRunning = settings.isRunning;
                 isBreakTime = settings.isBreakTime || false;
-                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60);
+                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60); // Ajustar totalTimeForPomodoro al cargar
                 updateTimerDisplay();
                 if (isRunning && settings.lastUpdated) {
                     const elapsedSinceLastUpdate = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
@@ -533,7 +378,7 @@ async function loadAllUserData() {
                                 if (startBreak) {
                                     console.log("Pomodoro (onSnapshot): Usuario eligió iniciar descanso.");
                                     timeLeft = 5 * 60;
-                                    totalTimeForPomodoro = 5 * 60;
+                                    totalTimeForPomodoro = 5 * 60; // Actualizar totalTimeForPomodoro para el descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     setDoc(pomodoroSettingsDocRef, { timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
@@ -626,7 +471,7 @@ async function loadAllUserData() {
                                 if (startBreak) {
                                     console.log("Pomodoro (startTimer): Usuario eligió iniciar descanso.");
                                     timeLeft = 5 * 60;
-                                    totalTimeForPomodoro = 5 * 60;
+                                    totalTimeForPomodoro = 5 * 60; // Actualizar totalTimeForPomodoro para el descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
                                     savePomodoroState(timeLeft, true, isBreakTime);
@@ -1586,15 +1431,88 @@ async function requestNotificationPermission() {
 
 // Asegurarse de que el DOM esté completamente cargado antes de interactuar con elementos HTML
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inicializar Firebase y la autenticación primero
-    await initializeFirebaseAndAuth();
-
     // Solicitar permiso de notificación al cargar la aplicación
+    // Esta función no depende directamente de Firebase, así que puede ir aquí
     await requestNotificationPermission();
 
+    // La inicialización de Firebase y la autenticación se manejan en index.html
+    // y onAuthStateChanged en index.html llamará a window.loadAllUserData()
+    // cuando el usuario esté autenticado.
+
     // Inicializar la sección Pomodoro al cargar la página
+    // Esto se hace aquí para asegurar que los elementos DOM existan
     console.log("DOMContentLoaded: Llamando a mostrarSeccion('pomodoro').");
     window.mostrarSeccion('pomodoro');
+
+    // Añadir listeners a los botones de autenticación (ahora en main.js)
+    const googleSigninButton = document.getElementById('google-signin-btn');
+    if (googleSigninButton) {
+        googleSigninButton.addEventListener('click', async () => {
+            googleSigninButton.classList.add('button-clicked');
+            setTimeout(() => { googleSigninButton.classList.remove('button-clicked'); }, 300);
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider(); // Usar firebase.auth
+                await firebase.auth().signInWithPopup(provider);
+                window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
+            } catch (error) {
+                console.error("Error al iniciar sesión con Google:", error);
+                let errorMessage = error.message;
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'El popup de inicio de sesión fue cerrado. Inténtalo de nuevo.';
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Ya hay una solicitud de inicio de sesión pendiente. Por favor, completa la anterior o inténtalo de nuevo.';
+                } else if (error.code === 'auth/auth-domain-config-error') {
+                    errorMessage = 'Error de configuración del dominio de autenticación. Asegúrate de que tu dominio esté autorizado en la consola de Firebase.';
+                }
+                window.showTempMessage(`Error al iniciar sesión con Google: ${errorMessage}`, 'error');
+            }
+        });
+    }
+
+    const anonymousSigninButton = document.getElementById('anonymous-signin-btn');
+    if (anonymousSigninButton) {
+        anonymousSigninButton.addEventListener('click', async () => {
+            anonymousSigninButton.classList.add('button-clicked');
+            setTimeout(() => { anonymousSigninButton.classList.remove('button-clicked'); }, 300);
+            try {
+                await firebase.auth().signInAnonymously();
+                window.showTempMessage('Sesión anónima iniciada.', 'success');
+            } catch (error) {
+                window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
+                console.error("Error al iniciar sesión anónima:", error);
+            }
+        });
+    }
+
+    const emailSigninToggleButton = document.getElementById('email-signin-toggle-btn');
+    if (emailSigninToggleButton) {
+        emailSigninToggleButton.addEventListener('click', () => {
+            emailSigninToggleButton.classList.add('button-clicked');
+            setTimeout(() => { emailSigninToggleButton.classList.remove('button-clicked'); }, 300);
+            window.showTempMessage('Funcionalidad de inicio de sesión con Email no implementada aún. ¡Pronto estará disponible!', 'info', 5000);
+            console.log("Intento de inicio de sesión con Email.");
+        });
+    }
+
+    const logoutButton = document.getElementById('logout-btn');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
+            try {
+                window.isLoggingOut = true; // Establecer la bandera de logout a true
+                const confirmLogout = await window.showCustomConfirm("¿Estás seguro de que quieres cerrar sesión?");
+                if (confirmLogout) {
+                    await firebase.auth().signOut();
+                    window.showTempMessage('Sesión cerrada correctamente.', 'info');
+                }
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
+            } finally {
+                window.isLoggingOut = false; // Resetear la bandera después de intentar el cierre de sesión
+            }
+        });
+    }
+
 
     // Añadir listeners a los botones de navegación para mostrar/ocultar secciones
     document.getElementById('btn-pomodoro').addEventListener('click', () => {
