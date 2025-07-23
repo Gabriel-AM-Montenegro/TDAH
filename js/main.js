@@ -3,10 +3,17 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs, writeBatch, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
+
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+const auth = getAuth(firebaseApp);
+onAuthStateChanged(auth, user => {
+  // Check for user status
+});
 // Inicializar variables globales de Firebase
 let app;
 let db;
-let auth;
+//let auth;
 let currentUserId; // currentUserId puede cambiar con la autenticación
 const appId = window.appId; // appId debería ser constante, viene de window.appId
 let isLoggingOut = false; // Nueva bandera para controlar el estado de cierre de sesión
