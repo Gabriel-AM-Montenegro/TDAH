@@ -6,7 +6,7 @@
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
 
-  <!-- Firebase SDKs: Cargados como scripts tradicionales (NO type="module") -->
+  <!-- Firebase SDKs: Cargados como scripts tradicionales (SIN type="module") -->
   <!-- Esto los expone globalmente como 'firebase' y sus sub-namespaces -->
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
@@ -256,6 +256,7 @@
     }
 
     // Inicializar Firebase App y servicios
+    // Las funciones de Firebase ahora están disponibles globalmente (firebase.initializeApp, firebase.firestore, firebase.auth)
     window.app = firebase.initializeApp(window.firebaseConfig);
     window.db = firebase.firestore(window.app);
     window.auth = firebase.auth(window.app);

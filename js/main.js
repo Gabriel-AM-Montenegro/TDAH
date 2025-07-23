@@ -39,12 +39,12 @@ async function loadAllUserData() {
     window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info');
 
     // --- Referencias a colecciones de Firestore específicas del usuario ---
-    const journalCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/journalEntries`);
-    const checklistCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/checklistItems`);
-    const pomodoroSettingsDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pomodoroSettings`, 'current');
-    const trelloConfigDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/trelloConfig`, 'settings');
-    const habitsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/habits`);
-    const userSettingsRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings`, 'appSettings');
+    const journalCollectionRef = firebase.firestore().collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
+    const checklistCollectionRef = firebase.firestore().collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
+    const pomodoroSettingsDocRef = firebase.firestore().doc(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`, 'current');
+    const trelloConfigDocRef = firebase.firestore().doc(`artifacts/${appId}/users/${currentUserId}/trelloConfig`, 'settings');
+    const habitsCollectionRef = firebase.firestore().collection(`artifacts/${appId}/users/${currentUserId}/habits`);
+    const userSettingsRef = firebase.firestore().doc(`artifacts/${appId}/users/${currentUserId}/settings`, 'appSettings');
 
 
     // --- Lógica del Tour de Bienvenida ---
@@ -95,7 +95,7 @@ async function loadAllUserData() {
         console.log("Tour: Todos los elementos HTML del Tour de Bienvenida encontrados.");
         async function showWelcomeTour() {
             try {
-                const docSnap = await getDoc(userSettingsRef);
+                const docSnap = await firebase.firestore().getDoc(userSettingsRef);
                 console.log("Tour: Documento de configuración de usuario para el tour:", docSnap.exists() ? docSnap.data() : "No existe");
                 if (docSnap.exists() && docSnap.data().tourCompleted) {
                     console.log("Tour: Ya completado para este usuario. No se mostrará.");
@@ -192,7 +192,7 @@ async function loadAllUserData() {
         async function completeTour() {
             console.log("Tour: Completando tour.");
             try {
-                await setDoc(userSettingsRef, { tourCompleted: true }, { merge: true });
+                await firebase.firestore().setDoc(userSettingsRef, { tourCompleted: true }, { merge: true });
                 console.log("Tour: Estado de tour completado guardado en Firestore.");
             } catch (error) {
                 console.error("Tour: Error al guardar estado de tour completado:", error);
@@ -227,7 +227,7 @@ async function loadAllUserData() {
 
     if (journalEntryTextarea && saveJournalEntryButton && journalEntriesList) {
         console.log("Journal: Elementos HTML del Journal encontrados.");
-        onSnapshot(query(journalCollectionRef, orderBy('timestamp', 'desc')), (snapshot) => {
+        firebase.firestore().onSnapshot(firebase.firestore().query(journalCollectionRef, firebase.firestore().orderBy('timestamp', 'desc')), (snapshot) => {
             console.log("Journal: Recibiendo snapshot de entradas.");
             journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
@@ -268,7 +268,7 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    await addDoc(journalCollectionRef, {
+                    await firebase.firestore().addDoc(journalCollectionRef, {
                         text: entryText,
                         timestamp: new Date().toISOString()
                     });
@@ -335,7 +335,7 @@ async function loadAllUserData() {
 
     if (timerDisplay && startTimerBtn && pausePomodoroBtn && resetTimerBtn && pomodoroProgressCircle) {
         console.log("Pomodoro: Elementos HTML del Temporizador y SVG encontrados.");
-        onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
+        firebase.firestore().onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
             console.log("Pomodoro: Recibiendo snapshot de settings.");
             if (docSnap.exists()) {
                 const settings = docSnap.data();
@@ -353,7 +353,7 @@ async function loadAllUserData() {
                     } else if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        setDoc(pomodoroSettingsDocRef, { timeLeft: 0, isRunning: false, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
+                        firebase.firestore().setDoc(pomodoroSettingsDocRef, { timeLeft: 0, isRunning: false, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
 
                         console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
 
@@ -381,7 +381,7 @@ async function loadAllUserData() {
                                     totalTimeForPomodoro = 5 * 60; // Actualizar totalTimeForPomodoro para el descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
-                                    setDoc(pomodoroSettingsDocRef, { timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
+                                    firebase.firestore().setDoc(pomodoroSettingsDocRef, { timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
                                     document.getElementById('sound-break').play().catch(e => {
                                         console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
                                         window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
@@ -409,7 +409,7 @@ async function loadAllUserData() {
                 }
             } else {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
-                setDoc(pomodoroSettingsDocRef, { timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
+                firebase.firestore().setDoc(pomodoroSettingsDocRef, { timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
             }
         }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
@@ -418,7 +418,7 @@ async function loadAllUserData() {
 
         async function savePomodoroState(newTimeLeft, newIsRunning, newIsBreakTime) {
             try {
-                await setDoc(pomodoroSettingsDocRef, {
+                await firebase.firestore().setDoc(pomodoroSettingsDocRef, {
                     timeLeft: newTimeLeft,
                     isRunning: newIsRunning,
                     isBreakTime: newIsBreakTime,
@@ -560,7 +560,7 @@ async function loadAllUserData() {
 
             if (target.classList.contains('completion-checkbox')) {
                 try {
-                    await updateDoc(doc(checklistCollectionRef, itemId), {
+                    await firebase.firestore().updateDoc(firebase.firestore().doc(checklistCollectionRef, itemId), {
                         completed: target.checked
                     });
                     if (target.checked) {
@@ -581,8 +581,8 @@ async function loadAllUserData() {
 
                 if (newIsMIT) {
                     try {
-                        const q = query(checklistCollectionRef, where('isMIT', '==', true));
-                        const mitSnapshot = await getDocs(q);
+                        const q = firebase.firestore().query(checklistCollectionRef, firebase.firestore().where('isMIT', '==', true));
+                        const mitSnapshot = await firebase.firestore().getDocs(q);
                         const currentMitCount = mitSnapshot.size;
                         console.log(`Current MIT count from Firestore: ${currentMitCount}`);
 
@@ -601,7 +601,7 @@ async function loadAllUserData() {
                 }
 
                 try {
-                    await updateDoc(doc(checklistCollectionRef, itemId), {
+                    await firebase.firestore().updateDoc(firebase.firestore().doc(checklistCollectionRef, itemId), {
                         isMIT: newIsMIT
                     });
                     console.log(`Checklist: Ítem ${itemId} MIT updated to ${newIsMIT} in Firestore.`);
@@ -622,7 +622,7 @@ async function loadAllUserData() {
                 const itemToDeleteId = listItem.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este ítem del checklist?')) {
                     try {
-                        await deleteDoc(doc(checklistCollectionRef, itemToDeleteId));
+                        await firebase.firestore().deleteDoc(firebase.firestore().doc(checklistCollectionRef, itemToDeleteId));
                         window.showTempMessage('Elemento eliminado del checklist.', 'info');
                         console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
                     } catch (error) {
@@ -653,7 +653,7 @@ async function loadAllUserData() {
                 const itemId = target.dataset.itemId;
                 if (newText !== originalText) {
                     try {
-                        await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
+                        await firebase.firestore().updateDoc(firebase.firestore().doc(checklistCollectionRef, itemId), { text: newText });
                         window.showTempMessage('Tarea actualizada con éxito.', 'success');
                         console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
                     } catch (error) {
@@ -744,11 +744,11 @@ async function loadAllUserData() {
 
         async function updateItemPositionsInFirestore() {
             const listItems = Array.from(checkListUl.children);
-            const batch = writeBatch(db);
+            const batch = firebase.firestore().writeBatch(db);
 
             listItems.forEach((item, index) => {
                 const itemId = item.dataset.id;
-                const itemRef = doc(checklistCollectionRef, itemId);
+                const itemRef = firebase.firestore().doc(checklistCollectionRef, itemId);
                 batch.update(itemRef, { position: index });
             });
 
@@ -761,7 +761,7 @@ async function loadAllUserData() {
             }
         }
 
-        onSnapshot(query(checklistCollectionRef, orderBy('position', 'asc'), orderBy('timestamp', 'asc')), (snapshot) => {
+        firebase.firestore().onSnapshot(firebase.firestore().query(checklistCollectionRef, firebase.firestore().orderBy('position', 'asc'), firebase.firestore().orderBy('timestamp', 'asc')), (snapshot) => {
             console.log("Checklist (onSnapshot): Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size);
             checkListUl.innerHTML = '';
             if (snapshot.empty) {
@@ -845,10 +845,10 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    const lastItemSnapshot = await getDocs(query(checklistCollectionRef, orderBy('position', 'desc'), limit(1)));
+                    const lastItemSnapshot = await firebase.firestore().getDocs(firebase.firestore().query(checklistCollectionRef, firebase.firestore().orderBy('position', 'desc'), firebase.firestore().limit(1)));
                     const newPosition = lastItemSnapshot.empty ? 0 : lastItemSnapshot.docs[0].data().position + 1;
 
-                    await addDoc(checklistCollectionRef, {
+                    await firebase.firestore().addDoc(checklistCollectionRef, {
                         text: itemText,
                         completed: false,
                         isMIT: false,
@@ -885,7 +885,7 @@ async function loadAllUserData() {
 
     if (trelloApiKeyInput && trelloTokenInput && trelloBoardIdInput && trelloStatusDiv && trelloSuccessMessage && configTrelloBtn && testTrelloBtn && saveTrelloConfigBtn) {
         console.log("Trello: Elementos HTML de Trello encontrados.");
-        onSnapshot(trelloConfigDocRef, (docSnap) => {
+        firebase.firestore().onSnapshot(trelloConfigDocRef, (docSnap) => {
             console.log("Trello: Recibiendo snapshot de configuración.");
             if (docSnap.exists()) {
                 const config = docSnap.data();
@@ -919,7 +919,7 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    await setDoc(trelloConfigDocRef, { apiKey, token, boardId });
+                    await firebase.firestore().setDoc(trelloConfigDocRef, { apiKey, token, boardId });
                     window.showTempMessage('Configuración de Trello guardada.', 'success');
                     probarConexionTrello();
                     console.log("Trello: Configuración guardada.");
@@ -934,7 +934,7 @@ async function loadAllUserData() {
 
         async function probarConexionTrello() {
             console.log("Trello: Probando conexión...");
-            const configSnap = await getDoc(trelloConfigDocRef);
+            const configSnap = await firebase.firestore().getDoc(trelloConfigDocRef);
             if (!configSnap.exists()) {
                 trelloStatusDiv.textContent = '❌ Trello no conectado';
                 trelloStatusDiv.className = 'status-indicator status-disconnected';
@@ -985,7 +985,7 @@ async function loadAllUserData() {
 
         async function cargarTareasTrello() {
             console.log("Trello: Cargando tareas...");
-            const configSnap = await getDoc(trelloConfigDocRef);
+            const configSnap = await firebase.firestore().getDoc(trelloConfigDocRef);
             if (!configSnap.exists()) {
                 console.log("Trello: No hay configuración de Trello para cargar tareas.");
                 return;
@@ -1070,39 +1070,39 @@ async function loadAllUserData() {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     
-                    const batch = writeBatch(db); // Usar un batch para eliminaciones
+                    const batch = firebase.firestore().writeBatch(db); // Usar un batch para eliminaciones
 
                     // Eliminar documentos de Journal
-                    const journalDocs = await getDocs(journalCollectionRef);
+                    const journalDocs = await firebase.firestore().getDocs(journalCollectionRef);
                     journalDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Entradas de Journal marcadas para eliminación.");
 
                     // Eliminar documentos de Checklist
-                    const checklistDocs = await getDocs(checklistCollectionRef);
+                    const checklistDocs = await firebase.firestore().getDocs(checklistCollectionRef);
                     checklistDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Ítems de Checklist marcados para eliminación.");
 
                     // Eliminar documentos de Hábitos
-                    const habitsDocs = await getDocs(habitsCollectionRef);
+                    const habitsDocs = await firebase.firestore().getDocs(habitsCollectionRef);
                     habitsDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Hábitos marcados para eliminación.");
 
                     // Eliminar documento de configuración de Pomodoro
-                    const pomodoroDocSnap = await getDoc(pomodoroSettingsDocRef);
+                    const pomodoroDocSnap = await firebase.firestore().getDoc(pomodoroSettingsDocRef);
                     if (pomodoroDocSnap.exists()) {
                         batch.delete(pomodoroSettingsDocRef);
                         console.log("Limpiar Datos: Configuración de Pomodoro marcada para eliminación.");
                     }
 
                     // Eliminar documento de configuración de Trello
-                    const trelloDocSnap = await getDoc(trelloConfigDocRef);
+                    const trelloDocSnap = await firebase.firestore().getDoc(trelloConfigDocRef);
                     if (trelloDocSnap.exists()) {
                         batch.delete(trelloConfigDocRef);
                         console.log("Limpiar Datos: Configuración de Trello marcada para eliminación.");
                     }
                     
                     // Eliminar documento de user settings (tourCompleted)
-                    const userSettingsDocSnap = await getDoc(userSettingsRef);
+                    const userSettingsDocSnap = await firebase.firestore().getDoc(userSettingsRef);
                     if (userSettingsDocSnap.exists()) {
                         batch.delete(userSettingsRef);
                         console.log("Limpiar Datos: Configuración de usuario (tourCompleted) marcada para eliminación.");
@@ -1126,14 +1126,14 @@ async function loadAllUserData() {
     // --- Lógica de Notas de Blog ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    const blogArticlesCollectionRef = collection(db, `artifacts/${appId}/blogArticles`); 
+    const blogArticlesCollectionRef = firebase.firestore().collection(`artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         console.log("Blog: Elementos HTML del Blog encontrados.");
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                const snapshot = await getDocs(query(blogArticlesCollectionRef, orderBy('timestamp', 'desc')));
+                const snapshot = await firebase.firestore().getDocs(firebase.firestore().query(blogArticlesCollectionRef, firebase.firestore().orderBy('timestamp', 'desc')));
                 blogContentDiv.innerHTML = ''; 
 
                 if (snapshot.empty) {
@@ -1172,14 +1172,14 @@ async function loadAllUserData() {
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
-    const nutricionCollectionRef = collection(db, `artifacts/${appId}/public/data/nutritionContent`);
+    const nutricionCollectionRef = firebase.firestore().collection(`artifacts/${appId}/public/data/nutritionContent`);
 
     if (nutricionContentDiv && refreshNutricionBtn) {
         console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                const snapshot = await getDocs(query(nutricionCollectionRef, orderBy('timestamp', 'desc')));
+                const snapshot = await firebase.firestore().getDocs(firebase.firestore().query(nutricionCollectionRef, firebase.firestore().orderBy('timestamp', 'desc')));
                 nutricionContentDiv.innerHTML = '';
 
                 if (snapshot.empty) {
@@ -1222,7 +1222,7 @@ async function loadAllUserData() {
 
     if (newHabitInput && addHabitBtn && habitsList) {
         console.log("Hábitos: Elementos HTML de Hábitos encontrados.");
-        onSnapshot(query(habitsCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
+        firebase.firestore().onSnapshot(firebase.firestore().query(habitsCollectionRef, firebase.firestore().orderBy('timestamp', 'asc')), (snapshot) => {
             console.log("Hábitos: Recibiendo snapshot de hábitos.");
             habitsList.innerHTML = '';
             if (snapshot.empty) {
@@ -1267,7 +1267,7 @@ async function loadAllUserData() {
                     addHabitBtn.classList.remove('button-clicked');
                 }, 300);
                 try {
-                    await addDoc(habitsCollectionRef, {
+                    await firebase.firestore().addDoc(habitsCollectionRef, {
                         name: habitName,
                         timestamp: new Date().toISOString(),
                         dailyCompletions: {}
@@ -1291,8 +1291,8 @@ async function loadAllUserData() {
                 const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = doc(habitsCollectionRef, habitId);
-                    const docSnap = await getDoc(habitDocRef);
+                    const habitDocRef = firebase.firestore().doc(habitsCollectionRef, habitId);
+                    const docSnap = await firebase.firestore().getDoc(habitDocRef);
                     if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
@@ -1300,7 +1300,7 @@ async function loadAllUserData() {
 
                         currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await updateDoc(habitDocRef, {
+                        await firebase.firestore().updateDoc(habitDocRef, {
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1314,7 +1314,7 @@ async function loadAllUserData() {
                 const habitIdToDelete = target.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
                     try {
-                        await deleteDoc(doc(habitsCollectionRef, habitIdToDelete));
+                        await firebase.firestore().deleteDoc(firebase.firestore().doc(habitsCollectionRef, habitIdToDelete));
                         window.showTempMessage('Hábito eliminado.', 'info');
                         console.log(`Hábito: ${habitIdToDelete} eliminado.`);
                     } catch (error) {
@@ -1333,8 +1333,8 @@ async function loadAllUserData() {
                 const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = doc(habitsCollectionRef, habitId);
-                    const docSnap = await getDoc(habitDocRef);
+                    const habitDocRef = firebase.firestore().doc(habitsCollectionRef, habitId);
+                    const docSnap = await firebase.firestore().getDoc(habitDocRef);
                     if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
@@ -1342,7 +1342,7 @@ async function loadAllUserData() {
 
                         currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await updateDoc(habitDocRef, {
+                        await firebase.firestore().updateDoc(habitDocRef, {
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1363,7 +1363,7 @@ async function loadAllUserData() {
     // Actualizar contadores de estado
     function updateAppStatus() {
         if (currentUserId && db) {
-            getDocs(checklistCollectionRef).then(snapshot => {
+            firebase.firestore().getDocs(checklistCollectionRef).then(snapshot => {
                 const checklistItemsCount = snapshot.size;
                 const checklistCountElement = document.getElementById('checklist-count');
                 if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
@@ -1371,7 +1371,7 @@ async function loadAllUserData() {
                 console.error("Error getting checklist count:", error);
             });
 
-            getDocs(habitsCollectionRef).then(snapshot => {
+            firebase.firestore().getDocs(habitsCollectionRef).then(snapshot => {
                 const habitsCount = snapshot.size;
                 const tasksCountElement = document.getElementById('tasks-count');
                 if (tasksCountElement) tasksCountElement.textContent = habitsCount;
