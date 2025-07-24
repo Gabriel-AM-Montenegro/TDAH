@@ -253,13 +253,15 @@
                 authButtons.innerHTML = '<p style="color: var(--error-dark); font-weight: bold;">Error: Configuración de Firebase incompleta.</p>';
             }
         });
+        // Detener la ejecución si la configuración es inválida
+        // throw new Error("Firebase configuration error: projectId not provided."); 
     }
 
     // Inicializar Firebase App y servicios
     // Las funciones de Firebase ahora están disponibles globalmente (firebase.initializeApp, firebase.firestore, firebase.auth)
     window.app = firebase.initializeApp(window.firebaseConfig);
-    window.db = firebase.firestore(window.app);
-    window.auth = firebase.auth(window.app);
+    window.db = firebase.firestore(); // Firebase SDK v8: firebase.firestore() sin window.app como argumento
+    window.auth = firebase.auth();   // Firebase SDK v8: firebase.auth() sin window.app como argumento
 
     // Bandera para controlar el estado de cierre de sesión
     window.isLoggingOut = false;
