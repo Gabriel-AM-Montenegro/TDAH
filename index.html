@@ -260,8 +260,8 @@
     // Inicializar Firebase App y servicios
     // Las funciones de Firebase ahora están disponibles globalmente (firebase.initializeApp, firebase.firestore, firebase.auth)
     window.app = firebase.initializeApp(window.firebaseConfig);
-    window.db = firebase.firestore(); // Firebase SDK v8: firebase.firestore() sin window.app como argumento
-    window.auth = firebase.auth();   // Firebase SDK v8: firebase.auth() sin window.app como argumento
+    window.db = firebase.firestore(window.app); // CORRECCIÓN CLAVE
+    window.auth = firebase.auth(window.app);   // CORRECCIÓN CLAVE
 
     // Bandera para controlar el estado de cierre de sesión
     window.isLoggingOut = false;
@@ -301,7 +301,7 @@
             window.currentUserId = null;
             console.log("onAuthStateChanged (index.html): Usuario no autenticado.");
             if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
-            if (userIdDisplay) userIdDisplay.textContent = '';
+            if (userIdDisplay) userIdDisplay.textContent = ''; // CORRECCIÓN: usar userDisplayNameElement
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
@@ -465,3 +465,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
+
