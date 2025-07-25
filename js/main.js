@@ -1,4 +1,3 @@
-// Las importaciones de Firebase SDK se eliminan de aquí porque se cargan globalmente en index.html
 // Las variables globales db, auth, currentUserId, appId, initialAuthToken
 // se acceden a través del objeto window, ya que se exponen en el script de index.html.
 
@@ -29,6 +28,7 @@ async function loadAllUserData() {
     }
 
     // Reasignar las variables locales para mayor claridad y asegurar que apunten a las globales actuales
+    app = window.app; // Asegurarse de que 'app' también se actualice si es necesario (aunque es menos común que cambie)
     db = window.db;
     auth = window.auth;
     currentUserId = window.currentUserId;
@@ -44,7 +44,7 @@ async function loadAllUserData() {
     window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info');
 
     // --- Referencias a colecciones de Firestore específicas del usuario ---
-    // Usar firebase.firestore().collection y firebase.firestore().doc (compatibilidad v8)
+    // Usar db.collection() y db.collection().doc() para compatibilidad v8
     const journalCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/journalEntries`);
     const checklistCollectionRef = db.collection(`artifacts/${appId}/users/${currentUserId}/checklistItems`);
     const pomodoroSettingsDocRef = db.collection(`artifacts/${appId}/users/${currentUserId}/pomodoroSettings`).doc('current');
@@ -101,7 +101,7 @@ async function loadAllUserData() {
         console.log("Tour: Todos los elementos HTML del Tour de Bienvenida encontrados.");
         async function showWelcomeTour() {
             try {
-                const docSnap = await userSettingsRef.get(); // Usar .get() en referencia Doc
+                const docSnap = await userSettingsRef.get(); 
                 console.log("Tour: Documento de configuración de usuario para el tour:", docSnap.exists ? docSnap.data() : "No existe");
                 if (docSnap.exists && docSnap.data().tourCompleted) {
                     console.log("Tour: Ya completado para este usuario. No se mostrará.");
@@ -198,7 +198,7 @@ async function loadAllUserData() {
         async function completeTour() {
             console.log("Tour: Completando tour.");
             try {
-                await userSettingsRef.set({ tourCompleted: true }, { merge: true }); // Usar .set() en referencia Doc
+                await userSettingsRef.set({ tourCompleted: true }, { merge: true });
                 console.log("Tour: Estado de tour completado guardado en Firestore.");
             } catch (error) {
                 console.error("Tour: Error al guardar estado de tour completado:", error);
@@ -214,7 +214,7 @@ async function loadAllUserData() {
 
         // Llamar a showWelcomeTour solo si el usuario actual no es null
         // Esto se ejecutará una vez que onAuthStateChanged en index.html determine el user
-        if (currentUserId) { // currentUserId está disponible después del onAuthStateChanged en index.html
+        if (currentUserId) { 
             showWelcomeTour();
         } else {
             console.log("Tour: Esperando autenticación de usuario para mostrar el tour (currentUserId no disponible aún).");
@@ -317,8 +317,8 @@ async function loadAllUserData() {
     }
 
     function updateTimerDisplay() {
-        const minutes = Math.floor(timeLeft / 660); // Error: debería ser 60
-        const seconds = timeLeft % 660; // Error: debería ser 60
+        const minutes = Math.floor(timeLeft / 60); 
+        const seconds = timeLeft % 60; 
         timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
         const progressPercent = timeLeft / totalTimeForPomodoro;
@@ -357,7 +357,7 @@ async function loadAllUserData() {
                     } else if (timeLeft <= 0) {
                         clearInterval(timer);
                         isRunning = false;
-                        pomodoroSettingsDocRef.set({ timeLeft: 0, isRunning: false, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() }); // Usar referencia directa
+                        pomodoroSettingsDocRef.set({ timeLeft: 0, isRunning: false, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
 
                         console.log("Pomodoro (onSnapshot): Tiempo terminado. isBreakTime:", isBreakTime);
 
@@ -385,7 +385,7 @@ async function loadAllUserData() {
                                     totalTimeForPomodoro = 5 * 60; // Actualizar totalTimeForPomodoro para el descanso
                                     isBreakTime = true;
                                     updateTimerDisplay();
-                                    pomodoroSettingsDocRef.set({ timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() }); // Usar referencia directa
+                                    pomodoroSettingsDocRef.set({ timeLeft: timeLeft, isRunning: true, isBreakTime: isBreakTime, lastUpdated: new Date().toISOString() });
                                     document.getElementById('sound-break').play().catch(e => {
                                         console.error("Error al reproducir sonido de descanso (onSnapshot):", e);
                                         window.showTempMessage('Error: No se pudo reproducir el sonido de descanso.', 'error', 5000);
@@ -413,7 +413,7 @@ async function loadAllUserData() {
                 }
             } else {
                 console.log("Pomodoro: No hay settings, creando por defecto.");
-                pomodoroSettingsDocRef.set({ timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() }); // Usar referencia directa
+                pomodoroSettingsDocRef.set({ timeLeft: 1 * 60, isRunning: false, isBreakTime: false, lastUpdated: new Date().toISOString() });
             }
         }, (error) => {
             console.error("Pomodoro: Error al cargar settings:", error);
@@ -564,7 +564,7 @@ async function loadAllUserData() {
 
             if (target.classList.contains('completion-checkbox')) {
                 try {
-                    await checklistCollectionRef.doc(itemId).update({ // Usar .doc().update() para compat v8
+                    await checklistCollectionRef.doc(itemId).update({ 
                         completed: target.checked
                     });
                     if (target.checked) {
@@ -585,8 +585,8 @@ async function loadAllUserData() {
 
                 if (newIsMIT) {
                     try {
-                        const q = checklistCollectionRef.where('isMIT', '==', true); // Usar .where() para compat v8
-                        const mitSnapshot = await q.get(); // Usar .get() para compat v8
+                        const q = checklistCollectionRef.where('isMIT', '==', true); 
+                        const mitSnapshot = await q.get(); 
                         const currentMitCount = mitSnapshot.size;
                         console.log(`Current MIT count from Firestore: ${currentMitCount}`);
 
@@ -605,7 +605,7 @@ async function loadAllUserData() {
                 }
 
                 try {
-                    await checklistCollectionRef.doc(itemId).update({ // Usar .doc().update() para compat v8
+                    await checklistCollectionRef.doc(itemId).update({ 
                         isMIT: newIsMIT
                     });
                     console.log(`Checklist: Ítem ${itemId} MIT updated to ${newIsMIT} in Firestore.`);
@@ -626,7 +626,7 @@ async function loadAllUserData() {
                 const itemToDeleteId = listItem.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este ítem del checklist?')) {
                     try {
-                        await checklistCollectionRef.doc(itemToDeleteId).delete(); // Usar .doc().delete() para compat v8
+                        await checklistCollectionRef.doc(itemToDeleteId).delete(); 
                         window.showTempMessage('Elemento eliminado del checklist.', 'info');
                         console.log(`Checklist: Ítem ${itemToDeleteId} eliminado.`);
                     } catch (error) {
@@ -657,13 +657,13 @@ async function loadAllUserData() {
                 const itemId = target.dataset.itemId;
                 if (newText !== originalText) {
                     try {
-                        await checklistCollectionRef.doc(itemId).update({ text: newText }); // Usar .doc().update() para compat v8
+                        await checklistCollectionRef.doc(itemId).update({ text: newText });
                         window.showTempMessage('Tarea actualizada con éxito.', 'success');
                         console.log(`Checklist: Item ${itemId} text updated to "${newText}".`);
                     } catch (error) {
                         console.error("Checklist: Error updating item text:", error);
                         window.showTempMessage(`Error al actualizar tarea: ${error.message}`, 'error');
-                        target.textContent = originalText; // Revert on error
+                        target.textContent = originalText;
                     }
                 } else {
                     console.log(`Checklist: No changes made to item ${itemId}.`);
@@ -748,11 +748,11 @@ async function loadAllUserData() {
 
         async function updateItemPositionsInFirestore() {
             const listItems = Array.from(checkListUl.children);
-            const batch = db.batch(); // Usar db.batch() para compat v8
+            const batch = db.batch(); 
 
             listItems.forEach((item, index) => {
                 const itemId = item.dataset.id;
-                const itemRef = checklistCollectionRef.doc(itemId); // Usar .doc() para compat v8
+                const itemRef = checklistCollectionRef.doc(itemId);
                 batch.update(itemRef, { position: index });
             });
 
@@ -765,7 +765,7 @@ async function loadAllUserData() {
             }
         }
 
-        checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => { // Usar .orderBy() para compat v8
+        checklistCollectionRef.orderBy('position', 'asc').orderBy('timestamp', 'asc').onSnapshot((snapshot) => { 
             console.log("Checklist (onSnapshot): Recibiendo snapshot de ítems. Tamaño del snapshot:", snapshot.size);
             checkListUl.innerHTML = '';
             if (snapshot.empty) {
@@ -849,10 +849,10 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    const lastItemSnapshot = await checklistCollectionRef.orderBy('position', 'desc').limit(1).get(); // Usar .orderBy(), .limit(), .get() para compat v8
+                    const lastItemSnapshot = await checklistCollectionRef.orderBy('position', 'desc').limit(1).get(); 
                     const newPosition = lastItemSnapshot.empty ? 0 : lastItemSnapshot.docs[0].data().position + 1;
 
-                    await checklistCollectionRef.add({ // Usar .add() para compat v8
+                    await checklistCollectionRef.add({ 
                         text: itemText,
                         completed: false,
                         isMIT: false,
@@ -889,7 +889,7 @@ async function loadAllUserData() {
 
     if (trelloApiKeyInput && trelloTokenInput && trelloBoardIdInput && trelloStatusDiv && trelloSuccessMessage && configTrelloBtn && testTrelloBtn && saveTrelloConfigBtn) {
         console.log("Trello: Elementos HTML de Trello encontrados.");
-        trelloConfigDocRef.onSnapshot((docSnap) => { // Usar .onSnapshot() para compat v8
+        trelloConfigDocRef.onSnapshot((docSnap) => { 
             console.log("Trello: Recibiendo snapshot de configuración.");
             if (docSnap.exists()) {
                 const config = docSnap.data();
@@ -923,7 +923,7 @@ async function loadAllUserData() {
                 }, 300);
 
                 try {
-                    await trelloConfigDocRef.set({ apiKey, token, boardId }); // Usar .set() para compat v8
+                    await trelloConfigDocRef.set({ apiKey, token, boardId });
                     window.showTempMessage('Configuración de Trello guardada.', 'success');
                     probarConexionTrello();
                     console.log("Trello: Configuración guardada.");
@@ -938,7 +938,7 @@ async function loadAllUserData() {
 
         async function probarConexionTrello() {
             console.log("Trello: Probando conexión...");
-            const configSnap = await trelloConfigDocRef.get(); // Usar .get() para compat v8
+            const configSnap = await trelloConfigDocRef.get();
             if (!configSnap.exists()) {
                 trelloStatusDiv.textContent = '❌ Trello no conectado';
                 trelloStatusDiv.className = 'status-indicator status-disconnected';
@@ -989,7 +989,7 @@ async function loadAllUserData() {
 
         async function cargarTareasTrello() {
             console.log("Trello: Cargando tareas...");
-            const configSnap = await trelloConfigDocRef.get(); // Usar .get() para compat v8
+            const configSnap = await trelloConfigDocRef.get();
             if (!configSnap.exists()) {
                 console.log("Trello: No hay configuración de Trello para cargar tareas.");
                 return;
@@ -1271,7 +1271,7 @@ async function loadAllUserData() {
                     addHabitBtn.classList.remove('button-clicked');
                 }, 300);
                 try {
-                    await habitsCollectionRef.add({ // Usar .add() para compat v8
+                    await habitsCollectionRef.add({ 
                         name: habitName,
                         timestamp: new Date().toISOString(),
                         dailyCompletions: {}
@@ -1295,8 +1295,8 @@ async function loadAllUserData() {
                 const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = habitsCollectionRef.doc(habitId); // Usar .doc() para compat v8
-                    const docSnap = await habitDocRef.get(); // Usar .get() para compat v8
+                    const habitDocRef = habitsCollectionRef.doc(habitId);
+                    const docSnap = await habitDocRef.get();
                     if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
@@ -1304,7 +1304,7 @@ async function loadAllUserData() {
 
                         currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await habitDocRef.update({ // Usar .update() para compat v8
+                        await habitDocRef.update({ 
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1318,7 +1318,7 @@ async function loadAllUserData() {
                 const habitIdToDelete = target.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
                     try {
-                        await habitsCollectionRef.doc(habitIdToDelete).delete(); // Usar .doc().delete() para compat v8
+                        await habitsCollectionRef.doc(habitIdToDelete).delete();
                         window.showTempMessage('Hábito eliminado.', 'info');
                         console.log(`Hábito: ${habitIdToDelete} eliminado.`);
                     } catch (error) {
@@ -1337,8 +1337,8 @@ async function loadAllUserData() {
                 const dateString = target.dataset.date;
                 
                 try {
-                    const habitDocRef = habitsCollectionRef.doc(habitId); // Usar .doc() para compat v8
-                    const docSnap = await habitDocRef.get(); // Usar .get() para compat v8
+                    const habitDocRef = habitsCollectionRef.doc(habitId);
+                    const docSnap = await habitDocRef.get();
                     if (docSnap.exists()) {
                         const habitData = docSnap.data();
                         const currentCompletions = habitData.dailyCompletions || {};
@@ -1346,7 +1346,7 @@ async function loadAllUserData() {
 
                         currentCompletions[dateString] = !isCurrentlyCompleted;
 
-                        await habitDocRef.update({ // Usar .update() para compat v8
+                        await habitDocRef.update({ 
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
@@ -1367,7 +1367,7 @@ async function loadAllUserData() {
     // Actualizar contadores de estado
     function updateAppStatus() {
         if (currentUserId && db) {
-            checklistCollectionRef.get().then(snapshot => { // Usar .get() para compat v8
+            checklistCollectionRef.get().then(snapshot => { 
                 const checklistItemsCount = snapshot.size;
                 const checklistCountElement = document.getElementById('checklist-count');
                 if (checklistCountElement) checklistCountElement.textContent = checklistItemsCount;
@@ -1375,7 +1375,7 @@ async function loadAllUserData() {
                 console.error("Error getting checklist count:", error);
             });
 
-            habitsCollectionRef.get().then(snapshot => { // Usar .get() para compat v8
+            habitsCollectionRef.get().then(snapshot => { 
                 const habitsCount = snapshot.size;
                 const tasksCountElement = document.getElementById('tasks-count');
                 if (tasksCountElement) tasksCountElement.textContent = habitsCount;
@@ -1455,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             googleSigninButton.classList.add('button-clicked');
             setTimeout(() => { googleSigninButton.classList.remove('button-clicked'); }, 300);
             try {
-                const provider = new firebase.auth.GoogleAuthProvider(); // Usar firebase.auth
+                const provider = new firebase.auth.GoogleAuthProvider(); 
                 await firebase.auth().signInWithPopup(provider);
                 window.showTempMessage('Sesión con Google iniciada correctamente.', 'success');
             } catch (error) {
