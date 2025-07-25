@@ -41,7 +41,7 @@ async function loadAllUserData() {
     } else {
         console.error("loadAllUserData: Elemento 'user-display-name' no encontrado.");
     }
-    window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 8)}...`, 'info');
+    window.showTempMessage(`Bienvenido, usuario ${user.displayName || user.email || user.uid.substring(0, 0)}...`, 'info');
 
     // --- Referencias a colecciones de Firestore específicas del usuario ---
     // Usar db.collection() y db.collection().doc() para compatibilidad v8
@@ -1074,47 +1074,47 @@ async function loadAllUserData() {
                 try {
                     console.log("Limpiar Datos: Iniciando limpieza...");
                     
-                    const batch = db.batch(); // Usar db.batch() para compat v8
+                    const batch = db.batch(); 
 
                     // Eliminar documentos de Journal
-                    const journalDocs = await journalCollectionRef.get(); // Usar .get() para compat v8
+                    const journalDocs = await journalCollectionRef.get();
                     journalDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Entradas de Journal marcadas para eliminación.");
 
                     // Eliminar documentos de Checklist
-                    const checklistDocs = await checklistCollectionRef.get(); // Usar .get() para compat v8
+                    const checklistDocs = await checklistCollectionRef.get();
                     checklistDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Ítems de Checklist marcados para eliminación.");
 
                     // Eliminar documentos de Hábitos
-                    const habitsDocs = await habitsCollectionRef.get(); // Usar .get() para compat v8
+                    const habitsDocs = await habitsCollectionRef.get();
                     habitsDocs.forEach((d) => batch.delete(d.ref));
                     console.log("Limpiar Datos: Hábitos marcados para eliminación.");
 
                     // Eliminar documento de configuración de Pomodoro
-                    const pomodoroDocSnap = await pomodoroSettingsDocRef.get(); // Usar .get() para compat v8
+                    const pomodoroDocSnap = await pomodoroSettingsDocRef.get();
                     if (pomodoroDocSnap.exists()) {
                         batch.delete(pomodoroSettingsDocRef);
                         console.log("Limpiar Datos: Configuración de Pomodoro marcada para eliminación.");
                     }
 
                     // Eliminar documento de configuración de Trello
-                    const trelloDocSnap = await trelloConfigDocRef.get(); // Usar .get() para compat v8
+                    const trelloDocSnap = await trelloConfigDocRef.get();
                     if (trelloDocSnap.exists()) {
                         batch.delete(trelloConfigDocRef);
                         console.log("Limpiar Datos: Configuración de Trello marcada para eliminación.");
                     }
                     
                     // Eliminar documento de user settings (tourCompleted)
-                    const userSettingsDocSnap = await userSettingsRef.get(); // Usar .get() para compat v8
+                    const userSettingsDocSnap = await userSettingsRef.get();
                     if (userSettingsDocSnap.exists()) {
                         batch.delete(userSettingsRef);
                         console.log("Limpiar Datos: Configuración de usuario (tourCompleted) marcada para eliminación.");
                     }
 
-                    await batch.commit(); // Ejecutar todas las eliminaciones en un solo batch
+                    await batch.commit(); 
                     window.showTempMessage('Todos los datos han sido limpiados.', 'info');
-                    location.reload(); // Recargar la página para reflejar los cambios
+                    location.reload(); 
                 } catch (error) {
                     console.error("Limpiar Datos: Error al limpiar datos:", error);
                     window.showTempMessage(`Error al limpiar datos: ${error.message}`, 'error');
@@ -1130,14 +1130,14 @@ async function loadAllUserData() {
     // --- Lógica de Notas de Blog ---
     const blogContentDiv = document.getElementById('blog-content');
     const refreshBlogBtn = document.getElementById('refresh-blog-btn');
-    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); // Usar db.collection() para compat v8
+    const blogArticlesCollectionRef = db.collection(`artifacts/${appId}/blogArticles`); 
 
     if (blogContentDiv && refreshBlogBtn) {
         console.log("Blog: Elementos HTML del Blog encontrados.");
         async function cargarNotasBlog() {
             blogContentDiv.innerHTML = '<p>Cargando artículos...</p>';
             try {
-                const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get(); // Usar .orderBy().get() para compat v8
+                const snapshot = await blogArticlesCollectionRef.orderBy('timestamp', 'desc').get(); 
                 blogContentDiv.innerHTML = ''; 
 
                 if (snapshot.empty) {
@@ -1176,14 +1176,14 @@ async function loadAllUserData() {
 
     const nutricionContentDiv = document.getElementById('nutricion-content');
     const refreshNutricionBtn = document.getElementById('refresh-nutricion-btn');
-    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); // Usar db.collection() para compat v8
+    const nutricionCollectionRef = db.collection(`artifacts/${appId}/public/data/nutritionContent`); 
 
     if (nutricionContentDiv && refreshNutricionBtn) {
         console.log("Nutrición: Elementos HTML de Nutrición encontrados.");
         async function cargarNutricion() {
             nutricionContentDiv.innerHTML = '<p>Cargando recomendaciones...</p>';
             try {
-                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); // Usar .orderBy().get() para compat v8
+                const snapshot = await nutricionCollectionRef.orderBy('timestamp', 'desc').get(); 
                 nutricionContentDiv.innerHTML = '';
 
                 if (snapshot.empty) {
@@ -1318,7 +1318,7 @@ async function loadAllUserData() {
                 const habitIdToDelete = target.dataset.id;
                 if (await window.showCustomConfirm('¿Estás seguro de que quieres eliminar este hábito?')) {
                     try {
-                        await habitsCollectionRef.doc(habitIdToDelete).delete();
+                        await habitsCollectionRef.doc(habitIdToDelete).delete(); 
                         window.showTempMessage('Hábito eliminado.', 'info');
                         console.log(`Hábito: ${habitIdToDelete} eliminado.`);
                     } catch (error) {
@@ -1350,7 +1350,7 @@ async function loadAllUserData() {
                             dailyCompletions: currentCompletions
                         });
                         window.showTempMessage(`Hábito ${habitData.name} ${isCurrentlyCompleted ? 'marcado como pendiente' : 'completado'} para ${dateString}.`, 'info');
-                        console.log(`Hábito: ${habitId} actualizado para fecha ${dateString}.`);
+                        console.log(`Hábitos: ${habitId} actualizado para fecha ${dateString}.`);
                     }
                 } catch (error) {
                     console.error("Hábitos: Error al actualizar estado de completado (keydown):", error);
@@ -1502,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             try {
-                window.isLoggingOut = true; // Establecer la bandera de logout a true
+                window.isLoggingOut = true; 
                 const confirmLogout = await window.showCustomConfirm("¿Estás seguro de que quieres cerrar sesión?");
                 if (confirmLogout) {
                     await firebase.auth().signOut();
@@ -1512,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error("Error al cerrar sesión:", error);
                 window.showTempMessage(`Error al cerrar sesión: ${error.message}`, 'error');
             } finally {
-                window.isLoggingOut = false; // Resetear la bandera después de intentar el cierre de sesión
+                window.isLoggingOut = false; 
             }
         });
     }
