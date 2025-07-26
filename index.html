@@ -4,38 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
+  <!-- La ruta a tu CSS sigue siendo la misma -->
   <link rel="stylesheet" href="css/styles1.css">
-
-  <!-- Firebase SDKs: Cargados como scripts tradicionales (SIN type="module") -->
-  <!-- Esto los expone globalmente como 'firebase' y sus sub-namespaces -->
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
-  <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
-
   <style>
-    /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
+    /* Este estilo es para verificar que el CSS se carga correctamente. Se volverá verde. */
     #css-check {
       position: fixed;
       top: 0;
       left: 0;
       width: 10px;
       height: 10px;
-      background-color: red; /* Si ves rojo, el CSS no carga o hay un problema */
+      background-color: rgb(48, 146, 105); 
       z-index: 99999;
     }
   </style>
 </head>
 <body>
-  <div id="css-check"></div> <!-- Div para verificar carga de CSS -->
+  <div id="css-check"></div>
 
   <div class="container">
 
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
-      <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
       <div id="user-info-area">
         <span id="user-display-name">Cargando...</span>
         <div class="auth-buttons-wrapper">
@@ -44,7 +35,6 @@
           <button id="email-signin-toggle-btn" class="auth-btn">Iniciar con Email</button>
         </div>
         <button id="logout-btn" style="display: none;">Cerrar Sesión</button>
-        <!-- ID de usuario para depuración y referencia -->
         <p id="user-id-display" style="font-size: 0.8em; color: rgba(255,255,255,0.7); margin-top: 5px;"></p>
       </div>
     </header>
@@ -181,7 +171,7 @@
         <div class="config-step">
           <label for="board-id">Trello Board ID:</label>
           <input type="text" id="board-id" placeholder="ID de tu tablero de Trello" />
-          <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/<span style="font-weight: bold; color: var(--primary-color);">[BOARD_ID]</span>/tu-tablero</code></p>
+          <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/&lt;span style="font-weight: bold; color: var(--primary-color);"&gt;[BOARD_ID]&lt;/span&gt;/tu-tablero</code></p>
         </div>
         <button id="save-trello-config-btn">Guardar Configuración de Trello</button>
 
@@ -236,107 +226,14 @@
     </div>
   </div>
 
-  <script type="text/javascript">
-    // Exponer variables globales para que main.js pueda acceder a ellas
-    // Estas variables son proporcionadas por el entorno de Canvas.
-    window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    window.firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    window.initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+  <!-- 
+    CAMBIO IMPORTANTE:
+    Se elimina el bloque <script> de inicialización de Firebase.
+    Ahora, main.js se carga como un "módulo", lo que le permite manejar
+    sus propias importaciones de Firebase.
+  -->
+  <script src="js/main.js" type="module"></script>
 
-    // ** Inicialización de Firebase aquí **
-    // Asegúrate de que firebaseConfig tenga projectId
-    if (!window.firebaseConfig || !window.firebaseConfig.projectId) {
-        console.error("Firebase: projectId no encontrado en __firebase_config. Asegúrate de que la variable de entorno esté configurada correctamente.");
-        document.addEventListener('DOMContentLoaded', () => {
-            const authButtons = document.querySelector('.auth-buttons-wrapper');
-            if (authButtons) {
-                authButtons.innerHTML = '<p style="color: var(--error-dark); font-weight: bold;">Error: Configuración de Firebase incompleta.</p>';
-            }
-        });
-        // Detener la ejecución si la configuración es inválida
-        // throw new Error("Firebase configuration error: projectId not provided."); 
-    }
-
-    // Inicializar Firebase App y servicios
-    // Las funciones de Firebase ahora están disponibles globalmente (firebase.initializeApp, firebase.firestore, firebase.auth)
-    window.app = firebase.initializeApp(window.firebaseConfig);
-    window.db = firebase.firestore(window.app); // CORRECCIÓN CLAVE
-    window.auth = firebase.auth(window.app);   // CORRECCIÓN CLAVE
-
-    // Bandera para controlar el estado de cierre de sesión
-    window.isLoggingOut = false;
-
-    // Listener de estado de autenticación (aquí en index.html)
-    firebase.auth().onAuthStateChanged(async (user) => {
-        console.log("onAuthStateChanged (index.html): Estado de autenticación cambiado. User:", user ? user.uid : "null");
-
-        const userDisplayNameElement = document.getElementById('user-display-name');
-        const logoutBtn = document.getElementById('logout-btn');
-        const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const userInfoArea = document.getElementById('user-info-area');
-
-        if (user) {
-            window.currentUserId = user.uid;
-            console.log("onAuthStateChanged (index.html): Usuario autenticado. UID:", window.currentUserId);
-
-            if (userDisplayNameElement) userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
-            if (userIdDisplay) userIdDisplay.textContent = `ID de Usuario: ${user.uid}`;
-            if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-            if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
-
-            // Solo cargar datos si no estamos en proceso de cierre de sesión
-            if (typeof window.loadAllUserData === 'function' && !window.isLoggingOut) {
-                await window.loadAllUserData();
-            } else if (window.isLoggingOut) {
-                console.log("onAuthStateChanged (index.html): Usuario reautenticado después de un cierre de sesión explícito. Reiniciando isLoggingOut.");
-                window.isLoggingOut = false;
-                if (typeof window.loadAllUserData === 'function') {
-                    await window.loadAllUserData();
-                }
-            }
-
-        } else { // Usuario es null (no autenticado)
-            window.currentUserId = null;
-            console.log("onAuthStateChanged (index.html): Usuario no autenticado.");
-            if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
-            if (userIdDisplay) userIdDisplay.textContent = ''; // CORRECCIÓN: usar userDisplayNameElement
-            if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
-            if (logoutBtn) logoutBtn.style.display = 'none';
-            if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
-
-            // Intentar autenticar con token inicial o anónimamente si no estamos cerrando sesión
-            if (window.initialAuthToken && !window.isLoggingOut) {
-                try {
-                    console.log("onAuthStateChanged (index.html): Intentando signInWithCustomToken con initialAuthToken.");
-                    await firebase.auth().signInWithCustomToken(window.initialAuthToken);
-                    console.log("onAuthStateChanged (index.html): signInWithCustomToken exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged (index.html): Error al iniciar sesión con CustomToken:", error);
-                    window.showTempMessage(`Error de autenticación inicial: ${error.message}`, 'error');
-                }
-            } else if (!window.isLoggingOut) {
-                try {
-                    console.log("onAuthStateChanged (index.html): No hay token inicial, intentando signInAnonymously.");
-                    await firebase.auth().signInAnonymously();
-                    console.log("onAuthStateChanged (index.html): signInAnonymously exitoso.");
-                } catch (error) {
-                    console.error("onAuthStateChanged (index.html): Error al iniciar sesión anónima:", error);
-                    window.showTempMessage(`Error al iniciar sesión anónima: ${error.message}`, 'error');
-                }
-            } else if (window.isLoggingOut) {
-                window.isLoggingOut = false;
-                console.log("onAuthStateChanged (index.html): Cierre de sesión explícito completado. Mostrando opciones de autenticación.");
-            }
-        }
-    });
-
-  </script>
-
-  <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
-  <!-- Importante: main.js NO debe ser un módulo si Firebase se carga globalmente -->
-  <script src="js/main.js"></script>
 </body>
 </html>
 
