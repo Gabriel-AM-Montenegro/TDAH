@@ -33,8 +33,17 @@ import {
 // CONFIGURATION & INITIALIZATION
 // =================================================================================
 
-// Usamos la configuración del entorno, que es la forma correcta.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// SOLUCIÓN: Usamos la configuración de Firebase manualmente para evitar problemas del entorno.
+const firebaseConfig = {
+  apiKey: "AIzaSyAoC7FVY_9bDHBv136YMAIIO9QXyvqRrUw",
+  authDomain: "tdah-app-efca9.firebaseapp.com",
+  projectId: "tdah-app-efca9",
+  storageBucket: "tdah-app-efca9.appspot.com",
+  messagingSenderId: "765424831369",
+  appId: "1:765424831369:web:838eca86f68f21daa5858",
+  measurementId: "G-QY7X98XZZY"
+};
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -47,21 +56,18 @@ let isLoggingOut = false;
 // Bloque de inicialización robusto
 try {
     if (!firebaseConfig || !firebaseConfig.projectId) {
-        throw new Error("Firebase projectId no encontrado en la configuración del entorno. La app no puede iniciar.");
+        throw new Error("El objeto firebaseConfig manual no tiene projectId.");
     }
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    console.log("Firebase inicializado exitosamente.");
+    console.log("Firebase inicializado exitosamente con configuración manual.");
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
-    // Muestra un error visible al usuario si la configuración falla.
     document.addEventListener('DOMContentLoaded', () => {
         document.body.innerHTML = `<div style="padding: 20px; text-align: center; background-color: #ffdddd; color: #d8000c;">
-            <h1>Error Crítico</h1>
-            <p>No se pudo conectar con la base de datos. La configuración de Firebase proporcionada por el entorno es incorrecta o está incompleta.</p>
-            <p><strong>Detalle del error:</strong> ${error.message}</p>
-        </div>`;
+            <h1>Error Crítico</h1><p>No se pudo conectar con la base de datos.</p>
+            <p><strong>Detalle del error:</strong> ${error.message}</p></div>`;
     });
 }
 
