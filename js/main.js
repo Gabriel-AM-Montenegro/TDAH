@@ -784,7 +784,7 @@ async function loadAllUserData(currentUserId) {
                 }).join('');
             } catch (error) {
                 console.error(`Error al cargar ${contentDivId}:`, error);
-                contentDiv.innerHTML = '<p class="empty-section-message">Error al cargar contenido.</p>';
+                contentDiv.innerHTML = `<p class="empty-section-message">Error al cargar contenido. Es posible que falte un índice en Firestore. Revisa la consola para más detalles.</p>`;
             }
         };
         refreshBtn.onclick = loadContent;
