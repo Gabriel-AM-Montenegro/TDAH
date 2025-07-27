@@ -4,17 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
-  <!-- La ruta a tu CSS sigue siendo la misma -->
   <link rel="stylesheet" href="css/styles1.css">
   <style>
-    /* Este estilo es para verificar que el CSS se carga correctamente. Se volverá verde. */
     #css-check {
       position: fixed;
       top: 0;
       left: 0;
       width: 10px;
       height: 10px;
-      background-color: rgb(48, 146, 105); 
+      background-color: red; 
       z-index: 99999;
     }
   </style>
@@ -228,7 +226,6 @@
 
   <!-- 
     CAMBIO IMPORTANTE:
-    Se elimina el bloque <script> de inicialización de Firebase.
     Ahora, main.js se carga como un "módulo", lo que le permite manejar
     sus propias importaciones de Firebase.
   -->

@@ -34,20 +34,9 @@ import {
 // GLOBAL VARIABLES AND CONFIGURATION
 // =================================================================================
 
-// SOLUCIÓN TEMPORAL: Configuración de Firebase insertada manualmente.
-// El objeto __firebase_config del entorno no funciona correctamente, así que usamos
-// la configuración directamente desde tu captura de pantalla de la consola de Firebase.
-const firebaseConfig = {
-  apiKey: "AIzaSyAoC7FVY_9bDHBv136YMAIIO9QXyvqRrUw",
-  authDomain: "tdah-app-efca9.firebaseapp.com",
-  projectId: "tdah-app-efca9",
-  storageBucket: "tdah-app-efca9.firebasestorage.app",
-  messagingSenderId: "765424831369",
-  appId: "1:765424831369:web:838eca86f68f21daa5858",
-  measurementId: "G-QY7X98XZZY"
-};
-
-// Estas variables son proporcionadas por el entorno de Canvas, pero firebaseConfig se anula arriba.
+// Volvemos a intentar usar la configuración del entorno, que es la forma correcta.
+// Si vuelve a fallar, el problema está en la plataforma, no en el código.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -63,12 +52,12 @@ let auth;
 
 try {
     if (!firebaseConfig || !firebaseConfig.projectId) {
-        throw new Error("Firebase projectId no encontrado en la configuración manual.");
+        throw new Error("Firebase projectId no encontrado en la configuración del entorno.");
     }
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    console.log("Firebase inicializado exitosamente con configuración manual.");
+    console.log("Firebase inicializado exitosamente.");
 } catch (error) {
     console.error("Error de inicialización de Firebase:", error);
     document.addEventListener('DOMContentLoaded', () => {
