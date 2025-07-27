@@ -1,6 +1,5 @@
 // =================================================================================
 // FIREBASE V11 MODULAR IMPORTS
-// Importamos solo las funciones que necesitamos de los SDK de Firebase.
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
@@ -31,41 +30,38 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // =================================================================================
-// GLOBAL VARIABLES AND CONFIGURATION
+// CONFIGURATION & INITIALIZATION
 // =================================================================================
 
-// Volvemos a intentar usar la configuración del entorno, que es la forma correcta.
-// Si vuelve a fallar, el problema está en la plataforma, no en el código.
+// Usamos la configuración del entorno, que es la forma correcta.
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-let notificationPermissionGranted = false;
-let isLoggingOut = false; // Bandera para controlar el estado de cierre de sesión
-
-// =================================================================================
-// FIREBASE INITIALIZATION
-// =================================================================================
 let app;
 let db;
 let auth;
+let notificationPermissionGranted = false;
+let isLoggingOut = false;
 
+// Bloque de inicialización robusto
 try {
     if (!firebaseConfig || !firebaseConfig.projectId) {
-        throw new Error("Firebase projectId no encontrado en la configuración del entorno.");
+        throw new Error("Firebase projectId no encontrado en la configuración del entorno. La app no puede iniciar.");
     }
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
     console.log("Firebase inicializado exitosamente.");
 } catch (error) {
-    console.error("Error de inicialización de Firebase:", error);
+    console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
+    // Muestra un error visible al usuario si la configuración falla.
     document.addEventListener('DOMContentLoaded', () => {
-        const header = document.querySelector('header');
-        if (header) {
-            header.innerHTML += `<p style="color: #f87171; background: #450a0a; padding: 10px; border-radius: 8px; text-align: center;">Error: Configuración de Firebase incompleta.</p>`;
-        }
-        document.querySelector('main').style.display = 'none';
+        document.body.innerHTML = `<div style="padding: 20px; text-align: center; background-color: #ffdddd; color: #d8000c;">
+            <h1>Error Crítico</h1>
+            <p>No se pudo conectar con la base de datos. La configuración de Firebase proporcionada por el entorno es incorrecta o está incompleta.</p>
+            <p><strong>Detalle del error:</strong> ${error.message}</p>
+        </div>`;
     });
 }
 
@@ -861,42 +857,51 @@ if (auth) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.mostrarSeccion('pomodoro');
+    // Solo adjuntar listeners si la inicialización de Firebase fue exitosa
+    if (auth) {
+        window.mostrarSeccion('pomodoro');
 
-    document.getElementById('google-signin-btn').onclick = async () => {
-        try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
-        catch (error) { console.error("Error de inicio de sesión con Google:", error); }
-    };
-    document.getElementById('anonymous-signin-btn').onclick = async () => {
-        try { await signInAnonymously(auth); } 
-        catch (error) { console.error("Error de inicio de sesión anónimo:", error); }
-    };
-    document.getElementById('email-signin-toggle-btn').onclick = () => {
-        window.showTempMessage('Inicio de sesión con Email no implementado aún.', 'info');
-    };
-    document.getElementById('logout-btn').onclick = async () => {
-        if (await window.showCustomConfirm("¿Cerrar sesión?")) {
-            isLoggingOut = true;
-            await signOut(auth);
-        }
-    };
+        document.getElementById('google-signin-btn').onclick = async () => {
+            try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+            catch (error) { 
+                console.error("Error de inicio de sesión con Google:", error);
+                window.showTempMessage(`Error con Google: ${error.message}`, 'error');
+            }
+        };
+        document.getElementById('anonymous-signin-btn').onclick = async () => {
+            try { await signInAnonymously(auth); } 
+            catch (error) { 
+                console.error("Error de inicio de sesión anónimo:", error);
+                window.showTempMessage(`Error de sesión anónima: ${error.message}`, 'error');
+            }
+        };
+        document.getElementById('email-signin-toggle-btn').onclick = () => {
+            window.showTempMessage('Inicio de sesión con Email no implementado aún.', 'info');
+        };
+        document.getElementById('logout-btn').onclick = async () => {
+            if (await window.showCustomConfirm("¿Cerrar sesión?")) {
+                isLoggingOut = true;
+                await signOut(auth);
+            }
+        };
 
-    // Navigation
-    document.querySelectorAll('.nav-tabs button').forEach(button => {
-        button.addEventListener('click', () => {
-            const sectionId = button.id.replace('btn-', '');
-            window.mostrarSeccion(sectionId);
+        // Navigation
+        document.querySelectorAll('.nav-tabs button').forEach(button => {
+            button.addEventListener('click', () => {
+                const sectionId = button.id.replace('btn-', '');
+                window.mostrarSeccion(sectionId);
+            });
         });
-    });
 
-    // Notification Permission
-    (async () => {
-        if (!("Notification" in window)) return;
-        if (Notification.permission === 'granted') {
-            notificationPermissionGranted = true;
-        } else if (Notification.permission !== 'denied') {
-            const permission = await Notification.requestPermission();
-            notificationPermissionGranted = permission === 'granted';
-        }
-    })();
+        // Notification Permission
+        (async () => {
+            if (!("Notification" in window)) return;
+            if (Notification.permission === 'granted') {
+                notificationPermissionGranted = true;
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                notificationPermissionGranted = permission === 'granted';
+            }
+        })();
+    }
 });
