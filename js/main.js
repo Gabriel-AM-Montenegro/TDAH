@@ -33,7 +33,6 @@ import {
 // CONFIGURATION & INITIALIZATION
 // =================================================================================
 
-// Usamos la configuración de Firebase manualmente con la NUEVA clave de API.
 const firebaseConfig = {
   apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
   authDomain: "tdah-app-efca9.firebaseapp.com",
@@ -52,17 +51,13 @@ let db;
 let auth;
 let notificationPermissionGranted = false;
 let isLoggingOut = false;
-let unsubscribeListeners = []; // Array para guardar los listeners y poder limpiarlos al cerrar sesión
+let unsubscribeListeners = [];
 
-// Bloque de inicialización robusto
 try {
-    if (!firebaseConfig || !firebaseConfig.projectId) {
-        throw new Error("El objeto firebaseConfig manual no tiene projectId.");
-    }
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    console.log("Firebase inicializado exitosamente con configuración manual.");
+    console.log("Firebase inicializado exitosamente.");
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
     document.addEventListener('DOMContentLoaded', () => {
@@ -73,7 +68,7 @@ try {
 }
 
 // =================================================================================
-// HELPER FUNCTIONS (UI & UTILITIES)
+// HELPER FUNCTIONS
 // =================================================================================
 
 window.showTempMessage = (message, type = 'info', duration = 3000) => {
@@ -145,7 +140,6 @@ function cleanupFirestoreListeners() {
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
     if (!db || !auth || !currentUserId) {
-        console.warn("loadAllUserData: Servicios de Firebase o ID de usuario no disponibles.");
         return;
     }
 
@@ -390,7 +384,7 @@ async function loadAllUserData(currentUserId) {
                 if (settings.isRunning && settings.lastUpdated) {
                     const elapsed = Math.floor((Date.now() - new Date(settings.lastUpdated).getTime()) / 1000);
                     timeLeft = Math.max(0, settings.timeLeft - elapsed);
-                    if (timeLeft > 0 && !timer) { // Evitar iniciar múltiples timers
+                    if (timeLeft > 0 && !timer) {
                         startTimer();
                     } else if (timeLeft <= 0) {
                         timeLeft = 0;
