@@ -33,9 +33,9 @@ import {
 // CONFIGURATION & INITIALIZATION
 // =================================================================================
 
-// SOLUCIÓN: Usamos la configuración de Firebase manualmente para evitar problemas del entorno.
+// SOLUCIÓN: Usamos la configuración de Firebase manualmente con la NUEVA clave de API.
 const firebaseConfig = {
-  apiKey: "AIzaSyAoC7FVY_9bDHBv136YMAIIO9QXyvqRrUw",
+  apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
   authDomain: "tdah-app-efca9.firebaseapp.com",
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
