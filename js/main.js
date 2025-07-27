@@ -33,7 +33,7 @@ import {
 // CONFIGURATION & INITIALIZATION
 // =================================================================================
 
-// SOLUCIÓN: Usamos la configuración de Firebase manualmente con la NUEVA clave de API.
+// Usamos la configuración de Firebase manualmente con la NUEVA clave de API.
 const firebaseConfig = {
   apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
   authDomain: "tdah-app-efca9.firebaseapp.com",
@@ -52,6 +52,7 @@ let db;
 let auth;
 let notificationPermissionGranted = false;
 let isLoggingOut = false;
+let unsubscribeListeners = []; // Array para guardar los listeners y poder limpiarlos al cerrar sesión
 
 // Bloque de inicialización robusto
 try {
@@ -135,12 +136,20 @@ window.mostrarSeccion = (seccionId) => {
 // =================================================================================
 // MAIN APPLICATION LOGIC
 // =================================================================================
+function cleanupFirestoreListeners() {
+    console.log(`Limpiando ${unsubscribeListeners.length} listeners de Firestore...`);
+    unsubscribeListeners.forEach(unsubscribe => unsubscribe());
+    unsubscribeListeners = [];
+}
+
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
     if (!db || !auth || !currentUserId) {
         console.warn("loadAllUserData: Servicios de Firebase o ID de usuario no disponibles.");
         return;
     }
+
+    cleanupFirestoreListeners();
 
     const user = auth.currentUser;
     const userDisplayNameElement = document.getElementById('user-display-name');
@@ -149,7 +158,6 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    // --- Firestore References (v11 Syntax) ---
     const journalCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/journalEntries`);
     const checklistCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/checklistItems`);
     const pomodoroSettingsDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pomodoroSettings`, 'current');
@@ -171,7 +179,6 @@ async function loadAllUserData(currentUserId) {
         const tourDotsContainer = document.getElementById('tour-dots');
 
         if (!tourOverlay || !tourTitle || !tourDescription || !tourHighlightImage || !tourBackBtn || !tourNextBtn || !tourSkipBtn || !tourDotsContainer) {
-            console.warn("Tour: Faltan elementos HTML del tour.");
             return;
         }
 
@@ -246,7 +253,7 @@ async function loadAllUserData(currentUserId) {
         if (!journalEntryTextarea || !saveJournalEntryButton || !journalEntriesList) return;
 
         const q = query(journalCollectionRef, orderBy('timestamp', 'desc'));
-        onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             journalEntriesList.innerHTML = '';
             if (snapshot.empty) {
                 journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
@@ -259,6 +266,7 @@ async function loadAllUserData(currentUserId) {
                 journalEntriesList.appendChild(listItem);
             });
         }, (error) => console.error("Journal: Error al escuchar:", error));
+        unsubscribeListeners.push(unsubscribe);
 
         saveJournalEntryButton.onclick = async () => {
             const entryText = journalEntryTextarea.value.trim();
@@ -276,8 +284,8 @@ async function loadAllUserData(currentUserId) {
     (() => {
         let timer;
         let isRunning = false;
-        let timeLeft = 1 * 60; // 1 min for testing
-        let totalTimeForPomodoro = 1 * 60;
+        let timeLeft = 25 * 60;
+        let totalTimeForPomodoro = 25 * 60;
         let isBreakTime = false;
         const timerDisplay = document.getElementById('timer');
         const startTimerBtn = document.getElementById('start-timer-btn');
@@ -297,7 +305,7 @@ async function loadAllUserData(currentUserId) {
 
         const updateTimerDisplay = () => {
             const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
+            const seconds = Math.floor(timeLeft % 60);
             timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             setProgress((timeLeft / totalTimeForPomodoro) * 100);
             progressCircle.style.stroke = isBreakTime ? 'var(--secondary-color)' : 'var(--primary-color)';
@@ -366,25 +374,25 @@ async function loadAllUserData(currentUserId) {
             clearInterval(timer);
             isRunning = false;
             isBreakTime = false;
-            timeLeft = 1 * 60;
-            totalTimeForPomodoro = 1 * 60;
+            timeLeft = 25 * 60;
+            totalTimeForPomodoro = 25 * 60;
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
             window.showTempMessage('Temporizador reiniciado.', 'info');
         };
 
-        onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
+        const unsubscribe = onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const settings = docSnap.data();
                 isBreakTime = settings.isBreakTime || false;
-                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (1 * 60);
+                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (25 * 60);
 
                 if (settings.isRunning && settings.lastUpdated) {
-                    const elapsed = (Date.now() - new Date(settings.lastUpdated).getTime()) / 1000;
+                    const elapsed = Math.floor((Date.now() - new Date(settings.lastUpdated).getTime()) / 1000);
                     timeLeft = Math.max(0, settings.timeLeft - elapsed);
-                    if (timeLeft > 0) {
+                    if (timeLeft > 0 && !timer) { // Evitar iniciar múltiples timers
                         startTimer();
-                    } else {
+                    } else if (timeLeft <= 0) {
                         timeLeft = 0;
                         handleTimerEnd();
                     }
@@ -394,9 +402,10 @@ async function loadAllUserData(currentUserId) {
                 }
                 updateTimerDisplay();
             } else {
-                savePomodoroState(timeLeft, isRunning, isBreakTime); // Create initial settings
+                savePomodoroState(timeLeft, isRunning, isBreakTime);
             }
         }, error => console.error("Pomodoro: Error al escuchar:", error));
+        unsubscribeListeners.push(unsubscribe);
         
         startTimerBtn.onclick = startTimer;
         pausePomodoroBtn.onclick = pauseTimer;
@@ -413,8 +422,8 @@ async function loadAllUserData(currentUserId) {
         let originalText = '';
         let draggedItem = null;
 
-        const q = query(checklistCollectionRef, orderBy('position', 'asc'), orderBy('timestamp', 'asc'));
-        onSnapshot(q, (snapshot) => {
+        const q = query(checklistCollectionRef, orderBy('position', 'asc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             const focusedElementId = document.activeElement?.closest('li')?.dataset.id;
             const focusedElementIsEditing = document.activeElement?.classList.contains('editing');
 
@@ -452,6 +461,7 @@ async function loadAllUserData(currentUserId) {
             }
 
         }, error => console.error("Checklist: Error al escuchar:", error));
+        unsubscribeListeners.push(unsubscribe);
 
         addCheckItemBtn.onclick = async () => {
             const itemText = checkItemInput.value.trim();
@@ -520,10 +530,10 @@ async function loadAllUserData(currentUserId) {
                         await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
                     } catch (error) {
                         console.error("Checklist: Error al actualizar texto:", error);
-                        target.textContent = originalText; // Revert on error
+                        target.textContent = originalText;
                     }
                 } else {
-                    target.textContent = originalText; // Revert if empty or unchanged
+                    target.textContent = originalText;
                 }
             }
         }, true);
@@ -550,7 +560,7 @@ async function loadAllUserData(currentUserId) {
                 setTimeout(() => e.target.classList.add('dragging'), 0);
             }
         });
-        checkListUl.addEventListener('dragend', (e) => {
+        checkListUl.addEventListener('dragend', () => {
             if(draggedItem) {
                 draggedItem.classList.remove('dragging');
                 draggedItem = null;
@@ -591,7 +601,7 @@ async function loadAllUserData(currentUserId) {
         if(!newHabitInput || !addHabitBtn || !habitsList) return;
 
         const q = query(habitsCollectionRef, orderBy('timestamp', 'asc'));
-        onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             habitsList.innerHTML = '';
             if(snapshot.empty) {
                 habitsList.innerHTML = '<li class="empty-section-message">Aún no tienes hábitos.</li>';
@@ -614,6 +624,7 @@ async function loadAllUserData(currentUserId) {
                 habitsList.appendChild(li);
             });
         }, error => console.error("Hábitos: Error al escuchar:", error));
+        unsubscribeListeners.push(unsubscribe);
 
         addHabitBtn.onclick = async () => {
             const habitName = newHabitInput.value.trim();
@@ -725,7 +736,7 @@ async function loadAllUserData(currentUserId) {
             }
         };
 
-        onSnapshot(trelloConfigDocRef, (docSnap) => {
+        const unsubscribe = onSnapshot(trelloConfigDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const config = docSnap.data();
                 trelloApiKeyInput.value = config.apiKey || '';
@@ -734,6 +745,7 @@ async function loadAllUserData(currentUserId) {
                 probarConexionTrello();
             }
         });
+        unsubscribeListeners.push(unsubscribe);
 
         saveTrelloConfigBtn.onclick = async () => {
             const apiKey = trelloApiKeyInput.value.trim();
@@ -777,6 +789,7 @@ async function loadAllUserData(currentUserId) {
                             </div>`;
                 }).join('');
             } catch (error) {
+                console.error(`Error al cargar ${contentDivId}:`, error);
                 contentDiv.innerHTML = '<p class="empty-section-message">Error al cargar contenido.</p>';
             }
         };
@@ -813,13 +826,18 @@ async function loadAllUserData(currentUserId) {
     })();
     
     // --- Status Counters ---
-    const updateAppStatus = () => {
+    (() => {
         const checklistCountElement = document.getElementById('checklist-count');
-        const habitsCountElement = document.getElementById('tasks-count'); // Note: ID is tasks-count
-        if (checklistCountElement) onSnapshot(query(checklistCollectionRef), s => checklistCountElement.textContent = s.size);
-        if (habitsCountElement) onSnapshot(query(habitsCollectionRef), s => habitsCountElement.textContent = s.size);
-    };
-    updateAppStatus();
+        const habitsCountElement = document.getElementById('tasks-count');
+        if (checklistCountElement) {
+            const unsubscribe = onSnapshot(query(checklistCollectionRef), s => checklistCountElement.textContent = s.size);
+            unsubscribeListeners.push(unsubscribe);
+        }
+        if (habitsCountElement) {
+            const unsubscribe = onSnapshot(query(habitsCollectionRef), s => habitsCountElement.textContent = s.size);
+            unsubscribeListeners.push(unsubscribe);
+        }
+    })();
 }
 
 // =================================================================================
@@ -839,7 +857,10 @@ if (auth) {
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
             if (logoutBtn) logoutBtn.style.display = 'inline-block';
             if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
-            if (!isLoggingOut) await loadAllUserData(user.uid);
+            
+            if (!isLoggingOut) {
+                await loadAllUserData(user.uid);
+            }
             isLoggingOut = false;
         } else {
             if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
@@ -847,7 +868,8 @@ if (auth) {
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
-            // Clear UI
+            
+            cleanupFirestoreListeners();
             document.getElementById('journalEntriesList').innerHTML = '';
             document.getElementById('checkList').innerHTML = '';
             document.getElementById('habitsList').innerHTML = '';
@@ -863,7 +885,6 @@ if (auth) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Solo adjuntar listeners si la inicialización de Firebase fue exitosa
     if (auth) {
         window.mostrarSeccion('pomodoro');
 
@@ -891,7 +912,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Navigation
         document.querySelectorAll('.nav-tabs button').forEach(button => {
             button.addEventListener('click', () => {
                 const sectionId = button.id.replace('btn-', '');
@@ -899,7 +919,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Notification Permission
         (async () => {
             if (!("Notification" in window)) return;
             if (Notification.permission === 'granted') {
