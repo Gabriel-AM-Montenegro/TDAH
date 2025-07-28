@@ -117,6 +117,14 @@
       <section id="tareas" class="seccion">
         <h2>📋 Tareas Trello</h2>
         <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
+        
+        <a href="#" id="trello-board-link" target="_blank" style="text-decoration: none; color: inherit;">
+          <h3>Tareas para esta semana ↗</h3>
+        </a>
+        <ul id="listaTareas">
+          <li>Cargando tareas de Trello...</li>
+        </ul>
+
         <div class="config-card">
           <h3>Estado de Conexión</h3>
           <p id="trello-status" class="status-indicator status-disconnected">❌ Trello no conectado</p>
@@ -124,10 +132,6 @@
           <button id="test-trello-btn">Probar Conexión</button>
           <button id="config-trello-btn">Configurar Trello</button>
         </div>
-        <h3>Tareas para esta semana</h3>
-        <ul id="listaTareas">
-          <li>Cargando tareas de Trello...</li>
-        </ul>
       </section>
 
       <!-- Sección Notas Blog -->

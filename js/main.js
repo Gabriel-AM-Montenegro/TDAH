@@ -663,8 +663,9 @@ async function loadAllUserData(currentUserId) {
         const testTrelloBtn = document.getElementById('test-trello-btn');
         const saveTrelloConfigBtn = document.getElementById('save-trello-config-btn');
         const listaTareasUl = document.getElementById('listaTareas');
+        const trelloBoardLink = document.getElementById('trello-board-link');
 
-        if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl) return;
+        if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl || !trelloBoardLink) return;
         
         const cargarTareasTrello = async () => {
             const configSnap = await getDoc(trelloConfigDocRef);
@@ -719,6 +720,7 @@ async function loadAllUserData(currentUserId) {
                     trelloStatusDiv.textContent = '✅ Trello conectado';
                     trelloStatusDiv.className = 'status-indicator status-connected';
                     trelloSuccessMessage.style.display = 'block';
+                    trelloBoardLink.href = `https://trello.com/b/${boardId}`;
                     cargarTareasTrello();
                 } else {
                     throw new Error('Respuesta no válida de Trello');
