@@ -43,7 +43,8 @@ const firebaseConfig = {
   measurementId: "G-QY7X98XZZY"
 };
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// Usamos el appId de la configuración manual, que es el correcto.
+const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 let app;
@@ -152,14 +153,15 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
+    // CORRECCIÓN: Se usan las rutas correctas para las colecciones públicas
     const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
     const trelloConfigDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'trelloConfig', 'settings');
     const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'habits');
     const userSettingsRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'appSettings');
-    const blogArticlesCollectionRef = collection(db, 'artifacts', '1:765424031369:web:838eca86f68f21daa5858', 'blogArticles');
-    const nutricionCollectionRef = collection(db, 'artifacts', '1:765424031369:web:838eca86f68f21daa5858', 'public', 'data', 'nutritionContent');
+    const blogArticlesCollectionRef = collection(db, 'artifacts', appId, 'blogArticles');
+    const nutricionCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nutritionContent');
 
     // --- Welcome Tour Logic ---
     (async () => {
@@ -868,11 +870,14 @@ if (auth) {
             document.getElementById('checkList').innerHTML = '';
             document.getElementById('habitsList').innerHTML = '';
 
+            // CORRECCIÓN: Se elimina el inicio de sesión anónimo automático.
             if (!isLoggingOut) {
                 try {
-                    if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                    else await signInAnonymously(auth);
-                } catch (error) { console.error("Error de inicio de sesión automático:", error); }
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    }
+                    // No hacer nada más, esperar la acción del usuario.
+                } catch (error) { console.error("Error de inicio de sesión con token:", error); }
             }
         }
     });
