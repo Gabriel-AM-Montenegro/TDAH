@@ -152,14 +152,15 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    const journalCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/journalEntries`);
-    const checklistCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/checklistItems`);
-    const pomodoroSettingsDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pomodoroSettings`, 'current');
-    const trelloConfigDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/trelloConfig`, 'settings');
-    const habitsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/habits`);
-    const userSettingsRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings`, 'appSettings');
-    const blogArticlesCollectionRef = collection(db, `artifacts/${appId}/blogArticles`);
-    const nutricionCollectionRef = collection(db, `artifacts/${appId}/public/data/nutritionContent`);
+    // CORRECCIÓN: Se usan path segments en lugar de strings con '/'
+    const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
+    const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
+    const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
+    const trelloConfigDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'trelloConfig', 'settings');
+    const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'habits');
+    const userSettingsRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'appSettings');
+    const blogArticlesCollectionRef = collection(db, 'artifacts', appId, 'blogArticles');
+    const nutricionCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nutritionContent');
 
     // --- Welcome Tour Logic ---
     (async () => {
