@@ -152,14 +152,15 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
+    const publicDataDocId = "1:765424031369:web:838eca86f68f21daa5858";
     const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
     const trelloConfigDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'trelloConfig', 'settings');
     const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'habits');
     const userSettingsRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'appSettings');
-    const blogArticlesCollectionRef = collection(db, 'artifacts', appId, 'blogArticles');
-    const nutricionCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nutritionContent');
+    const blogArticlesCollectionRef = collection(db, 'artifacts', publicDataDocId, 'blogArticles');
+    const nutricionCollectionRef = collection(db, 'artifacts', publicDataDocId, 'public', 'data', 'nutritionContent');
 
     // --- Welcome Tour Logic ---
     (async () => {
@@ -663,10 +664,12 @@ async function loadAllUserData(currentUserId) {
         const testTrelloBtn = document.getElementById('test-trello-btn');
         const saveTrelloConfigBtn = document.getElementById('save-trello-config-btn');
         const listaTareasUl = document.getElementById('listaTareas');
-        const trelloBoardLink = document.getElementById('trello-board-link');
+        const trelloBoardLinkHeader = document.getElementById('trello-board-link-header');
 
-        if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl || !trelloBoardLink) return;
+        if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl || !trelloBoardLinkHeader) return;
         
+        let boardUrl = '';
+
         const cargarTareasTrello = async () => {
             const configSnap = await getDoc(trelloConfigDocRef);
             if (!configSnap.exists()) return;
@@ -720,7 +723,7 @@ async function loadAllUserData(currentUserId) {
                     trelloStatusDiv.textContent = '✅ Trello conectado';
                     trelloStatusDiv.className = 'status-indicator status-connected';
                     trelloSuccessMessage.style.display = 'block';
-                    trelloBoardLink.href = `https://trello.com/b/${boardId}`;
+                    boardUrl = `https://trello.com/b/${boardId}`;
                     cargarTareasTrello();
                 } else {
                     throw new Error('Respuesta no válida de Trello');
@@ -758,6 +761,13 @@ async function loadAllUserData(currentUserId) {
         
         testTrelloBtn.onclick = probarConexionTrello;
         configTrelloBtn.onclick = () => window.mostrarSeccion('config');
+        trelloBoardLinkHeader.onclick = () => {
+            if (boardUrl) {
+                window.open(boardUrl, '_blank');
+            } else {
+                window.showTempMessage('Configura Trello primero para abrir el tablero.', 'warning');
+            }
+        };
     })();
     
     // --- Blog & Nutrition Logic ---

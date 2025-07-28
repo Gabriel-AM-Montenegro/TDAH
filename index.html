@@ -15,6 +15,14 @@
       background-color: red; 
       z-index: 99999;
     }
+    /* Estilo para que el título de Trello parezca un enlace */
+    #trello-board-link-header {
+        cursor: pointer;
+        transition: color 0.2s ease-in-out;
+    }
+    #trello-board-link-header:hover {
+        color: var(--secondary-color);
+    }
   </style>
 </head>
 <body>
@@ -118,9 +126,7 @@
         <h2>📋 Tareas Trello</h2>
         <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
         
-        <a href="#" id="trello-board-link" target="_blank" style="text-decoration: none; color: inherit;">
-          <h3>Tareas para esta semana ↗</h3>
-        </a>
+        <h3 id="trello-board-link-header" role="link" tabindex="0">Tareas para esta semana ↗</h3>
         <ul id="listaTareas">
           <li>Cargando tareas de Trello...</li>
         </ul>
