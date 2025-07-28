@@ -39,7 +39,7 @@ const firebaseConfig = {
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
   messagingSenderId: "765424831369",
-  appId: "1:7654248-web:838eca86f68f21daa5858",
+  appId: "1:765424831369:web:838eca86f68f21daa5858",
   measurementId: "G-QY7X98XZZY"
 };
 
@@ -152,15 +152,14 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    // CORRECCIÓN: Se usan path segments en lugar de strings con '/'
     const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
     const trelloConfigDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'trelloConfig', 'settings');
     const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'habits');
     const userSettingsRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'appSettings');
-    const blogArticlesCollectionRef = collection(db, 'artifacts', appId, 'blogArticles');
-    const nutricionCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'nutritionContent');
+    const blogArticlesCollectionRef = collection(db, 'artifacts', '1:765424031369:web:838eca86f68f21daa5858', 'blogArticles');
+    const nutricionCollectionRef = collection(db, 'artifacts', '1:765424031369:web:838eca86f68f21daa5858', 'public', 'data', 'nutritionContent');
 
     // --- Welcome Tour Logic ---
     (async () => {
