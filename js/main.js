@@ -39,7 +39,7 @@ const firebaseConfig = {
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
   messagingSenderId: "765424831369",
-  appId: "1:765424831369:web:838eca86f68f21daa5858",
+  appId: "1:7654248-web:838eca86f68f21daa5858",
   measurementId: "G-QY7X98XZZY"
 };
 
