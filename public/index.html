@@ -5,297 +5,232 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
-
-  <!-- Firebase SDKs: Cargados con las versiones de compatibilidad para exponer el objeto global 'firebase' -->
-  <!-- Esto evita los problemas de 'import'/'export' cuando no se cargan como módulos ES -->
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
-  <!-- Si usas Analytics, descomenta la línea de abajo -->
-  <!-- <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"></script> -->
-
   <style>
-    /* Estilo para el div de verificación de CSS (eliminar cuando se confirme que el CSS carga) */
     #css-check {
       position: fixed;
       top: 0;
       left: 0;
       width: 10px;
       height: 10px;
-      background-color: red; /* Si este color no es visible, el CSS no está cargando */
-      z-index: 9999;
+      background-color: red; 
+      z-index: 99999;
     }
   </style>
 </head>
 <body>
+  <div id="css-check"></div>
+
   <div class="container">
+
     <header>
       <h1>🧠 TDAH Helper App</h1>
       <p>Tu asistente personal para organización y productividad</p>
-      <!-- user-info-area: Se ajustará dinámicamente para centrar los botones cuando no hay sesión -->
-      <div id="user-info-area" style="text-align: center;">
-        <div id="user-display" style="display: none;">
-          <span id="user-email"></span>
-          <button id="logout-button" class="btn btn-secondary">Cerrar Sesión</button>
+      <div id="user-info-area">
+        <span id="user-display-name">Cargando...</span>
+        <div class="auth-buttons-wrapper">
+          <button id="google-signin-btn" class="auth-btn">Iniciar con Google</button>
+          <button id="anonymous-signin-btn" class="auth-btn">Iniciar Anónimamente</button>
+          <button id="email-signin-toggle-btn" class="auth-btn">Iniciar con Email</button>
         </div>
-        <div id="auth-buttons" style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
-          <button id="google-signin-button" class="btn btn-primary">Iniciar con Google</button>
-          <button id="anonymous-signin-button" class="btn btn-secondary">Iniciar Anónimamente</button>
-          <button id="email-signin-button" class="btn btn-tertiary">Iniciar con Email</button>
-        </div>
+        <button id="logout-btn" style="display: none;">Cerrar Sesión</button>
+        <p id="user-id-display" style="font-size: 0.8em; color: rgba(255,255,255,0.7); margin-top: 5px;"></p>
       </div>
     </header>
 
-    <!-- Barra de navegación principal -->
-    <nav class="main-nav">
-      <button id="btn-pomodoro" class="nav-btn active">
-        <span class="icon">⏰</span> Pomodoro
-      </button>
-      <button id="btn-checklist" class="nav-btn">
-        <span class="icon">✅</span> Checklist Rápido
-      </button>
-      <button id="btn-journal" class="nav-btn">
-        <span class="icon">✍️</span> Journal
-      </button>
-      <button id="btn-habitos" class="nav-btn">
-        <span class="icon">🎯</span> Hábitos
-      </button>
-      <button id="btn-tareas" class="nav-btn">
-        <span class="icon">📋</span> Tareas Trello
-      </button>
-      <button id="btn-notas" class="nav-btn">
-        <span class="icon">📝</span> Notas Blog
-      </button>
-      <button id="btn-nutricion" class="nav-btn">
-        <span class="icon">🍎</span> Nutrición
-      </button>
-      <button id="btn-config" class="nav-btn">
-        <span class="icon">⚙️</span> Configuración
-      </button>
+    <nav class="nav-tabs">
+      <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
+      <button id="btn-checklist">✅ Checklist Rápido</button>
+      <button id="btn-journal">📝 Journal</button>
+      <button id="btn-habitos">🌱 Hábitos</button>
+      <button id="btn-tareas">📋 Tareas Trello</button>
+      <button id="btn-notas">📚 Notas Blog</button>
+      <button id="btn-nutricion">🍎 Nutrición</button>
+      <button id="btn-config">⚙️ Configuración</button>
     </nav>
 
-    <main class="content-area">
+    <main>
       <!-- Sección Pomodoro -->
-      <section id="pomodoro" class="content-section active">
-        <h2>Temporizador Pomodoro</h2>
-        <div class="pomodoro-timer">
-          <span id="minutes">25</span>:<span id="seconds">00</span>
+      <section id="pomodoro" class="seccion active">
+        <h2>⏱️ Temporizador Pomodoro</h2>
+        <p class="subtitle">Enfócate en tus tareas con bloques de tiempo definidos.</p>
+        <div class="pomodoro-timer-container">
+          <svg class="pomodoro-progress-ring" width="200" height="200">
+            <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+            <circle class="pomodoro-progress-ring-progress" stroke="var(--primary-color)" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+          </svg>
+          <p id="timer">25:00</p>
         </div>
-        <div class="pomodoro-controls">
-          <button id="start-pomodoro" class="btn btn-primary">Iniciar</button>
-          <button id="pause-pomodoro" class="btn btn-secondary">Pausar</button>
-          <button id="reset-pomodoro" class="btn btn-tertiary">Reiniciar</button>
+        <div class="pomodoro-buttons">
+          <button id="start-timer-btn">Iniciar</button>
+          <button id="pause-pomodoro-btn">Pausar</button>
+          <button id="reset-timer-btn">Reiniciar</button>
         </div>
-        <p id="pomodoro-message" class="message"></p>
+        <audio id="sound-complete" src="https://www.soundjay.com/buttons/beep-07.mp3" preload="auto"></audio>
+        <audio id="sound-break" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+        <audio id="sound-task-done" src="https://www.soundjay.com/buttons/button-20.mp3" preload="auto"></audio>
       </section>
 
       <!-- Sección Checklist Rápido -->
-      <section id="checklist" class="content-section">
-        <h2>Checklist Rápido</h2>
-        <div class="input-group">
-          <input type="text" id="new-checklist-item" placeholder="Nueva tarea del checklist" />
-          <button id="add-checklist-item" class="btn btn-primary">Agregar</button>
+      <section id="checklist" class="seccion">
+        <h2>✅ Checklist Rápido</h2>
+        <p class="subtitle">La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
+        <div class="mit-explanation">
+          <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
         </div>
-        <ul id="checklist-items" class="item-list">
+        <div class="input-group">
+          <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
+          <button id="add-check-item-btn">➕ Agregar</button>
+        </div>
+        <ul id="checkList">
           <!-- Los ítems del checklist se cargarán aquí -->
+        </ul>
+        <p class="help-text">Para tareas pequeñas y recordatorios rápidos del día</p>
+      </section>
+
+      <!-- Sección Journal Personal -->
+      <section id="journal" class="seccion">
+        <h2>📝 Journal Personal</h2>
+        <p class="subtitle">Un espacio para tus pensamientos, reflexiones y logros diarios.</p>
+        <textarea id="journalEntry" placeholder="Escribe aquí tu entrada de hoy..."></textarea>
+        <button id="save-journal-entry-btn">Guardar Entrada</button>
+        <h3>Tus Entradas Anteriores</h3>
+        <ul id="journalEntriesList">
+          <!-- Las entradas del journal se cargarán aquí -->
         </ul>
       </section>
 
-      <!-- Sección Journal -->
-      <section id="journal" class="content-section">
-        <h2>Journal</h2>
-        <div class="journal-entry">
-          <textarea id="journal-text" placeholder="Escribe tus pensamientos aquí..."></textarea>
-          <button id="save-journal-entry" class="btn btn-primary">Guardar Entrada</button>
-        </div>
-        <div id="journal-entries" class="item-list">
-          <!-- Las entradas del journal se cargarán aquí -->
-        </div>
-      </section>
-
-      <!-- Sección Hábitos -->
-      <section id="habitos" class="content-section">
-        <h2>Hábitos</h2>
+      <!-- Sección Hábitos Diarios -->
+      <section id="habitos" class="seccion">
+        <h2>🌱 Hábitos Diarios</h2>
+        <p class="subtitle">Construye rutinas saludables y sigue tu progreso día a día.</p>
         <div class="input-group">
-          <input type="text" id="new-habit-name" placeholder="Nuevo hábito" />
-          <button id="add-habit" class="btn btn-primary">Agregar Hábito</button>
+          <input type="text" id="newHabitInput" placeholder="Añadir nuevo hábito (ej. Beber 2L de agua)" />
+          <button id="add-habit-btn">➕ Añadir Hábito</button>
         </div>
-        <ul id="habit-list" class="item-list">
+        <h3>Mis Hábitos</h3>
+        <ul id="habitsList">
           <!-- Los hábitos se cargarán aquí -->
         </ul>
       </section>
 
-      <!-- Sección Tareas Trello (o similar) -->
-      <section id="tareas" class="content-section">
-        <h2>Tareas</h2>
-        <p>Aquí podrás integrar o gestionar tus tareas.</p>
-        <div class="input-group">
-          <input type="text" id="new-task-input" placeholder="Añadir nueva tarea" />
-          <button id="add-task-btn" class="btn btn-primary">Añadir</button>
-        </div>
-        <ul id="task-list" class="item-list">
-          <!-- Las tareas se cargarán aquí -->
+      <!-- Sección Tareas Trello -->
+      <section id="tareas" class="seccion">
+        <h2>📋 Tareas Trello</h2>
+        <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
+        
+        <!-- CAMBIO: Tareas movidas arriba -->
+        <a href="#" id="trello-board-link" target="_blank" style="text-decoration: none; color: inherit;">
+          <h3>Tareas para esta semana ↗</h3>
+        </a>
+        <ul id="listaTareas">
+          <li>Cargando tareas de Trello...</li>
         </ul>
+
+        <!-- CAMBIO: Estado de conexión ahora abajo -->
+        <div class="config-card">
+          <h3>Estado de Conexión</h3>
+          <p id="trello-status" class="status-indicator status-disconnected">❌ Trello no conectado</p>
+          <p id="trello-success-message" class="success-message" style="display: none;">Conexión exitosa. ¡Tareas cargadas!</p>
+          <button id="test-trello-btn">Probar Conexión</button>
+          <button id="config-trello-btn">Configurar Trello</button>
+        </div>
       </section>
 
       <!-- Sección Notas Blog -->
-      <section id="notas" class="content-section">
-        <h2>Notas</h2>
-        <div class="input-group">
-          <input type="text" id="new-note-title" placeholder="Título de la nota" />
-          <textarea id="new-note-content" placeholder="Contenido de la nota..."></textarea>
-          <button id="add-note" class="btn btn-primary">Guardar Nota</button>
-        </div>
-        <div id="notes-list" class="item-list">
-          <!-- Las notas se cargarán aquí -->
+      <section id="notas" class="seccion">
+        <h2>📚 Notas Blog</h2>
+        <p class="subtitle">Artículos y consejos útiles sobre TDAH y productividad.</p>
+        <button id="refresh-blog-btn">Actualizar Artículos</button>
+        <div id="blog-content">
+          <p>Cargando artículos...</p>
         </div>
       </section>
 
       <!-- Sección Nutrición -->
-      <section id="nutricion" class="content-section">
-        <h2>Nutrición</h2>
-        <p>Aquí podrás registrar tus comidas y objetivos nutricionales.</p>
-        <div class="input-group">
-          <input type="text" id="new-food-item" placeholder="Alimento consumido" />
-          <button id="add-food-item" class="btn btn-primary">Registrar</button>
+      <section id="nutricion" class="seccion">
+        <h2>🍎 Nutrición</h2>
+        <p class="subtitle">Recomendaciones nutricionales para apoyar tu bienestar cerebral.</p>
+        <button id="refresh-nutricion-btn">Actualizar Contenido</button>
+        <div id="nutricion-content">
+          <p>Cargando recomendaciones...</p>
         </div>
-        <ul id="food-log" class="item-list">
-          <!-- El registro de alimentos se cargará aquí -->
-        </ul>
       </section>
 
       <!-- Sección Configuración -->
-      <section id="config" class="content-section">
-        <h2>Configuración</h2>
-        <p>Ajustes de la aplicación.</p>
-        <div class="config-options">
-          <button id="request-notification-permission" class="btn btn-primary">
-            Solicitar Permiso de Notificaciones
-          </button>
-          <p id="notification-status">Estado de las notificaciones: Desconocido</p>
+      <section id="config" class="seccion">
+        <h2>⚙️ Configuración</h2>
+        <p class="subtitle">Personaliza tu experiencia y gestiona tus datos.</p>
+
+        <h3>Configuración de Trello API</h3>
+        <div class="config-step">
+          <label for="api-key">Trello API Key:</label>
+          <input type="text" id="api-key" placeholder="Tu clave API de Trello" />
+          <p class="help-text">Obtén tu API Key <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a>.</p>
         </div>
+        <div class="config-step">
+          <label for="token">Trello Token:</label>
+          <input type="text" id="token" placeholder="Tu token de Trello" />
+          <p class="help-text">Genera un token <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a> (haz clic en "Token" bajo tu API Key).</p>
+        </div>
+        <div class="config-step">
+          <label for="board-id">Trello Board ID:</label>
+          <input type="text" id="board-id" placeholder="ID de tu tablero de Trello" />
+          <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/&lt;span style="font-weight: bold; color: var(--primary-color);"&gt;[BOARD_ID]&lt;/span&gt;/tu-tablero</code></p>
+        </div>
+        <button id="save-trello-config-btn">Guardar Configuración de Trello</button>
+
+        <h3>Gestión de Datos</h3>
+        <button id="clear-data-btn" class="button-danger">Limpiar Todos los Datos</button>
+        <p class="help-text">Esto eliminará todos tus datos (Pomodoro, Checklist, Journal, Trello Config, Hábitos) de forma permanente.</p>
       </section>
     </main>
+
+    <footer>
+      <p>&copy; 2025 TDAH Helper App. Todos los derechos reservados.</p>
+      <div class="status-counts">
+        <span>Tareas: <span id="tasks-count">0</span></span>
+        <span>Checklist: <span id="checklist-count">0</span></span>
+      </div>
+    </footer>
   </div>
 
-  <!-- Modal de confirmación personalizado -->
-  <div id="custom-confirm-modal" class="custom-modal-overlay">
+  <!-- Contenedor para mensajes temporales -->
+  <div id="temp-message-container"></div>
+
+  <!-- Contenedor para el confeti -->
+  <div id="confetti-container"></div>
+
+  <!-- Custom Confirmation Modal -->
+  <div id="custom-modal-overlay" class="custom-modal-overlay">
     <div class="custom-modal-content">
-      <p id="custom-confirm-message"></p>
+      <p id="custom-modal-message">¿Estás seguro?</p>
       <div class="modal-buttons">
-        <button id="custom-confirm-yes" class="btn btn-primary">Sí</button>
-        <button id="custom-confirm-no" class="btn btn-secondary">No</button>
+        <button id="custom-modal-yes-btn">Sí</button>
+        <button id="custom-modal-no-btn" class="button-danger">No</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // Inicialización de Firebase (asegúrate de que __firebase_config esté definido en tu entorno Canvas)
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+  <!-- Welcome Tour Overlay -->
+  <div id="welcome-tour-overlay">
+    <div class="welcome-tour-modal-inner">
+      <div class="welcome-tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+        <div class="tour-highlight-image-container">
+          <img id="tour-highlight-image" src="" alt="Highlight Image" class="tour-highlight-image" style="display: none;">
+        </div>
+      </div>
+      <div class="welcome-tour-navigation">
+        <button id="tour-back-btn" class="tour-nav-btn">⬅️ Anterior</button>
+        <div id="tour-dots" class="tour-dots"></div>
+        <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
+        <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
+      </div>
+    </div>
+  </div>
 
-    // Si firebaseConfig está vacío, o no tiene projectId, esto podría indicar un problema de configuración en Canvas
-    if (!firebaseConfig.projectId) {
-        console.error("Firebase: projectId no encontrado en __firebase_config. Asegúrate de que la variable de entorno esté configurada correctamente.");
-        // Opcional: Mostrar un mensaje al usuario en la UI
-        document.addEventListener('DOMContentLoaded', () => {
-            const authButtons = document.getElementById('auth-buttons');
-            if (authButtons) {
-                authButtons.innerHTML = '<p style="color: red;">Error: Configuración de Firebase incompleta. Contacta al soporte.</p>';
-            }
-        });
-    }
+  <script src="js/main.js" type="module"></script>
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
-    const auth = firebase.auth(app);
-
-    // Exponer variables globales para main.js
-    window.app = app;
-    window.db = db;
-    window.auth = auth;
-    window.appId = appId;
-
-    // Autenticación inicial con token personalizado o anónima
-    window.currentUserId = null; // Inicialmente nulo
-
-    // Manejar el estado de autenticación
-    firebase.auth().onAuthStateChanged(async (user) => {
-        const userDisplay = document.getElementById('user-display');
-        const authButtons = document.getElementById('auth-buttons');
-        const userEmailSpan = document.getElementById('user-email');
-
-        if (user) {
-            window.currentUserId = user.uid;
-            userEmailSpan.textContent = user.email || 'Usuario Anónimo';
-            userDisplay.style.display = 'block';
-            authButtons.style.display = 'none';
-            console.log("Usuario autenticado:", user.uid);
-
-            // Cargar datos del usuario solo si no estamos en proceso de cierre de sesión
-            if (!window.isLoggingOut) {
-                await window.loadAllUserData();
-            }
-        } else {
-            window.currentUserId = null;
-            userDisplay.style.display = 'none';
-            authButtons.style.display = 'flex';
-            console.log("Usuario no autenticado.");
-            // Si no hay usuario, limpiar la UI o mostrar un estado predeterminado
-            // Por ejemplo, ocultar las secciones de contenido o mostrar un mensaje
-            document.querySelectorAll('.content-section').forEach(section => {
-                if (section.id !== 'pomodoro') { // Mantener Pomodoro visible si es una sección pública
-                    section.classList.remove('active');
-                }
-            });
-             document.getElementById('pomodoro').classList.add('active'); // Asegurarse de que Pomodoro esté activo
-        }
-    });
-
-    // Función de confirmación personalizada
-    window.customConfirm = (message) => {
-        return new Promise((resolve) => {
-            const modal = document.getElementById('custom-confirm-modal');
-            const messageEl = document.getElementById('custom-confirm-message');
-            const yesBtn = document.getElementById('custom-confirm-yes');
-            const noBtn = document.getElementById('custom-confirm-no');
-
-            messageEl.textContent = message;
-            modal.style.display = 'flex'; // Make it visible (but still transparent/offset)
-
-            // Force reflow to ensure display:flex is applied before adding 'show' class
-            // This is crucial for CSS transitions to work from display:none to display:flex
-            void modal.offsetWidth;
-
-            modal.classList.add('show'); // Now add the class that applies opacity and transform
-
-            const cleanup = () => {
-                modal.classList.remove('show'); // Start hide transition
-                // Wait for the transition to finish before setting display to 'none'
-                modal.addEventListener('transitionend', () => {
-                    modal.style.display = 'none';
-                }, { once: true });
-                yesBtn.removeEventListener('click', onYesClick);
-                noBtn.removeEventListener('click', onNoClick);
-            };
-
-            const onYesClick = () => {
-                cleanup();
-                resolve(true);
-            };
-
-            const onNoClick = () => {
-                cleanup();
-                resolve(false);
-            };
-
-            yesBtn.addEventListener('click', onYesClick);
-            noBtn.addEventListener('click', onNoClick);
-        });
-    };
-  </script>
-
-  <!-- main.js se carga al final del body para asegurar que todos los elementos HTML estén disponibles -->
-  <script src="js/main.js"></script>
 </body>
 </html>

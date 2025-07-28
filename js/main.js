@@ -39,8 +39,7 @@ const firebaseConfig = {
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
   messagingSenderId: "765424831369",
-  // CORRECCIÓN: Se eliminó el guion erróneo del appId
-  appId: "1:765424831369:web:838eca86f68f21daa5858",
+  appId: "1:765424031369:web:838eca86f68f21daa5858",
   measurementId: "G-QY7X98XZZY"
 };
 
@@ -869,13 +868,11 @@ if (auth) {
             document.getElementById('checkList').innerHTML = '';
             document.getElementById('habitsList').innerHTML = '';
 
-            // CORRECCIÓN: Se elimina el inicio de sesión anónimo automático.
             if (!isLoggingOut) {
                 try {
                     if (initialAuthToken) {
                         await signInWithCustomToken(auth, initialAuthToken);
                     }
-                    // No hacer nada más, esperar la acción del usuario.
                 } catch (error) { console.error("Error de inicio de sesión con token:", error); }
             }
         }
