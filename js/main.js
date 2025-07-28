@@ -39,11 +39,11 @@ const firebaseConfig = {
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
   messagingSenderId: "765424831369",
+  // CORRECCIÓN: Se eliminó el guion erróneo del appId
   appId: "1:765424831369:web:838eca86f68f21daa5858",
   measurementId: "G-QY7X98XZZY"
 };
 
-// Usamos el appId de la configuración manual, que es el correcto.
 const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -153,7 +153,6 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    // CORRECCIÓN: Se usan las rutas correctas para las colecciones públicas
     const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
