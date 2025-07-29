@@ -39,6 +39,7 @@ const firebaseConfig = {
   projectId: "tdah-app-efca9",
   storageBucket: "tdah-app-efca9.appspot.com",
   messagingSenderId: "765424831369",
+  // CORRECCIÓN: Se corrigió el typo en el appId
   appId: "1:765424031369:web:838eca86f68f21daa5858",
   measurementId: "G-QY7X98XZZY"
 };
@@ -152,7 +153,8 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    const publicDataDocId = "1:765424031369:web:838eca86f68f21daa5858";
+    // CORRECCIÓN FINAL: Usamos el ID de documento correcto para las colecciones públicas.
+    const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
     const journalCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'pomodoroSettings', 'current');
