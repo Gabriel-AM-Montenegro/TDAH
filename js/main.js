@@ -43,7 +43,6 @@ const firebaseConfig = {
   measurementId: "G-QY7X98XZZY"
 };
 
-const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 let app;
@@ -152,7 +151,7 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    const publicDataDocId = "1:765424031369:web:838eca86f68f21daa5858";
+    const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
     const journalCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'pomodoroSettings', 'current');
@@ -896,7 +895,11 @@ document.addEventListener('DOMContentLoaded', () => {
         window.mostrarSeccion('pomodoro');
 
         document.getElementById('google-signin-btn').onclick = async () => {
-            try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+            try { 
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await signInWithPopup(auth, provider); 
+            } 
             catch (error) { 
                 console.error("Error de inicio de sesión con Google:", error);
                 window.showTempMessage(`Error con Google: ${error.message}`, 'error');
