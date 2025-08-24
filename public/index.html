@@ -15,6 +15,22 @@
       background-color: red; 
       z-index: 99999;
     }
+    /* Estilo para que el título de Trello parezca un enlace */
+    #trello-board-link-header {
+        cursor: pointer;
+        transition: color 0.2s ease-in-out;
+    }
+    #trello-board-link-header:hover {
+        color: var(--secondary-color);
+    }
+    /* NUEVO: Estilo para cuando un ítem del checklist está en modo edición */
+    .item-text.editing {
+        background-color: #f0f2f5;
+        border: 1px solid var(--primary-color);
+        padding: 2px 4px;
+        border-radius: 4px;
+        outline: none;
+    }
   </style>
 </head>
 <body>
@@ -118,15 +134,11 @@
         <h2>📋 Tareas Trello</h2>
         <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
         
-        <!-- CAMBIO: Tareas movidas arriba -->
-        <a href="#" id="trello-board-link" target="_blank" style="text-decoration: none; color: inherit;">
-          <h3>Tareas para esta semana ↗</h3>
-        </a>
+        <h3 id="trello-board-link-header" role="link" tabindex="0">Tareas para esta semana ↗</h3>
         <ul id="listaTareas">
           <li>Cargando tareas de Trello...</li>
         </ul>
 
-        <!-- CAMBIO: Estado de conexión ahora abajo -->
         <div class="config-card">
           <h3>Estado de Conexión</h3>
           <p id="trello-status" class="status-indicator status-disconnected">❌ Trello no conectado</p>
@@ -234,3 +246,4 @@
 
 </body>
 </html>
+

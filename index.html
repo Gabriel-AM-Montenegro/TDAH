@@ -15,13 +15,29 @@
       background-color: red; 
       z-index: 99999;
     }
-    /* Estilo para que el título de Trello parezca un enlace */
     #trello-board-link-header {
         cursor: pointer;
         transition: color 0.2s ease-in-out;
     }
     #trello-board-link-header:hover {
         color: var(--secondary-color);
+    }
+    .item-text.editing {
+        background-color: #f0f2f5;
+        border: 1px solid var(--primary-color);
+        padding: 2px 4px;
+        border-radius: 4px;
+        outline: none;
+    }
+    /* NUEVO: Estilo para el botón de editar */
+    .edit-item-btn {
+        background-color: var(--warning-light);
+        color: var(--warning-dark);
+        border: none;
+        padding: 5px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 5px;
     }
   </style>
 </head>
@@ -238,4 +254,3 @@
 
 </body>
 </html>
-

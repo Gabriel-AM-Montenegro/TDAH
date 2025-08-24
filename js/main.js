@@ -43,6 +43,7 @@ const firebaseConfig = {
   measurementId: "G-QY7X98XZZY"
 };
 
+const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 let app;
@@ -151,7 +152,7 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
+    const publicDataDocId = "1:765424031369:web:838eca86f68f21daa5858";
     const journalCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'pomodoroSettings', 'current');
@@ -441,6 +442,7 @@ async function loadAllUserData(currentUserId) {
                     <div class="mit-controls">
                         <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" ${item.isMIT ? 'checked' : ''}> MIT
                     </div>
+                    <button class="edit-item-btn">✏️</button>
                     <button class="button-danger delete-item-btn" data-id="${itemId}">❌</button>`;
                 checkListUl.appendChild(li);
             });
@@ -479,6 +481,15 @@ async function loadAllUserData(currentUserId) {
             if (target.classList.contains('delete-item-btn')) {
                 if (await window.showCustomConfirm('¿Eliminar esta tarea?')) await deleteDoc(itemRef);
             }
+            if (target.classList.contains('edit-item-btn')) {
+                const itemTextSpan = listItem.querySelector('.item-text');
+                if (itemTextSpan) {
+                    originalText = itemTextSpan.textContent;
+                    itemTextSpan.contentEditable = 'true';
+                    itemTextSpan.focus();
+                    itemTextSpan.classList.add('editing');
+                }
+            }
         });
         
         checkListUl.addEventListener('change', async (e) => {
@@ -502,16 +513,6 @@ async function loadAllUserData(currentUserId) {
             }
         });
         
-        checkListUl.addEventListener('dblclick', (e) => {
-            const target = e.target;
-            if (target.classList.contains('item-text')) {
-                originalText = target.textContent;
-                target.contentEditable = 'true';
-                target.focus();
-                target.classList.add('editing');
-            }
-        });
-
         checkListUl.addEventListener('blur', async (e) => {
             const target = e.target;
             if (target.classList.contains('item-text') && target.contentEditable === 'true') {
@@ -522,8 +523,10 @@ async function loadAllUserData(currentUserId) {
                 if (newText && newText !== originalText) {
                     try {
                         await updateDoc(doc(checklistCollectionRef, itemId), { text: newText });
+                        window.showTempMessage('Tarea actualizada.', 'success');
                     } catch (error) {
                         console.error("Checklist: Error al actualizar texto:", error);
+                        window.showTempMessage('Error al actualizar.', 'error');
                         target.textContent = originalText;
                     }
                 } else {
