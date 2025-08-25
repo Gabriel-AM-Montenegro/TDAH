@@ -162,7 +162,7 @@ async function loadAllUserData(currentUserId) {
     }
     window.showTempMessage(`Sesión iniciada.`, 'info');
 
-    const publicDataDocId = "1:765424031369:web:838eca86f68f21daa5858";
+    const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
     const journalCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'journalEntries');
     const checklistCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'checklistItems');
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'pomodoroSettings', 'current');
