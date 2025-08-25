@@ -1,7 +1,7 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
 /* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-   border: 5px solid rgb(115, 188, 176) !important;  /* Este borde debería desaparecer si el CSS carga */
+   border: 5px solid rgb(201, 91, 47) !important;  /* Este borde debería desaparecer si el CSS carga */
 }
 
 :root {

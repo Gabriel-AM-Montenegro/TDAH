@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
+  
+  <!-- Scripts para la API de Google -->
+  <script async defer src="https://apis.google.com/js/api.js"></script>
+  <script async defer src="https://accounts.google.com/gsi/client"></script>
+
   <style>
     #css-check {
       position: fixed;
@@ -12,10 +17,9 @@
       left: 0;
       width: 10px;
       height: 10px;
-      background-color: red; 
+      background-color: rgb(0, 17, 255); 
       z-index: 99999;
     }
-    /* Estilo para que el título de Trello parezca un enlace */
     #trello-board-link-header {
         cursor: pointer;
         transition: color 0.2s ease-in-out;
@@ -23,13 +27,37 @@
     #trello-board-link-header:hover {
         color: var(--secondary-color);
     }
-    /* NUEVO: Estilo para cuando un ítem del checklist está en modo edición */
     .item-text.editing {
         background-color: #f0f2f5;
         border: 1px solid var(--primary-color);
         padding: 2px 4px;
         border-radius: 4px;
         outline: none;
+    }
+    .edit-item-btn {
+        background-color: var(--warning-light);
+        color: var(--warning-dark);
+        border: none;
+        padding: 5px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 5px;
+        font-size: 0.9em;
+    }
+    /* Estilos para la nueva sección de calendario */
+    .calendar-event {
+        background-color: var(--light-bg);
+        border-left: 4px solid var(--secondary-color);
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+    .event-time {
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    .event-summary {
+        margin-top: 5px;
     }
   </style>
 </head>
@@ -55,6 +83,8 @@
 
     <nav class="nav-tabs">
       <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
+      <!-- NUEVO: Botón de Calendario <button id="btn-calendario" class="nav-btn">🗓️ Calendario</button>-->
+      <button id="btn-checklist">🗓️ Calendario</button>
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
       <button id="btn-habitos">🌱 Hábitos</button>
@@ -85,7 +115,18 @@
         <audio id="sound-break" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
         <audio id="sound-task-done" src="https://www.soundjay.com/buttons/button-20.mp3" preload="auto"></audio>
       </section>
-
+      <!-- NUEVO: Sección Calendario -->
+      <section id="calendario" class="seccion">
+        <h2>🗓️ Próximos Eventos</h2>
+        <p class="subtitle">Tus citas y reuniones de hoy y mañana.</p>
+        <div id="calendar-status">
+            <p>Para ver tus eventos, necesitas conectar tu cuenta de Google Calendar.</p>
+            <button id="connect-calendar-btn" class="auth-btn">Conectar con Google Calendar</button>
+        </div>
+        <ul id="calendar-events-list" style="display: none;">
+          <!-- Los eventos del calendario se cargarán aquí -->
+        </ul>
+      </section>
       <!-- Sección Checklist Rápido -->
       <section id="checklist" class="seccion">
         <h2>✅ Checklist Rápido</h2>
@@ -190,7 +231,12 @@
           <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/&lt;span style="font-weight: bold; color: var(--primary-color);"&gt;[BOARD_ID]&lt;/span&gt;/tu-tablero</code></p>
         </div>
         <button id="save-trello-config-btn">Guardar Configuración de Trello</button>
-
+      <!-- NUEVO: Configuración de Calendario -->
+        <h3>Integración con Google Calendar</h3>
+        <div id="calendar-config-area">
+            <p id="calendar-connection-status">Estado: No conectado.</p>
+            <button id="disconnect-calendar-btn" class="button-danger" style="display: none;">Desconectar Calendario</button>
+        </div>
         <h3>Gestión de Datos</h3>
         <button id="clear-data-btn" class="button-danger">Limpiar Todos los Datos</button>
         <p class="help-text">Esto eliminará todos tus datos (Pomodoro, Checklist, Journal, Trello Config, Hábitos) de forma permanente.</p>

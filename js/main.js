@@ -43,6 +43,16 @@ const firebaseConfig = {
   measurementId: "G-QY7X98XZZY"
 };
 
+// =================================================================================
+// NUEVO: Configuración de la API de Google Calendar
+// =================================================================================
+// PEGA AQUÍ EL ID DE CLIENTE QUE CREASTE EN EL PASO 1
+const GOOGLE_CLIENT_ID = "765424031369-ce5bpg3ibdagnidokv4a6m5b2rdo7m67.apps.googleusercontent.com";
+const CALENDAR_API_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+
+let tokenClient;
+//
+
 const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -846,6 +856,96 @@ async function loadAllUserData(currentUserId) {
             unsubscribeListeners.push(unsubscribe);
         }
     })();
+    // =================================================================================
+// GOOGLE CALENDAR API LOGIC
+// =================================================================================
+function initializeGapiClient() {
+    gapi.client.init({
+        apiKey: firebaseConfig.apiKey,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+    }).then(() => {
+        console.log("GAPI client initialized.");
+    }).catch(error => {
+        console.error("Error initializing GAPI client:", error);
+    });
+}
+
+function initializeGsiClient() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: CALENDAR_API_SCOPE,
+        callback: async (resp) => {
+            if (resp.error) {
+                throw resp;
+            }
+            console.log("Token de calendario obtenido.");
+            await listUpcomingEvents();
+        },
+    });
+}
+
+async function listUpcomingEvents() {
+    const calendarStatusDiv = document.getElementById('calendar-status');
+    const calendarEventsList = document.getElementById('calendar-events-list');
+    const disconnectBtn = document.getElementById('disconnect-calendar-btn');
+    const statusText = document.getElementById('calendar-connection-status');
+
+    calendarEventsList.innerHTML = '<li>Cargando eventos...</li>';
+    calendarStatusDiv.style.display = 'none';
+    calendarEventsList.style.display = 'block';
+    disconnectBtn.style.display = 'inline-block';
+    statusText.textContent = 'Estado: Conectado.';
+
+    try {
+        const timeMin = new Date().toISOString();
+        const timeMax = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(); // Hoy y mañana
+
+        const request = {
+            'calendarId': 'primary',
+            'timeMin': timeMin,
+            'timeMax': timeMax,
+            'showDeleted': false,
+            'singleEvents': true,
+            'maxResults': 10,
+            'orderBy': 'startTime',
+        };
+        
+        const response = await gapi.client.calendar.events.list(request);
+        const events = response.result.items;
+
+        if (events && events.length > 0) {
+            calendarEventsList.innerHTML = events.map(event => {
+                const start = event.start.dateTime || event.start.date;
+                const end = event.end.dateTime || event.end.date;
+                const startTime = new Date(start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                const endTime = new Date(end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                return `<li class="calendar-event">
+                            <div class="event-time">${startTime} - ${endTime}</div>
+                            <div class="event-summary">${event.summary}</div>
+                        </li>`;
+            }).join('');
+        } else {
+            calendarEventsList.innerHTML = '<li class="empty-section-message">¡No tienes eventos próximos! Disfruta de tu tiempo.</li>';
+        }
+    } catch (err) {
+        console.error("Error al obtener eventos del calendario:", err);
+        calendarEventsList.innerHTML = '<li class="empty-section-message">Error al cargar los eventos.</li>';
+    }
+}
+
+function handleDisconnectCalendar() {
+    const token = gapi.client.getToken();
+    if (token) {
+        google.accounts.oauth2.revoke(token.access_token, () => {
+            gapi.client.setToken('');
+            document.getElementById('calendar-status').style.display = 'block';
+            document.getElementById('calendar-events-list').style.display = 'none';
+            document.getElementById('disconnect-calendar-btn').style.display = 'none';
+            document.getElementById('calendar-connection-status').textContent = 'Estado: No conectado.';
+            window.showTempMessage('Calendario desconectado.', 'info');
+        });
+    }
+}
 }
 
 // =================================================================================
@@ -941,5 +1041,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 notificationPermissionGranted = permission === 'granted';
             }
         })();
+        document.getElementById('btn-calendario').addEventListener('click', () => window.mostrarSeccion('calendario'));
+
+        // Listeners para Google Calendar
+        document.getElementById('connect-calendar-btn').onclick = () => {
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } else {
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        };
+        document.getElementById('disconnect-calendar-btn').onclick = handleDisconnectCalendar;
+
+        // Cargar las librerías de Google
+        gapi.load('client', initializeGapiClient);
+        initializeGsiClient();
     }
 });
