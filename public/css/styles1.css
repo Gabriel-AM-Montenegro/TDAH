@@ -1,40 +1,33 @@
 /* ========== ESTILOS GENERALES Y VARIABLES ========== */
-/* Se mantiene el border de prueba hasta que se confirme que los estilos cargan bien */
 body {
-   border: 5px solid rgb(129, 23, 88) !important;  /* Este borde debería desaparecer si el CSS carga */
+   border: 5px solid rgb(35, 129, 23) !important;
 }
 
 :root {
-  /* Colores */
-  --primary-color: #4F46E5; /* Indigo */
-  --secondary-color: #7C3AED; /* Violet */
-  --bg-gradient-start: #667eea; /* Azul claro */
-  --bg-gradient-end: #764ba2; /* Morado */
-  --text-dark: #374151; /* Gris oscuro */
-  --text-medium: #6b7280; /* Gris medio */
-  --text-light: #9ca3af; /* Gris claro */
+  --primary-color: #4F46E5;
+  --secondary-color: #7C3AED;
+  --bg-gradient-start: #667eea;
+  --bg-gradient-end: #764ba2;
+  --text-dark: #374151;
+  --text-medium: #6b7280;
+  --text-light: #9ca3af;
   --white: white;
-  --light-bg: #f8fafc; /* Fondo claro para cards/list items */
+  --light-bg: #f8fafc;
   --border-color: #e5e7eb;
-  --success-light: #ecfdf5; /* Verde claro */
-  --success-dark: #10b981; /* Verde oscuro */
-  --error-light: #fef2f2; /* Rojo claro */
-  --error-dark: #dc2626; /* Rojo oscuro */
-  --warning-light: #fffbeb; /* Amarillo claro */
-  --warning-dark: #f59e0b; /* Amarillo oscuro */
-  --info-light: #e0f2fe; /* Azul info claro */
-  --info-dark: #0ea5e9; /* Azul info oscuro */
-  --mit-color: #FFD700; /* Color especial para MITs (Oro) */
-
-
-  /* Espaciado */
+  --success-light: #ecfdf5;
+  --success-dark: #10b981;
+  --error-light: #fef2f2;
+  --error-dark: #dc2626;
+  --warning-light: #fffbeb;
+  --warning-dark: #f59e0b;
+  --info-light: #e0f2fe;
+  --info-dark: #0ea5e9;
+  --mit-color: #FFD700;
   --spacing-xs: 5px;
   --spacing-sm: 10px;
   --spacing-md: 15px;
   --spacing-lg: 20px;
   --spacing-xl: 30px;
-
-  /* Bordes y Sombras */
   --border-radius-sm: 8px;
   --border-radius-md: 15px;
   --button-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
@@ -42,7 +35,7 @@ body {
 }
 
 * {
-  box-sizing: border-box; /* Asegura que padding y border se incluyan en el ancho/alto */
+  box-sizing: border-box;
 }
 
 body {
@@ -51,20 +44,19 @@ body {
   padding: 0;
   background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   min-height: 100vh;
-  color: var(--text-dark); /* Color de texto por defecto */
-  display: flex; /* Para centrar el contenedor verticalmente si es necesario */
-  align-items: center; /* Centrado vertical */
-  justify-content: center; /* Centrado horizontal */
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .container {
   max-width: 800px;
-  width: 95%; /* Ajuste para pantallas pequeñas */
-  margin: var(--spacing-lg) auto; /* Ajuste margen */
+  width: 95%;
+  margin: var(--spacing-lg) auto;
   padding: var(--spacing-lg);
 }
 
-/* ========== HEADER ========== */
 header {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -87,56 +79,49 @@ header p {
   font-size: 1.1em;
 }
 
-/* Estilos para el user-info-area y los botones de autenticación */
 #user-info-area {
   margin-top: 10px;
   display: flex;
-  align-items: center; /* Alinear verticalmente los elementos */
-  flex-wrap: wrap; /* Permitir que los elementos se envuelvan */
-  gap: 10px; /* Espacio entre los botones */
-  min-height: 50px; /* Asegura que el área tenga altura incluso si los botones están ocultos */
-  transition: all 0.3s ease; /* Transición suave para cambios de layout */
-  /* Por defecto, alineado a la derecha (para cuando el usuario está logueado) */
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 50px;
+  transition: all 0.3s ease;
   justify-content: flex-end;
   flex-direction: row;
 }
 
-/* Estilos cuando las opciones de autenticación están visibles (usuario no logueado) */
 #user-info-area.auth-options-visible {
-  justify-content: center; /* Centrar los botones y el texto */
-  flex-direction: column; /* Apilar el texto y luego los botones en una fila */
+  justify-content: center;
+  flex-direction: column;
 }
 
 #user-info-area.auth-options-visible #user-display-name {
-  width: 100%; /* Ocupar todo el ancho para centrar el texto */
-  margin-bottom: 10px; /* Espacio entre el texto y los botones */
-  text-align: center; /* Centrar el texto */
+  width: 100%;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
-/* Contenedor para los botones de autenticación cuando el usuario no está logueado */
-/* Esto permite que los botones se alineen horizontalmente dentro del #user-info-area.auth-options-visible */
 .auth-buttons-wrapper {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px; /* Espacio entre los botones */
-  width: 100%; /* Asegura que el wrapper ocupe todo el ancho para centrar los botones */
+  gap: 10px;
+  width: 100%;
 }
 
-/* Estilos para los botones de autenticación */
 .auth-btn {
-  min-width: 180px; /* Ancho mínimo para que los botones no sean demasiado pequeños */
-  flex-grow: 1; /* Permitir que los botones crezcan para ocupar espacio */
-  max-width: 200px; /* Limitar el ancho máximo para que no sean demasiado grandes */
+  min-width: 180px;
+  flex-grow: 1;
+  max-width: 200px;
 }
 
-/* ========== NAVEGACIÓN ========== */
 .nav-tabs {
   display: flex;
   justify-content: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
-  flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+  flex-wrap: wrap;
 }
 
 .nav-tabs button {
@@ -144,12 +129,12 @@ header p {
   background: rgba(255, 255, 255, 0.2);
   color: var(--white);
   border: none;
-  border-radius: 25px; /* Más redondeado */
+  border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
   font-size: 14px;
-  flex-shrink: 0; /* Evita que los botones se encojan */
+  flex-shrink: 0;
 }
 
 .nav-tabs button.active,
@@ -159,10 +144,9 @@ header p {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* ========== SECCIONES ========== */
 .seccion {
   display: none;
-  background: rgba(255, 255, 255, 0.95); /* Fondo blanco translúcido para todas las secciones */
+  background: rgba(255, 255, 255, 0.95);
   padding: 2em;
   border-radius: var(--border-radius-md);
   box-shadow: var(--glass-shadow);
@@ -175,14 +159,8 @@ header p {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 h2 {
@@ -194,11 +172,10 @@ h2 {
   font-size: 1.8em;
 }
 
-/* Estilo para el nuevo subtítulo */
 .subtitle {
     color: var(--text-medium);
     font-size: 0.95em;
-    margin-top: -1em; /* Ajusta el margen superior para que esté cerca del título */
+    margin-top: -1em;
     margin-bottom: 1.5em;
     line-height: 1.5;
 }
@@ -208,11 +185,10 @@ h3 {
   margin-bottom: 1em;
 }
 
-/* ========== TIMER POMODORO ========== */
 .pomodoro-timer-container {
   position: relative;
-  width: 200px; /* Ancho fijo para el contenedor del timer y SVG */
-  height: 200px; /* Altura fija para el contenedor del timer y SVG */
+  width: 200px;
+  height: 200px;
   margin: 1em auto;
   display: flex;
   justify-content: center;
@@ -223,11 +199,9 @@ h3 {
   font-size: 3em;
   font-weight: bold;
   text-align: center;
-  /* Eliminar márgenes para que se superponga con el SVG */
   margin: 0;
-  position: absolute; /* Posicionar sobre el SVG */
-  z-index: 10; /* Asegurar que el texto esté por encima del SVG */
-  /* Degradado para el texto */
+  position: absolute;
+  z-index: 10;
   background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -235,22 +209,22 @@ h3 {
 }
 
 .pomodoro-progress-ring {
-  position: absolute; /* Posicionar SVG detrás del texto del timer */
-  transform: rotate(-90deg); /* Iniciar el progreso desde la parte superior */
-  z-index: 5; /* Asegurar que el SVG esté detrás del texto */
+  position: absolute;
+  transform: rotate(-90deg);
+  z-index: 5;
 }
 
 .pomodoro-progress-ring-track {
-  stroke: #e6e6e6; /* Color de la pista de fondo */
+  stroke: #e6e6e6;
   stroke-width: 10;
   fill: transparent;
 }
 
 .pomodoro-progress-ring-progress {
-  stroke: var(--primary-color); /* Color de la barra de progreso */
+  stroke: var(--primary-color);
   stroke-width: 10;
   fill: transparent;
-  transition: stroke-dashoffset 1s linear; /* Transición suave para la animación */
+  transition: stroke-dashoffset 1s linear;
 }
 
 .pomodoro-buttons {
@@ -261,7 +235,6 @@ h3 {
   flex-wrap: wrap;
 }
 
-/* ========== CONFIGURACIÓN TRELLO ========== */
 .config-card {
   background: var(--light-bg);
   border: 2px dashed var(--border-color);
@@ -287,7 +260,6 @@ h3 {
   color: var(--text-dark);
 }
 
-/* ========== INDICADORES DE ESTADO ========== */
 .status-indicator {
   display: inline-flex;
   align-items: center;
@@ -309,7 +281,6 @@ h3 {
   color: var(--success-dark);
 }
 
-/* ========== BOTONES ========== */
 button {
   padding: 12px 24px;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -339,15 +310,14 @@ button:active {
 }
 
 .button-danger {
-  background: #ef4444 !important; /* Rojo fuerte para eliminar */
-  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); /* Sombra acorde al color */
+  background: #ef4444 !important;
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
 }
 
 .button-danger:hover {
   background: #dc2626 !important;
 }
 
-/* Animación de click para botones */
 .button-clicked {
   animation: buttonClick 0.3s ease-out;
 }
@@ -358,8 +328,6 @@ button:active {
   100% { transform: scale(1); }
 }
 
-
-/* ========== INPUTS Y TEXTAREA ========== */
 input[type="text"], textarea {
   width: 100%;
   padding: 12px;
@@ -382,7 +350,6 @@ textarea {
   min-height: 100px;
 }
 
-/* Estilo para el grupo input + botón en checklist */
 .input-group {
     display: flex;
     gap: var(--spacing-sm);
@@ -391,10 +358,9 @@ textarea {
 
 .input-group input {
     flex-grow: 1;
-    margin-bottom: 0; /* Eliminar margen inferior si es parte de un grupo */
+    margin-bottom: 0;
 }
 
-/* ========== LISTAS ========== */
 ul {
   list-style: none;
   padding: 0;
@@ -411,54 +377,40 @@ li {
   align-items: center;
   gap: var(--spacing-sm);
   transition: all 0.3s ease;
-  word-wrap: break-word; /* Asegura que el texto largo se rompa */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra sutil para los ítems */
+  word-wrap: break-word;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 li:hover {
-  background: #f1f5f9; /* Un gris aún más claro al hover */
+  background: #f1f5f9;
   transform: translateX(5px);
 }
 
 li span {
   flex-grow: 1;
-  word-break: break-word; /* Para asegurar que el texto se rompe dentro del span */
+  word-break: break-word;
 }
 
 li button {
   padding: 5px 10px;
   font-size: 12px;
   margin-left: auto;
-  min-width: unset; /* Reiniciar el min-width de los botones generales */
+  min-width: unset;
 }
 
-/* Estilos específicos para los controles MIT dentro del li */
 .mit-controls {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 0.9em;
     color: var(--text-medium);
-    margin-left: var(--spacing-sm); /* Espacio entre el texto de la tarea y el control MIT */
+    margin-left: var(--spacing-sm);
 }
 
-/* Estilo para las tareas marcadas como MIT */
 .mit-task {
-    background-color: #fffacd; /* Light goldenrod yellow */
-    border-left-color: var(--mit-color); /* Usar el color MIT definido en :root */
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2); /* Sombra dorada */
-}
-
-
-/* ========== ESTADOS DE TAREAS ========== */
-.task-urgent {
-  border-left-color: var(--error-dark);
-  background: var(--error-light);
-}
-
-.task-completed {
-  opacity: 0.7; /* Ligeramente más opaco que antes para mejor legibilidad */
-  /* La decoración se maneja en el span para evitar que el botón también se raye */
+    background-color: #fffacd;
+    border-left-color: var(--mit-color);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
 }
 
 .task-completed {
@@ -466,16 +418,14 @@ li button {
   color: var(--text-medium);
 }
 
-/* ========== CHECKBOXES ========== */
 input[type="checkbox"] {
-  min-width: 18px; /* Asegura un tamaño mínimo consistente */
+  min-width: 18px;
   min-height: 18px;
   margin-right: var(--spacing-sm);
   cursor: pointer;
-  accent-color: var(--primary-color); /* Personaliza el color del checkmark */
+  accent-color: var(--primary-color);
 }
 
-/* Estilo para la explicación de MITs */
 .mit-explanation {
     background-color: var(--info-light);
     border: 1px solid var(--info-dark);
@@ -491,8 +441,6 @@ input[type="checkbox"] {
     color: var(--primary-color);
 }
 
-
-/* ========== HELPERS Y MENSAJES ========== */
 .help-text {
   font-size: 12px;
   color: var(--text-medium);
@@ -510,7 +458,7 @@ input[type="checkbox"] {
   text-decoration: underline;
 }
 
-.success-message { /* Usado por trello-success-message */
+.success-message {
   background: var(--success-light);
   color: var(--success-dark);
   padding: var(--spacing-sm);
@@ -522,7 +470,6 @@ input[type="checkbox"] {
   text-align: center;
 }
 
-/* Contenedor para mensajes temporales flotantes */
 #temp-message-container {
     position: fixed;
     bottom: var(--spacing-lg);
@@ -532,8 +479,8 @@ input[type="checkbox"] {
     flex-direction: column;
     gap: var(--spacing-sm);
     z-index: 1000;
-    pointer-events: none; /* Permite clics a través del contenedor */
-    width: 90%; /* Ancho máximo */
+    pointer-events: none;
+    width: 90%;
     max-width: 400px;
 }
 
@@ -544,9 +491,9 @@ input[type="checkbox"] {
     border-radius: var(--border-radius-sm);
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    opacity: 0; /* Empezar oculto */
+    opacity: 0;
     transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-    transform: translateY(20px); /* Empezar un poco abajo */
+    transform: translateY(20px);
 }
 
 .temp-message.show {
@@ -556,33 +503,31 @@ input[type="checkbox"] {
 
 .temp-message.hide {
     opacity: 0;
-    transform: translateY(-20px); /* Desaparecer hacia arriba */
+    transform: translateY(-20px);
 }
 
-/* Colores para tipos de mensajes */
 .temp-message.success { background: var(--success-dark); }
 .temp-message.error { background: var(--error-dark); }
 .temp-message.warning { background: var(--warning-dark); }
 .temp-message.info { background: var(--info-dark); }
 
-/* ========== SECCIONES DE CONTENIDO DINÁMICO (Blog, Nutrición) ========== */
 #blog-content, #nutricion-content {
-  max-height: 400px; /* Limita la altura para evitar scroll infinito */
+  max-height: 400px;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  background: var(--light-bg); /* Fondo para la caja de contenido */
+  background: var(--light-bg);
 }
 
 .blog-article-card, .nutricion-card {
-  background: var(--white); /* Fondo blanco para las tarjetas internas */
+  background: var(--white);
   padding: var(--spacing-md);
   border-radius: var(--border-radius-sm);
   margin: var(--spacing-sm) 0;
   border-left: 4px solid var(--primary-color);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra para las tarjetas */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .blog-article-card h4, .nutricion-card h4 {
@@ -600,7 +545,7 @@ input[type="checkbox"] {
 .blog-article-card small, .nutricion-card small {
   color: var(--text-light);
   font-style: italic;
-  display: block; /* Para que la fuente de la noticia se separe */
+  display: block;
   margin-bottom: var(--spacing-xs);
 }
 
@@ -609,7 +554,7 @@ input[type="checkbox"] {
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9em;
-    display: inline-block; /* Para el icono de flecha */
+    display: inline-block;
     margin-top: var(--spacing-xs);
 }
 
@@ -617,18 +562,15 @@ input[type="checkbox"] {
     text-decoration: underline;
 }
 
-
-/* Estilos para el Journal */
-/* La sección del journal ahora usa los estilos generales de .seccion */
 #journalEntry {
-    width: 100%; /* Asegura que ocupe todo el ancho disponible */
+    width: 100%;
     padding: 12px;
     margin-bottom: var(--spacing-sm);
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius-sm);
     font-size: 14px;
-    resize: vertical; /* Permite redimensionar verticalmente */
-    font-family: inherit; /* Hereda la fuente de la app */
+    resize: vertical;
+    font-family: inherit;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -639,8 +581,7 @@ input[type="checkbox"] {
 }
 
 #saveJournalEntry {
-    /* Usa los estilos de botón generales definidos arriba */
-    margin-bottom: var(--spacing-lg); /* Espacio después del botón */
+    margin-bottom: var(--spacing-lg);
 }
 
 #journalEntriesList {
@@ -650,17 +591,17 @@ input[type="checkbox"] {
 }
 
 #journalEntriesList li {
-    background-color: var(--white); /* Fondo blanco para las entradas individuales */
+    background-color: var(--white);
     border: 1px solid var(--border-color);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
     border-radius: var(--border-radius-sm);
     font-size: 0.95rem;
     line-height: 1.5;
-    white-space: pre-wrap; /* Mantiene los saltos de línea y espacios en blanco del textarea */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Sombra sutil */
-    border-left: 4px solid var(--secondary-color); /* Un borde lateral distintivo */
-    display: block; /* Para que ocupe su propio bloque */
+    white-space: pre-wrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid var(--secondary-color);
+    display: block;
 }
 
 #journalEntriesList li .journal-date {
@@ -671,34 +612,31 @@ input[type="checkbox"] {
     font-style: italic;
 }
 
-/* Estilos para la sección de Hábitos */
 .habit-tracking-dots {
     display: flex;
     gap: 5px;
-    margin-left: auto; /* Empuja los puntos a la derecha */
+    margin-left: auto;
 }
 
 .habit-day-dot {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background-color: var(--text-light); /* Color para días pendientes */
+    background-color: var(--text-light);
     border: 1px solid var(--border-color);
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.2s ease;
-    flex-shrink: 0; /* Evita que los puntos se encojan */
+    flex-shrink: 0;
 }
 
 .habit-day-dot.completed {
-    background-color: var(--success-dark); /* Color para días completados */
+    background-color: var(--success-dark);
 }
 
 .habit-day-dot:hover {
     transform: scale(1.1);
 }
 
-
-/* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 768px) {
   .container {
     padding: var(--spacing-sm);
@@ -711,7 +649,7 @@ input[type="checkbox"] {
 
   .nav-tabs {
     flex-direction: column;
-    align-items: stretch; /* Estirar botones a ancho completo */
+    align-items: stretch;
   }
 
   .nav-tabs button {
@@ -741,7 +679,7 @@ input[type="checkbox"] {
   }
 
   li button {
-    align-self: flex-end; /* Alinear el botón a la derecha en la columna */
+    align-self: flex-end;
   }
 
   .input-group {
@@ -785,7 +723,6 @@ input[type="checkbox"] {
   }
 }
 
-/* ========== ANIMACIONES ADICIONALES ========== */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -799,7 +736,6 @@ input[type="checkbox"] {
   animation: pulse 2s infinite;
 }
 
-/* ========== SCROLLBAR PERSONALIZADA ========== */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -818,33 +754,31 @@ input[type="checkbox"] {
   background: #a8a8a8;
 }
 
-/* ========== ESTILOS DE CONFETI ========== */
 #confetti-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* Permite clics a través del contenedor */
-  overflow: hidden; /* Oculta el confeti fuera del viewport */
-  z-index: 9999; /* Asegura que esté en la parte superior */
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 9999;
 }
 
 .confetti-piece {
   position: absolute;
   width: 10px;
   height: 10px;
-  background-color: var(--primary-color); /* Color por defecto */
-  border-radius: 50%; /* Hacerlos redondos */
+  background-color: var(--primary-color);
+  border-radius: 50%;
   opacity: 0;
   animation: fall linear forwards;
 }
 
-/* Diferentes colores para el confeti */
 .confetti-piece:nth-child(2n) { background-color: var(--secondary-color); }
-.confetti-piece:nth-child(3n) { background-color: #FFD700; } /* Oro */
-.confetti-piece:nth-child(4n) { background-color: #FF69B4; } /* Rosa fuerte */
-.confetti-piece:nth-child(5n) { background-color: #00FFFF; } /* Cian */
+.confetti-piece:nth-child(3n) { background-color: #FFD700; }
+.confetti-piece:nth-child(4n) { background-color: #FF69B4; }
+.confetti-piece:nth-child(5n) { background-color: #00FFFF; }
 
 @keyframes fall {
   0% {
@@ -857,12 +791,10 @@ input[type="checkbox"] {
   }
 }
 
-/* Regla para el div de verificación de CSS */
 #css-check {
-    background-color: green !important; /* Debería ser verde si el CSS se carga */
+    background-color: green !important;
 }
 
-/* Custom Confirmation Modal Styles */
 .custom-modal-overlay {
     position: fixed;
     top: 0;
@@ -870,17 +802,17 @@ input[type="checkbox"] {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
-    display: none; /* Por defecto, oculto */
+    display: none;
     justify-content: center;
     align-items: center;
-    z-index: 10000; /* Asegura que esté por encima de todo */
+    z-index: 10000;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
 
 .custom-modal-overlay.show {
     opacity: 1;
-    display: flex; /* Mostrar al añadir la clase 'show' */
+    display: flex;
 }
 
 .custom-modal-content {
@@ -917,30 +849,27 @@ input[type="checkbox"] {
     min-width: 100px;
 }
 
-/* ========== ESTILOS DEL TOUR DE BIENVENIDA ========== */
-/* El overlay del tour ahora tiene sus propias reglas de display */
 #welcome-tour-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
-    backdrop-filter: blur(5px); /* Efecto de desenfoque */
-    display: none; /* Por defecto, oculto */
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
     justify-content: center;
     align-items: center;
-    z-index: 10000; /* Asegura que esté por encima de todo */
+    z-index: 10000;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 #welcome-tour-overlay.active {
     opacity: 1;
-    display: flex !important; /* Mostrar al activar, con !important para forzar */
+    display: flex !important;
 }
 
-/* El contenido del modal del tour ahora tiene su propia clase */
 .welcome-tour-modal-inner {
     background: var(--white);
     border-radius: var(--border-radius-md);
@@ -954,13 +883,11 @@ input[type="checkbox"] {
     transform: translateY(20px);
     opacity: 0;
     transition: transform 0.3s ease, opacity 0.3s ease;
-    /* Reglas de depuración */
-    /* border: 5px solid red !important; */ /* Un borde rojo para que sea muy visible */
 }
 
 #welcome-tour-overlay.active .welcome-tour-modal-inner {
-    transform: translateY(0) !important; /* Forzar visibilidad */
-    opacity: 1 !important; /* Forzar visibilidad */
+    transform: translateY(0) !important;
+    opacity: 1 !important;
 }
 
 .welcome-tour-content {
@@ -985,7 +912,7 @@ input[type="checkbox"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 150px; /* Altura mínima para la imagen */
+    min-height: 150px;
 }
 
 .tour-highlight-image {
@@ -999,7 +926,7 @@ input[type="checkbox"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* Para responsive */
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
 }
 
@@ -1007,8 +934,8 @@ input[type="checkbox"] {
   padding: 10px 15px;
   font-size: 0.9em;
   border-radius: 20px;
-  flex-grow: 1; /* Para que los botones se estiren */
-  min-width: 120px; /* Ancho mínimo para botones */
+  flex-grow: 1;
+  min-width: 120px;
 }
 
 .tour-dots {
@@ -1032,16 +959,12 @@ input[type="checkbox"] {
   transform: scale(1.2);
 }
 
-/* Estilos de foco mejorados para accesibilidad */
-/* Aplica a todos los elementos interactivos que pueden recibir foco */
 :focus-visible {
-  outline: none; /* Elimina el outline por defecto del navegador */
-  /* Usa un box-shadow para un anillo de foco más atractivo y visible */
+  outline: none;
   box-shadow: 0 0 0 3px var(--info-dark), 0 0 0 6px var(--primary-color);
   transition: box-shadow 0.2s ease-in-out;
 }
 
-/* Asegura que los elementos específicos también tengan este estilo de foco */
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
@@ -1053,11 +976,10 @@ a:focus-visible,
 .completion-checkbox:focus-visible,
 .mit-checkbox:focus-visible,
 .habit-day-dot:focus-visible {
-  outline: none; /* Redundante pero seguro */
+  outline: none;
   box-shadow: 0 0 0 3px var(--info-dark), 0 0 0 6px var(--primary-color);
 }
 
-/* Estilos para edición de texto del checklist */
 .item-text[contenteditable="true"] {
     background-color: var(--white);
     border: 1px solid var(--primary-color);
@@ -1067,7 +989,6 @@ a:focus-visible,
     box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
-/* Estilos para Drag & Drop */
 .dragging {
     opacity: 0.5;
     border: 2px dashed var(--primary-color);
@@ -1075,11 +996,46 @@ a:focus-visible,
 }
 
 .drag-over {
-    border-top: 2px solid var(--secondary-color); /* Indicador visual para dónde se soltará */
+    border-top: 2px solid var(--secondary-color);
 }
 
-/* Asegura que el texto tachado solo afecte al span y no al checkbox */
 .task-completed {
     text-decoration: line-through;
     color: var(--text-medium);
 }
+
+#trello-board-link-header {
+    cursor: pointer;
+    transition: color 0.2s ease-in-out;
+}
+#trello-board-link-header:hover {
+    color: var(--secondary-color);
+}
+
+.edit-item-btn {
+    background-color: var(--warning-light);
+    color: var(--warning-dark);
+    border: none;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 5px;
+    font-size: 0.9em;
+}
+
+/* NUEVOS ESTILOS PARA CALENDARIO */
+.calendar-event {
+    background-color: var(--light-bg);
+    border-left: 4px solid var(--secondary-color);
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+.event-time {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.event-summary {
+    margin-top: 5px;
+}
+
