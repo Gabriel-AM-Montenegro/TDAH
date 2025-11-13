@@ -46,13 +46,132 @@ const firebaseConfig = {
 // =================================================================================
 // NUEVO: Configuración de la API de Google Calendar
 // =================================================================================
-// PEGA AQUÍ EL ID DE CLIENTE QUE CREASTE EN EL PASO 1
-const GOOGLE_CLIENT_ID = "765424031369-ce5bpg3ibdagnidokv4a6m5b2rdo7m67.apps.googleusercontent.com";
 const CALENDAR_API_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+let calendarAccessToken = null;
+const CALENDAR_TOKEN_STORAGE_KEY = 'calendarAccessToken';
 
-let tokenClient;
-//
 
+
+// Inicializa el cliente de Google Identity Services
+
+
+function updateCalendarConnectionStatus(connected) {
+    const status = document.getElementById('calendar-connection-status');
+    const connectBtn = document.getElementById('connect-calendar-btn');
+    const disconnectBtn = document.getElementById('disconnect-calendar-btn');
+    const eventsList = document.getElementById('calendar-events-list');
+    if (connected) {
+        status.textContent = 'Estado: Conectado a Google Calendar.';
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'inline-block';
+        eventsList.style.display = 'block';
+    } else {
+        status.textContent = 'Estado: No conectado.';
+        connectBtn.style.display = 'inline-block';
+        disconnectBtn.style.display = 'none';
+        eventsList.style.display = 'none';
+    }
+}
+
+
+function handleDisconnectCalendar() {
+    console.log('[Calendar] Disconnecting from Google Calendar...');
+    calendarAccessToken = null;
+    localStorage.removeItem(CALENDAR_TOKEN_STORAGE_KEY);
+    updateCalendarConnectionStatus(false);
+    const eventsList = document.getElementById('calendar-events-list');
+    if (eventsList) {
+        eventsList.innerHTML = '';
+    }
+    window.showTempMessage('Desconectado de Google Calendar.', 'info');
+}
+
+async function loadCalendarEvents() {
+    console.log('[Calendar] Loading events. calendarAccessToken exists:', !!calendarAccessToken);
+    const eventsList = document.getElementById('calendar-events-list');
+    if (!eventsList) return;
+
+    if (!calendarAccessToken) {
+        eventsList.innerHTML = '<li>Primero conecta Google Calendar iniciando sesión con Google.</li>';
+        return;
+    }
+
+    eventsList.innerHTML = '<li>Cargando eventos...</li>';
+
+    try {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+
+        const timeMin = now.toISOString();
+        const timeMax = new Date(
+            tomorrow.getFullYear(),
+            tomorrow.getMonth(),
+            tomorrow.getDate() + 1
+        ).toISOString();
+
+        const params = new URLSearchParams({
+            timeMin,
+            timeMax,
+            singleEvents: 'true',
+            showDeleted: 'false',
+            orderBy: 'startTime',
+            maxResults: '10'
+        });
+
+        const response = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${calendarAccessToken}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            console.error('[Calendar] Error response:', await response.text());
+            if (response.status === 401 || response.status === 403) {
+                window.showTempMessage(
+                    'El acceso a Calendar expiró o no es válido. Vuelve a iniciar sesión con Google.',
+                    'warning'
+                );
+                updateCalendarConnectionStatus(false);
+            }
+            eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+            return;
+        }
+
+        const data = await response.json();
+        const events = data.items || [];
+        console.log('[Calendar] Events received:', events);
+
+        if (!events.length) {
+            eventsList.innerHTML = '<li>No hay eventos para hoy o mañana.</li>';
+            return;
+        }
+
+        eventsList.innerHTML = '';
+        events.forEach(event => {
+            const li = document.createElement('li');
+            li.className = 'calendar-event';
+            const start = event.start.dateTime || event.start.date;
+            const dateObj = new Date(start);
+            const timeStr = dateObj.toLocaleString('es-ES', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+            li.innerHTML = `
+                <span class="event-time">${timeStr}</span>
+                <span class="event-summary">${event.summary || '(Sin título)'}</span>
+            `;
+            eventsList.appendChild(li);
+        });
+    } catch (err) {
+        console.error('[Calendar] Error loading events:', err);
+        eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+        window.showTempMessage('Error al cargar eventos de Google Calendar.', 'error');
+    }
+}
 const appId = firebaseConfig.appId; 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -492,6 +611,7 @@ async function loadAllUserData(currentUserId) {
                 if (await window.showCustomConfirm('¿Eliminar esta tarea?')) await deleteDoc(itemRef);
             }
             if (target.classList.contains('edit-item-btn')) {
+                e.stopPropagation(); // <-- CORRECCIÓN CLAVE
                 const itemTextSpan = listItem.querySelector('.item-text');
                 if (itemTextSpan) {
                     originalText = itemTextSpan.textContent;
@@ -856,96 +976,6 @@ async function loadAllUserData(currentUserId) {
             unsubscribeListeners.push(unsubscribe);
         }
     })();
-    // =================================================================================
-// GOOGLE CALENDAR API LOGIC
-// =================================================================================
-function initializeGapiClient() {
-    gapi.client.init({
-        apiKey: firebaseConfig.apiKey,
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-    }).then(() => {
-        console.log("GAPI client initialized.");
-    }).catch(error => {
-        console.error("Error initializing GAPI client:", error);
-    });
-}
-
-function initializeGsiClient() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: CALENDAR_API_SCOPE,
-        callback: async (resp) => {
-            if (resp.error) {
-                throw resp;
-            }
-            console.log("Token de calendario obtenido.");
-            await listUpcomingEvents();
-        },
-    });
-}
-
-async function listUpcomingEvents() {
-    const calendarStatusDiv = document.getElementById('calendar-status');
-    const calendarEventsList = document.getElementById('calendar-events-list');
-    const disconnectBtn = document.getElementById('disconnect-calendar-btn');
-    const statusText = document.getElementById('calendar-connection-status');
-
-    calendarEventsList.innerHTML = '<li>Cargando eventos...</li>';
-    calendarStatusDiv.style.display = 'none';
-    calendarEventsList.style.display = 'block';
-    disconnectBtn.style.display = 'inline-block';
-    statusText.textContent = 'Estado: Conectado.';
-
-    try {
-        const timeMin = new Date().toISOString();
-        const timeMax = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(); // Hoy y mañana
-
-        const request = {
-            'calendarId': 'primary',
-            'timeMin': timeMin,
-            'timeMax': timeMax,
-            'showDeleted': false,
-            'singleEvents': true,
-            'maxResults': 10,
-            'orderBy': 'startTime',
-        };
-        
-        const response = await gapi.client.calendar.events.list(request);
-        const events = response.result.items;
-
-        if (events && events.length > 0) {
-            calendarEventsList.innerHTML = events.map(event => {
-                const start = event.start.dateTime || event.start.date;
-                const end = event.end.dateTime || event.end.date;
-                const startTime = new Date(start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                const endTime = new Date(end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                return `<li class="calendar-event">
-                            <div class="event-time">${startTime} - ${endTime}</div>
-                            <div class="event-summary">${event.summary}</div>
-                        </li>`;
-            }).join('');
-        } else {
-            calendarEventsList.innerHTML = '<li class="empty-section-message">¡No tienes eventos próximos! Disfruta de tu tiempo.</li>';
-        }
-    } catch (err) {
-        console.error("Error al obtener eventos del calendario:", err);
-        calendarEventsList.innerHTML = '<li class="empty-section-message">Error al cargar los eventos.</li>';
-    }
-}
-
-function handleDisconnectCalendar() {
-    const token = gapi.client.getToken();
-    if (token) {
-        google.accounts.oauth2.revoke(token.access_token, () => {
-            gapi.client.setToken('');
-            document.getElementById('calendar-status').style.display = 'block';
-            document.getElementById('calendar-events-list').style.display = 'none';
-            document.getElementById('disconnect-calendar-btn').style.display = 'none';
-            document.getElementById('calendar-connection-status').textContent = 'Estado: No conectado.';
-            window.showTempMessage('Calendario desconectado.', 'info');
-        });
-    }
-}
 }
 
 // =================================================================================
@@ -953,6 +983,7 @@ function handleDisconnectCalendar() {
 // =================================================================================
 if (auth) {
     onAuthStateChanged(auth, async (user) => {
+        console.log('[Auth] onAuthStateChanged fired. user =', user);
         const userDisplayNameElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
         const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
@@ -960,102 +991,161 @@ if (auth) {
         const userInfoArea = document.getElementById('user-info-area');
 
         if (user) {
-            if (userDisplayNameElement) userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+            if (userDisplayNameElement) {
+                userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
+            }
             if (userIdDisplay) userIdDisplay.textContent = `ID: ${user.uid}`;
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
             if (logoutBtn) logoutBtn.style.display = 'inline-block';
             if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
-            
+
+            // 🔹 Recuperar token de Calendar (si existe)
+            const storedToken = localStorage.getItem(CALENDAR_TOKEN_STORAGE_KEY);
+            if (storedToken) {
+                calendarAccessToken = storedToken;
+                updateCalendarConnectionStatus(true);
+            } else {
+                updateCalendarConnectionStatus(false);
+            }
+
             if (!isLoggingOut) {
                 await loadAllUserData(user.uid);
             }
             isLoggingOut = false;
         } else {
+            // 🔹 Resetear UI de usuario
             if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
             if (userIdDisplay) userIdDisplay.textContent = '';
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
-            
+
+            // 🔹 Limpiar listeners y datos visibles
             cleanupFirestoreListeners();
             document.getElementById('journalEntriesList').innerHTML = '';
             document.getElementById('checkList').innerHTML = '';
             document.getElementById('habitsList').innerHTML = '';
+
+            // 🔹 Resetear estado de Calendar
+            calendarAccessToken = null;
+            localStorage.removeItem(CALENDAR_TOKEN_STORAGE_KEY);
+            updateCalendarConnectionStatus(false);
 
             if (!isLoggingOut) {
                 try {
                     if (initialAuthToken) {
                         await signInWithCustomToken(auth, initialAuthToken);
                     }
-                } catch (error) { console.error("Error de inicio de sesión con token:", error); }
+                } catch (error) {
+                    console.error("Error de inicio de sesión con token:", error);
+                }
             }
         }
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (auth) {
-        window.mostrarSeccion('pomodoro');
+    if (!auth) return;
 
-        document.getElementById('google-signin-btn').onclick = async () => {
-            try { 
-                const provider = new GoogleAuthProvider();
-                provider.setCustomParameters({ prompt: 'select_account' });
-                await signInWithPopup(auth, provider); 
-            } 
-            catch (error) { 
-                console.error("Error de inicio de sesión con Google:", error);
-                window.showTempMessage(`Error con Google: ${error.message}`, 'error');
-            }
-        };
-        document.getElementById('anonymous-signin-btn').onclick = async () => {
-            try { await signInAnonymously(auth); } 
-            catch (error) { 
+    window.mostrarSeccion('pomodoro');
+
+    // 🔹 Login con Google (Firebase + Calendar scope)
+ document.getElementById('google-signin-btn').onclick = async () => {
+    try { 
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        console.log('[Auth] Iniciando signInWithPopup...');
+        const result = await signInWithPopup(auth, provider);
+        console.log('[Auth] signInWithPopup result =', result);
+
+    } catch (error) { 
+        console.error("Error de inicio de sesión con Google:", error);
+
+        // Este error aparece cuando el popup se cierra antes de tiempo
+        // o cuando el navegador no deja leer window.closed.
+        if (error.code === 'auth/popup-closed-by-user') {
+            console.log('[Auth] El popup se cerró antes de completar el login (o el navegador bloqueó window.closed).');
+            return;
+        }
+
+        window.showTempMessage(`Error con Google: ${error.message}`, 'error');
+    }
+};
+
+    // 🔹 Login anónimo
+    const anonymousBtn = document.getElementById('anonymous-signin-btn');
+    if (anonymousBtn) {
+        anonymousBtn.onclick = async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
                 console.error("Error de inicio de sesión anónimo:", error);
                 window.showTempMessage(`Error de sesión anónima: ${error.message}`, 'error');
             }
         };
-        document.getElementById('email-signin-toggle-btn').onclick = () => {
+    }
+
+    // 🔹 Email (todavía no implementado)
+    const emailToggleBtn = document.getElementById('email-signin-toggle-btn');
+    if (emailToggleBtn) {
+        emailToggleBtn.onclick = () => {
             window.showTempMessage('Inicio de sesión con Email no implementado aún.', 'info');
         };
-        document.getElementById('logout-btn').onclick = async () => {
+    }
+
+    // 🔹 Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = async () => {
             if (await window.showCustomConfirm("¿Cerrar sesión?")) {
                 isLoggingOut = true;
                 await signOut(auth);
             }
         };
+    }
 
-        document.querySelectorAll('.nav-tabs button').forEach(button => {
-            button.addEventListener('click', () => {
-                const sectionId = button.id.replace('btn-', '');
-                window.mostrarSeccion(sectionId);
-            });
+    // 🔹 Navegación entre secciones
+    document.querySelectorAll('.nav-tabs button').forEach(button => {
+        button.addEventListener('click', () => {
+            const sectionId = button.id.replace('btn-', '');
+            window.mostrarSeccion(sectionId);
         });
+    });
 
-        (async () => {
-            if (!("Notification" in window)) return;
-            if (Notification.permission === 'granted') {
-                notificationPermissionGranted = true;
-            } else if (Notification.permission !== 'denied') {
-                const permission = await Notification.requestPermission();
-                notificationPermissionGranted = permission === 'granted';
-            }
-        })();
-        document.getElementById('btn-calendario').addEventListener('click', () => window.mostrarSeccion('calendario'));
+    // 🔹 Permisos de notificaciones
+    (async () => {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === 'granted') {
+            notificationPermissionGranted = true;
+        } else if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            notificationPermissionGranted = permission === 'granted';
+        }
+    })();
 
-        // Listeners para Google Calendar
-        document.getElementById('connect-calendar-btn').onclick = () => {
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({ prompt: 'consent' });
-            } else {
-                tokenClient.requestAccessToken({ prompt: '' });
+    // 🔹 Integración Calendar: handlers de botones
+    const connectBtn = document.getElementById('connect-calendar-btn');
+    if (connectBtn) {
+        // Si lo dejás deshabilitado en el HTML, lo habilitamos acá:
+        connectBtn.disabled = false;
+
+        connectBtn.onclick = () => {
+            if (!calendarAccessToken) {
+                window.showTempMessage(
+                    'Inicia sesión con Google (arriba) para conectar tu calendario.',
+                    'warning'
+                );
+                return;
             }
+            updateCalendarConnectionStatus(true);
+            loadCalendarEvents();
         };
-        document.getElementById('disconnect-calendar-btn').onclick = handleDisconnectCalendar;
+    }
 
-        // Cargar las librerías de Google
-        gapi.load('client', initializeGapiClient);
-        initializeGsiClient();
+    const disconnectBtn = document.getElementById('disconnect-calendar-btn');
+    if (disconnectBtn) {
+        disconnectBtn.onclick = handleDisconnectCalendar;
     }
 });
 

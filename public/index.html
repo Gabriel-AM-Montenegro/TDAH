@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
-  
-  <!-- Scripts para la API de Google -->
-  <script async defer src="https://apis.google.com/js/api.js"></script>
-  <script async defer src="https://accounts.google.com/gsi/client"></script>
 
 </head>
 <body>
@@ -61,9 +57,9 @@
           <button id="pause-pomodoro-btn">Pausar</button>
           <button id="reset-timer-btn">Reiniciar</button>
         </div>
-        <audio id="sound-complete" src="https://www.soundjay.com/buttons/beep-07.mp3" preload="auto"></audio>
-        <audio id="sound-break" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
-        <audio id="sound-task-done" src="https://www.soundjay.com/buttons/button-20.mp3" preload="auto"></audio>
+        <audio id="sound-complete" src="sounds/beep-07.mp3" preload="auto"></audio>
+        <audio id="sound-break" src="sounds/bell-ringing-05.mp3" preload="auto"></audio>
+        <audio id="sound-task-done" src="sounds/button-20.mp3" preload="auto"></audio>
       </section>
 
       <!-- NUEVO: Sección Calendario -->
@@ -229,7 +225,7 @@
       </div>
       <div class="welcome-tour-navigation">
         <button id="tour-back-btn" class="tour-nav-btn">⬅️ Anterior</button>
-        <div id="tour-dots" class="tour-dots"></div>
+        <div id="tour-dots"></div>
         <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
         <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
       </div>
@@ -240,5 +236,4 @@
 
 </body>
 </html>
-
 

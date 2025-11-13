@@ -386,7 +386,7 @@ li:hover {
   transform: translateX(5px);
 }
 
-li span {
+li span.item-text {
   flex-grow: 1;
   word-break: break-word;
 }
@@ -1004,12 +1004,22 @@ a:focus-visible,
     color: var(--text-medium);
 }
 
-#trello-board-link-header {
-    cursor: pointer;
-    transition: color 0.2s ease-in-out;
+/* NUEVO: Estilos para la sección de calendario */
+.calendar-event {
+    background-color: var(--info-light);
+    border-left: 4px solid var(--info-dark);
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
 }
-#trello-board-link-header:hover {
-    color: var(--secondary-color);
+
+.event-time {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.event-summary {
+    margin-top: 5px;
 }
 
 .edit-item-btn {
@@ -1020,22 +1030,4 @@ a:focus-visible,
     border-radius: 5px;
     cursor: pointer;
     margin-right: 5px;
-    font-size: 0.9em;
 }
-
-/* NUEVOS ESTILOS PARA CALENDARIO */
-.calendar-event {
-    background-color: var(--light-bg);
-    border-left: 4px solid var(--secondary-color);
-    padding: 10px 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-}
-.event-time {
-    font-weight: bold;
-    color: var(--primary-color);
-}
-.event-summary {
-    margin-top: 5px;
-}
-
