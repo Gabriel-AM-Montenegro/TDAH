@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
   <link rel="stylesheet" href="css/styles1.css">
-
 </head>
+
 <body>
   <div id="css-check"></div>
 
@@ -28,8 +29,9 @@
     </header>
 
     <nav class="nav-tabs">
-      <button id="btn-pomodoro" class="active">⏱️ Pomodoro</button>
-      <!-- NUEVO: Botón de Calendario -->
+      <!-- Ahora la idea es que la vista principal sea HOY -->
+      <button id="btn-hoy" class="active">📅 Hoy</button>
+      <button id="btn-pomodoro">⏱️ Pomodoro</button>
       <button id="btn-calendario">🗓️ Calendario</button>
       <button id="btn-checklist">✅ Checklist Rápido</button>
       <button id="btn-journal">📝 Journal</button>
@@ -41,14 +43,57 @@
     </nav>
 
     <main>
+
+      <!-- Sección HOY (US1.1) -->
+      <section id="hoy" class="seccion active">
+        <h2>📅 Hoy</h2>
+        <p class="subtitle">Tus prioridades, foco y agenda del día en una sola vista.</p>
+
+        <div class="card">
+          <h3>Prioridades (MITs) de hoy</h3>
+          <ul id="today-mits" class="list"></ul>
+        </div>
+
+        <div class="card">
+          <h3>Foco (Pomodoro)</h3>
+          <div class="pomodoro-timer-container" style="margin: 20px auto;">
+            <svg class="pomodoro-progress-ring" width="200" height="200">
+              <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
+                cx="100" cy="100" />
+              <circle class="pomodoro-progress-ring-progress-today" stroke="var(--primary-color)" stroke-width="10"
+                fill="transparent" r="90" cx="100" cy="100" />
+            </svg>
+            <p id="pomodoro-timer-today">25:00</p>
+          </div>
+          <div class="pomodoro-buttons">
+            <button id="pomodoro-start-today">Iniciar</button>
+            <button id="pomodoro-pause-today">Pausar</button>
+            <button id="pomodoro-reset-today">Reiniciar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Agenda de hoy</h3>
+          <ul id="today-calendar-events-list" class="list">
+            <!-- Se llena desde main.js usando los eventos del Calendar -->
+          </ul>
+          <p class="muted">
+            Los eventos se sincronizan desde tu Google Calendar.
+            <a href="#" id="go-to-calendar-from-hoy" class="trello-link">Ver calendario completo ↗</a>
+          </p>
+        </div>
+      </section>
+
       <!-- Sección Pomodoro -->
-      <section id="pomodoro" class="seccion active">
+      <section id="pomodoro" class="seccion">
         <h2>⏱️ Temporizador Pomodoro</h2>
         <p class="subtitle">Enfócate en tus tareas con bloques de tiempo definidos.</p>
         <div class="pomodoro-timer-container">
           <svg class="pomodoro-progress-ring" width="200" height="200">
-            <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
-            <circle class="pomodoro-progress-ring-progress" stroke="var(--primary-color)" stroke-width="10" fill="transparent" r="90" cx="100" cy="100"/>
+            <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
+              cx="100" cy="100" />
+            <circle class="pomodoro-progress-ring-progress" stroke="var(--primary-color)" stroke-width="10"
+              fill="transparent" r="90" cx="100" cy="100" />
           </svg>
           <p id="timer">25:00</p>
         </div>
@@ -62,14 +107,15 @@
         <audio id="sound-task-done" src="sounds/button-20.mp3" preload="auto"></audio>
       </section>
 
-      <!-- NUEVO: Sección Calendario -->
+      <!-- Sección Calendario -->
       <section id="calendario" class="seccion">
         <h2>🗓️ Próximos Eventos</h2>
         <p class="subtitle">Tus citas y reuniones de hoy y mañana.</p>
         <div id="calendar-status">
-            <p id="calendar-connection-status">Estado: No conectado.</p>
-            <button id="connect-calendar-btn" class="auth-btn">Conectar con Google Calendar</button>
-            <button id="disconnect-calendar-btn" class="button-danger" style="display: none;">Desconectar Calendario</button>
+          <p id="calendar-connection-status">Estado: No conectado.</p>
+          <button id="connect-calendar-btn" class="auth-btn">Conectar con Google Calendar</button>
+          <button id="disconnect-calendar-btn" class="button-danger" style="display: none;">Desconectar
+            Calendario</button>
         </div>
         <ul id="calendar-events-list" style="display: none;">
           <!-- Los eventos del calendario se cargarán aquí -->
@@ -79,9 +125,12 @@
       <!-- Sección Checklist Rápido -->
       <section id="checklist" class="seccion">
         <h2>✅ Checklist Rápido</h2>
-        <p class="subtitle">La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo es asegurar lo crucial.</p>
+        <p class="subtitle">La clave es no abrumarse. Al inicio de cada día, identifica las <strong>3 tareas más
+            importantes (MITs - Most Important Tasks)</strong>. Si terminas esas, puedes pasar a otras, pero el objetivo
+          es asegurar lo crucial.</p>
         <div class="mit-explanation">
-          <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes añadir más tareas en cualquier momento!</p>
+          <p>Marca hasta 3 tareas como MITs usando la casilla "MIT". Estas se destacarán con un color especial. ¡Puedes
+            añadir más tareas en cualquier momento!</p>
         </div>
         <div class="input-group">
           <input type="text" id="checkItem" placeholder="Nuevo ítem del checklist..." />
@@ -123,7 +172,7 @@
       <section id="tareas" class="seccion">
         <h2>📋 Tareas Trello</h2>
         <p class="subtitle">Visualiza las tareas de tu board de Trello que vencen esta semana.</p>
-        
+
         <h3 id="trello-board-link-header" role="link" tabindex="0">Tareas para esta semana ↗</h3>
         <ul id="listaTareas">
           <li>Cargando tareas de Trello...</li>
@@ -132,7 +181,8 @@
         <div class="config-card">
           <h3>Estado de Conexión</h3>
           <p id="trello-status" class="status-indicator status-disconnected">❌ Trello no conectado</p>
-          <p id="trello-success-message" class="success-message" style="display: none;">Conexión exitosa. ¡Tareas cargadas!</p>
+          <p id="trello-success-message" class="success-message" style="display: none;">Conexión exitosa. ¡Tareas
+            cargadas!</p>
           <button id="test-trello-btn">Probar Conexión</button>
           <button id="config-trello-btn">Configurar Trello</button>
         </div>
@@ -167,23 +217,28 @@
         <div class="config-step">
           <label for="api-key">Trello API Key:</label>
           <input type="text" id="api-key" placeholder="Tu clave API de Trello" />
-          <p class="help-text">Obtén tu API Key <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a>.</p>
+          <p class="help-text">Obtén tu API Key <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a>.
+          </p>
         </div>
         <div class="config-step">
           <label for="token">Trello Token:</label>
           <input type="text" id="token" placeholder="Tu token de Trello" />
-          <p class="help-text">Genera un token <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a> (haz clic en "Token" bajo tu API Key).</p>
+          <p class="help-text">Genera un token <a href="https://trello.com/power-ups/admin" target="_blank">aquí</a>
+            (haz clic en "Token" bajo tu API Key).</p>
         </div>
         <div class="config-step">
           <label for="board-id">Trello Board ID:</label>
           <input type="text" id="board-id" placeholder="ID de tu tablero de Trello" />
-          <p class="help-text">El ID del tablero está en la URL: <code>https://trello.com/b/<span style="font-weight: bold; color: var(--primary-color);">[BOARD_ID]</span>/tu-tablero</code></p>
+          <p class="help-text">El ID del tablero está en la URL:
+            <code>https://trello.com/b/<span style="font-weight: bold; color: var(--primary-color);">[BOARD_ID]</span>/tu-tablero</code>
+          </p>
         </div>
         <button id="save-trello-config-btn">Guardar Configuración de Trello</button>
 
         <h3>Gestión de Datos</h3>
         <button id="clear-data-btn" class="button-danger">Limpiar Todos los Datos</button>
-        <p class="help-text">Esto eliminará todos tus datos (Pomodoro, Checklist, Journal, Trello Config, Hábitos) de forma permanente.</p>
+        <p class="help-text">Esto eliminará todos tus datos (Pomodoro, Checklist, Journal, Trello Config, Hábitos) de
+          forma permanente.</p>
       </section>
     </main>
 
@@ -220,7 +275,8 @@
         <h3 id="tour-title"></h3>
         <p id="tour-description"></p>
         <div class="tour-highlight-image-container">
-          <img id="tour-highlight-image" src="" alt="Highlight Image" class="tour-highlight-image" style="display: none;">
+          <img id="tour-highlight-image" src="" alt="Highlight Image" class="tour-highlight-image"
+            style="display: none;">
         </div>
       </div>
       <div class="welcome-tour-navigation">
@@ -233,7 +289,6 @@
   </div>
 
   <script src="js/main.js" type="module"></script>
-
 </body>
-</html>
 
+</html>

@@ -455,15 +455,25 @@ async function loadAllUserData(currentUserId) {
         const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
         const resetTimerBtn = document.getElementById('reset-timer-btn');
         const progressCircle = document.querySelector('.pomodoro-progress-ring-progress');
+        const progressCircleToday = document.querySelector('.pomodoro-progress-ring-progress-today');
         if (!timerDisplay || !progressCircle || !startTimerBtn || !pausePomodoroBtn || !resetTimerBtn) return;
 
         const radius = progressCircle.r.baseVal.value;
         const circumference = radius * 2 * Math.PI;
         progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
 
+        // Inicializar también el círculo de la sección Hoy
+        if (progressCircleToday) {
+            progressCircleToday.style.strokeDasharray = `${circumference} ${circumference}`;
+        }
+
         const setProgress = (percent) => {
             const offset = circumference - (percent / 100) * circumference;
             progressCircle.style.strokeDashoffset = offset;
+            // Actualizar también el círculo de la sección Hoy
+            if (progressCircleToday) {
+                progressCircleToday.style.strokeDashoffset = offset;
+            }
         };
 
         const updateTimerDisplay = () => {
@@ -473,7 +483,12 @@ async function loadAllUserData(currentUserId) {
             timerDisplay.textContent = formatted;
             if (todayTimerDisplay) todayTimerDisplay.textContent = formatted;
             setProgress((timeLeft / totalTimeForPomodoro) * 100);
-            progressCircle.style.stroke = isBreakTime ? 'var(--secondary-color)' : 'var(--primary-color)';
+            const strokeColor = isBreakTime ? 'var(--secondary-color)' : 'var(--primary-color)';
+            progressCircle.style.stroke = strokeColor;
+            // Actualizar también el color del círculo de la sección Hoy
+            if (progressCircleToday) {
+                progressCircleToday.style.stroke = strokeColor;
+            }
         };
 
         const savePomodoroState = async (newTime, newRunning, newBreak) => {
