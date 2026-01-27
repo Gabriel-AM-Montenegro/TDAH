@@ -2,31 +2,30 @@
 // FIREBASE V11 MODULAR IMPORTS
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signInAnonymously, 
-    onAuthStateChanged, 
-    signOut, 
-    signInWithCustomToken 
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInAnonymously,
+    onAuthStateChanged,
+    signOut,
+    signInWithCustomToken
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { 
-    getFirestore, 
-    collection, 
-    doc, 
-    onSnapshot, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    orderBy, 
-    limit, 
-    getDocs, 
-    writeBatch, 
-    getDoc, 
-    setDoc, 
-    where 
+import {
+    getFirestore,
+    collection,
+    doc,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    orderBy,
+    limit,
+    getDocs,
+    writeBatch,
+    getDoc,
+    setDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // =================================================================================
@@ -34,13 +33,13 @@ import {
 // =================================================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
-  authDomain: "tdah-app-efca9.firebaseapp.com",
-  projectId: "tdah-app-efca9",
-  storageBucket: "tdah-app-efca9.appspot.com",
-  messagingSenderId: "765424831369",
-  appId: "1:765424031369:web:838eca86f68f21daa5858",
-  measurementId: "G-QY7X98XZZY"
+    apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
+    authDomain: "tdah-app-efca9.firebaseapp.com",
+    projectId: "tdah-app-efca9",
+    storageBucket: "tdah-app-efca9.appspot.com",
+    messagingSenderId: "765424831369",
+    appId: "1:765424031369:web:838eca86f68f21daa5858",
+    measurementId: "G-QY7X98XZZY"
 };
 
 // =================================================================================
@@ -50,16 +49,13 @@ const CALENDAR_API_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 let calendarAccessToken = null;
 const CALENDAR_TOKEN_STORAGE_KEY = 'calendarAccessToken';
 
-
-
-// Inicializa el cliente de Google Identity Services
-
-
 function updateCalendarConnectionStatus(connected) {
     const status = document.getElementById('calendar-connection-status');
     const connectBtn = document.getElementById('connect-calendar-btn');
     const disconnectBtn = document.getElementById('disconnect-calendar-btn');
     const eventsList = document.getElementById('calendar-events-list');
+    if (!status || !connectBtn || !disconnectBtn || !eventsList) return;
+
     if (connected) {
         status.textContent = 'Estado: Conectado a Google Calendar.';
         connectBtn.style.display = 'none';
@@ -73,30 +69,35 @@ function updateCalendarConnectionStatus(connected) {
     }
 }
 
-
 function handleDisconnectCalendar() {
     console.log('[Calendar] Disconnecting from Google Calendar...');
     calendarAccessToken = null;
     localStorage.removeItem(CALENDAR_TOKEN_STORAGE_KEY);
     updateCalendarConnectionStatus(false);
     const eventsList = document.getElementById('calendar-events-list');
-    if (eventsList) {
-        eventsList.innerHTML = '';
-    }
+    const todayEventsList = document.getElementById('today-calendar-events-list');
+    if (eventsList) eventsList.innerHTML = '';
+    if (todayEventsList) todayEventsList.innerHTML = '';
     window.showTempMessage('Desconectado de Google Calendar.', 'info');
 }
 
 async function loadCalendarEvents() {
     console.log('[Calendar] Loading events. calendarAccessToken exists:', !!calendarAccessToken);
     const eventsList = document.getElementById('calendar-events-list');
+    const todayEventsList = document.getElementById('today-calendar-events-list');
+
     if (!eventsList) return;
 
     if (!calendarAccessToken) {
-        eventsList.innerHTML = '<li>Primero conecta Google Calendar iniciando sesión con Google.</li>';
+        eventsList.innerHTML = '<li>Para ver tu calendario, haz clic en "Iniciar con Google" en la parte superior de la página.</li>';
+        if (todayEventsList) {
+            todayEventsList.innerHTML = '<li>Conecta Google Calendar primero.</li>';
+        }
         return;
     }
 
     eventsList.innerHTML = '<li>Cargando eventos...</li>';
+    if (todayEventsList) todayEventsList.innerHTML = '<li>Cargando eventos de hoy...</li>';
 
     try {
         const now = new Date();
@@ -138,6 +139,7 @@ async function loadCalendarEvents() {
                 updateCalendarConnectionStatus(false);
             }
             eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+            if (todayEventsList) todayEventsList.innerHTML = '<li>Error al cargar eventos de hoy.</li>';
             return;
         }
 
@@ -145,12 +147,23 @@ async function loadCalendarEvents() {
         const events = data.items || [];
         console.log('[Calendar] Events received:', events);
 
+        const today = new Date();
+        const isSameDay = (d1, d2) =>
+            d1.getFullYear() === d2.getFullYear() &&
+            d1.getMonth() === d2.getMonth() &&
+            d1.getDate() === d2.getDate();
+
         if (!events.length) {
             eventsList.innerHTML = '<li>No hay eventos para hoy o mañana.</li>';
+            if (todayEventsList) todayEventsList.innerHTML = '<li>No hay eventos para hoy.</li>';
             return;
         }
 
         eventsList.innerHTML = '';
+        if (todayEventsList) todayEventsList.innerHTML = '';
+
+        let todayCount = 0;
+
         events.forEach(event => {
             const li = document.createElement('li');
             li.className = 'calendar-event';
@@ -165,14 +178,39 @@ async function loadCalendarEvents() {
                 <span class="event-summary">${event.summary || '(Sin título)'}</span>
             `;
             eventsList.appendChild(li);
+
+            // También pintar lista de eventos SOLO de hoy para la vista HOY
+            if (todayEventsList && isSameDay(dateObj, today)) {
+                const liToday = document.createElement('li');
+                liToday.className = 'calendar-event';
+                const hourStr = dateObj.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                liToday.innerHTML = `
+                    <span class="event-time">${hourStr}</span>
+                    <span class="event-summary">${event.summary || '(Sin título)'}</span>
+                `;
+                todayEventsList.appendChild(liToday);
+                todayCount++;
+            }
         });
+
+        if (todayEventsList && todayCount === 0) {
+            todayEventsList.innerHTML = '<li>No hay eventos para hoy.</li>';
+        }
+
     } catch (err) {
         console.error('[Calendar] Error loading events:', err);
         eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+        if (todayEventsList) {
+            todayEventsList.innerHTML = '<li>Error al cargar eventos de hoy.</li>';
+        }
         window.showTempMessage('Error al cargar eventos de Google Calendar.', 'error');
     }
 }
-const appId = firebaseConfig.appId; 
+
+const appId = firebaseConfig.appId;
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 let app;
@@ -336,7 +374,7 @@ async function loadAllUserData(currentUserId) {
                 dot.setAttribute('tabindex', '0');
                 dot.setAttribute('role', 'button');
                 dot.onclick = () => { currentTourStep = index; renderTourStep(); };
-                dot.onkeydown = (e) => { if(e.key === 'Enter') { currentTourStep = index; renderTourStep(); }};
+                dot.onkeydown = (e) => { if (e.key === 'Enter') { currentTourStep = index; renderTourStep(); } };
                 tourDotsContainer.appendChild(dot);
             });
         };
@@ -346,7 +384,7 @@ async function loadAllUserData(currentUserId) {
                 dot.classList.toggle('active', index === currentTourStep);
             });
         };
-        
+
         const completeTour = async () => {
             try {
                 await setDoc(userSettingsRef, { tourCompleted: true }, { merge: true });
@@ -412,6 +450,7 @@ async function loadAllUserData(currentUserId) {
         let totalTimeForPomodoro = 25 * 60;
         let isBreakTime = false;
         const timerDisplay = document.getElementById('timer');
+        const todayTimerDisplay = document.getElementById('pomodoro-timer-today');
         const startTimerBtn = document.getElementById('start-timer-btn');
         const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
         const resetTimerBtn = document.getElementById('reset-timer-btn');
@@ -421,7 +460,7 @@ async function loadAllUserData(currentUserId) {
         const radius = progressCircle.r.baseVal.value;
         const circumference = radius * 2 * Math.PI;
         progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-        
+
         const setProgress = (percent) => {
             const offset = circumference - (percent / 100) * circumference;
             progressCircle.style.strokeDashoffset = offset;
@@ -430,11 +469,13 @@ async function loadAllUserData(currentUserId) {
         const updateTimerDisplay = () => {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = Math.floor(timeLeft % 60);
-            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timerDisplay.textContent = formatted;
+            if (todayTimerDisplay) todayTimerDisplay.textContent = formatted;
             setProgress((timeLeft / totalTimeForPomodoro) * 100);
             progressCircle.style.stroke = isBreakTime ? 'var(--secondary-color)' : 'var(--primary-color)';
         };
-        
+
         const savePomodoroState = async (newTime, newRunning, newBreak) => {
             try {
                 await setDoc(pomodoroSettingsDocRef, {
@@ -445,17 +486,17 @@ async function loadAllUserData(currentUserId) {
                 });
             } catch (error) { console.error("Pomodoro: Error al guardar estado:", error); }
         };
-        
+
         const handleTimerEnd = async () => {
             clearInterval(timer);
             isRunning = false;
             await savePomodoroState(0, false, isBreakTime);
-            
+
             if (!isBreakTime) {
                 window.triggerConfetti();
                 document.getElementById('sound-complete').play().catch(e => console.error(e));
                 if (notificationPermissionGranted) new Notification('¡Pomodoro Terminado!', { body: '¡Excelente trabajo! Es hora de un descanso.' });
-                
+
                 setTimeout(async () => {
                     if (await window.showCustomConfirm('¡Excelente trabajo! ¿Comenzar descanso de 5 minutos?')) {
                         isBreakTime = true;
@@ -530,19 +571,19 @@ async function loadAllUserData(currentUserId) {
             }
         }, error => console.error("Pomodoro: Error al escuchar:", error));
         unsubscribeListeners.push(unsubscribe);
-        
+
         startTimerBtn.onclick = startTimer;
         pausePomodoroBtn.onclick = pauseTimer;
         resetTimerBtn.onclick = resetTimer;
     })();
 
-    // --- Checklist Logic ---
+    // --- Checklist Logic (también alimenta MITs de HOY) ---
     (() => {
         const checkItemInput = document.getElementById('checkItem');
         const addCheckItemBtn = document.getElementById('add-check-item-btn');
         const checkListUl = document.getElementById('checkList');
         if (!checkItemInput || !addCheckItemBtn || !checkListUl) return;
-        
+
         let originalText = '';
         let draggedItem = null;
 
@@ -552,13 +593,26 @@ async function loadAllUserData(currentUserId) {
             const focusedElementIsEditing = document.activeElement?.classList.contains('editing');
 
             checkListUl.innerHTML = '';
+            const mitItems = [];
+
             if (snapshot.empty) {
                 checkListUl.innerHTML = '<li class="empty-section-message">No hay ítems en el checklist.</li>';
+                const todayMits = document.getElementById('today-mits');
+                if (todayMits) {
+                    todayMits.innerHTML = '<li class="muted">No definiste MITs para hoy todavía.</li>';
+                }
                 return;
             }
+
             snapshot.forEach(docSnap => {
                 const item = docSnap.data();
                 const itemId = docSnap.id;
+
+                // recopilar MITs no completadas para la vista HOY
+                if (item.isMIT && !item.completed) {
+                    mitItems.push({ id: itemId, text: item.text });
+                }
+
                 const li = document.createElement('li');
                 li.dataset.id = itemId;
                 li.className = item.isMIT ? 'mit-task' : '';
@@ -575,13 +629,33 @@ async function loadAllUserData(currentUserId) {
                     <button class="button-danger delete-item-btn" data-id="${itemId}">❌</button>`;
                 checkListUl.appendChild(li);
             });
-            
+
             if (focusedElementId && focusedElementIsEditing) {
                 const newFocusedElement = checkListUl.querySelector(`[data-id="${focusedElementId}"] .item-text`);
                 if (newFocusedElement) {
                     newFocusedElement.focus();
                     newFocusedElement.classList.add('editing');
                     newFocusedElement.contentEditable = 'true';
+                }
+            }
+
+            // Actualizar MITs en la sección HOY (máx 3)
+            const todayMits = document.getElementById('today-mits');
+            if (todayMits) {
+                if (!mitItems.length) {
+                    todayMits.innerHTML = '<li class="muted">No definiste MITs para hoy todavía.</li>';
+                } else {
+                    todayMits.innerHTML = '';
+                    mitItems.slice(0, 3).forEach(it => {
+                        const li = document.createElement('li');
+                        li.className = 'mit-item';
+                        li.innerHTML = `
+                            <label>
+                              <input type="checkbox" class="completion-checkbox" data-id="${it.id}" />
+                              <span>${it.text || '(Sin título)'}</span>
+                            </label>`;
+                        todayMits.appendChild(li);
+                    });
                 }
             }
 
@@ -611,7 +685,7 @@ async function loadAllUserData(currentUserId) {
                 if (await window.showCustomConfirm('¿Eliminar esta tarea?')) await deleteDoc(itemRef);
             }
             if (target.classList.contains('edit-item-btn')) {
-                e.stopPropagation(); // <-- CORRECCIÓN CLAVE
+                e.stopPropagation();
                 const itemTextSpan = listItem.querySelector('.item-text');
                 if (itemTextSpan) {
                     originalText = itemTextSpan.textContent;
@@ -621,7 +695,7 @@ async function loadAllUserData(currentUserId) {
                 }
             }
         });
-        
+
         checkListUl.addEventListener('change', async (e) => {
             const target = e.target;
             const listItem = target.closest('li');
@@ -630,11 +704,12 @@ async function loadAllUserData(currentUserId) {
             const itemRef = doc(checklistCollectionRef, itemId);
             if (target.classList.contains('completion-checkbox')) {
                 await updateDoc(itemRef, { completed: target.checked });
-                if(target.checked) document.getElementById('sound-task-done').play().catch(err=>console.error(err));
+                if (target.checked) document.getElementById('sound-task-done').play().catch(err => console.error(err));
             } else if (target.classList.contains('mit-checkbox')) {
-                const mitQuery = query(checklistCollectionRef, where('isMIT', '==', true));
-                const mitSnapshot = await getDocs(mitQuery);
-                if (target.checked && mitSnapshot.size >= 3) {
+                // limitar a 3 MITs
+                const snapshot = await getDocs(query(checklistCollectionRef));
+                const currentMits = snapshot.docs.filter(d => d.data().isMIT).length;
+                if (target.checked && currentMits >= 3) {
                     window.showTempMessage('Solo puedes tener 3 MITs a la vez.', 'warning');
                     target.checked = false;
                     return;
@@ -642,7 +717,7 @@ async function loadAllUserData(currentUserId) {
                 await updateDoc(itemRef, { isMIT: target.checked });
             }
         });
-        
+
         checkListUl.addEventListener('blur', async (e) => {
             const target = e.target;
             if (target.classList.contains('item-text') && target.contentEditable === 'true') {
@@ -671,24 +746,24 @@ async function loadAllUserData(currentUserId) {
                 else if (e.key === 'Escape') { e.target.textContent = originalText; e.target.blur(); }
             }
         });
-        
+
         const updateItemPositions = async () => {
             const batch = writeBatch(db);
             Array.from(checkListUl.children).forEach((item, index) => {
                 const itemId = item.dataset.id;
-                if(itemId) batch.update(doc(checklistCollectionRef, itemId), { position: index });
+                if (itemId) batch.update(doc(checklistCollectionRef, itemId), { position: index });
             });
             await batch.commit();
         };
 
         checkListUl.addEventListener('dragstart', (e) => {
-            if(e.target.tagName === 'LI') {
+            if (e.target.tagName === 'LI') {
                 draggedItem = e.target;
                 setTimeout(() => e.target.classList.add('dragging'), 0);
             }
         });
         checkListUl.addEventListener('dragend', () => {
-            if(draggedItem) {
+            if (draggedItem) {
                 draggedItem.classList.remove('dragging');
                 draggedItem = null;
                 updateItemPositions();
@@ -725,12 +800,12 @@ async function loadAllUserData(currentUserId) {
         const newHabitInput = document.getElementById('newHabitInput');
         const addHabitBtn = document.getElementById('add-habit-btn');
         const habitsList = document.getElementById('habitsList');
-        if(!newHabitInput || !addHabitBtn || !habitsList) return;
+        if (!newHabitInput || !addHabitBtn || !habitsList) return;
 
         const q = query(habitsCollectionRef, orderBy('timestamp', 'asc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             habitsList.innerHTML = '';
-            if(snapshot.empty) {
+            if (snapshot.empty) {
                 habitsList.innerHTML = '<li class="empty-section-message">Aún no tienes hábitos.</li>';
                 return;
             }
@@ -755,7 +830,7 @@ async function loadAllUserData(currentUserId) {
 
         addHabitBtn.onclick = async () => {
             const habitName = newHabitInput.value.trim();
-            if(habitName) {
+            if (habitName) {
                 try {
                     await addDoc(habitsCollectionRef, { name: habitName, timestamp: new Date().toISOString(), dailyCompletions: {} });
                     newHabitInput.value = '';
@@ -765,20 +840,20 @@ async function loadAllUserData(currentUserId) {
 
         habitsList.addEventListener('click', async (e) => {
             const target = e.target;
-            if(target.classList.contains('habit-day-dot')) {
+            if (target.classList.contains('habit-day-dot')) {
                 const { habitId, date } = target.dataset;
                 const habitRef = doc(habitsCollectionRef, habitId);
                 try {
                     const docSnap = await getDoc(habitRef);
-                    if(docSnap.exists()) {
+                    if (docSnap.exists()) {
                         const completions = docSnap.data().dailyCompletions || {};
-                        const newCompletions = {...completions, [date]: !completions[date]};
+                        const newCompletions = { ...completions, [date]: !completions[date] };
                         await updateDoc(habitRef, { dailyCompletions: newCompletions });
                     }
                 } catch (error) { console.error("Hábitos: Error al actualizar:", error); }
             } else if (target.classList.contains('button-danger')) {
                 const habitId = target.dataset.id;
-                if(await window.showCustomConfirm('¿Eliminar este hábito?')) {
+                if (await window.showCustomConfirm('¿Eliminar este hábito?')) {
                     await deleteDoc(doc(habitsCollectionRef, habitId));
                 }
             }
@@ -799,7 +874,7 @@ async function loadAllUserData(currentUserId) {
         const trelloBoardLinkHeader = document.getElementById('trello-board-link-header');
 
         if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl || !trelloBoardLinkHeader) return;
-        
+
         let boardUrl = '';
 
         const cargarTareasTrello = async () => {
@@ -830,7 +905,7 @@ async function loadAllUserData(currentUserId) {
                 friday.setHours(23, 59, 59, 999);
 
                 const filteredCards = allCards.filter(card => card.due && !card.dueComplete && new Date(card.due) >= monday && new Date(card.due) <= friday);
-                
+
                 if (filteredCards.length > 0) {
                     listaTareasUl.innerHTML = filteredCards.map(card => `<li>${card.name} (Vence: ${new Date(card.due).toLocaleDateString()})</li>`).join('');
                 } else {
@@ -890,7 +965,7 @@ async function loadAllUserData(currentUserId) {
                 window.showTempMessage('Por favor, completa todos los campos.', 'warning');
             }
         };
-        
+
         testTrelloBtn.onclick = probarConexionTrello;
         configTrelloBtn.onclick = () => window.mostrarSeccion('config');
         trelloBoardLinkHeader.onclick = () => {
@@ -901,13 +976,13 @@ async function loadAllUserData(currentUserId) {
             }
         };
     })();
-    
+
     // --- Blog & Nutrition Logic ---
     const createContentLoader = (collectionRef, contentDivId, refreshBtnId) => {
         const contentDiv = document.getElementById(contentDivId);
         const refreshBtn = document.getElementById(refreshBtnId);
-        if(!contentDiv || !refreshBtn) return;
-        
+        if (!contentDiv || !refreshBtn) return;
+
         const loadContent = async () => {
             contentDiv.innerHTML = '<p>Cargando...</p>';
             try {
@@ -941,14 +1016,14 @@ async function loadAllUserData(currentUserId) {
     // --- Clear Data Logic ---
     (() => {
         const clearDataBtn = document.getElementById('clear-data-btn');
-        if(!clearDataBtn) return;
+        if (!clearDataBtn) return;
         clearDataBtn.onclick = async () => {
-            if(await window.showCustomConfirm('¿Estás seguro? Se borrarán TODOS tus datos de esta app.')) {
+            if (await window.showCustomConfirm('¿Estás seguro? Se borrarán TODOS tus datos de esta app.')) {
                 const batch = writeBatch(db);
                 const collectionsToClear = [journalCollectionRef, checklistCollectionRef, habitsCollectionRef];
                 const docsToClear = [pomodoroSettingsDocRef, trelloConfigDocRef, userSettingsRef];
                 try {
-                    for(const collRef of collectionsToClear) {
+                    for (const collRef of collectionsToClear) {
                         const snapshot = await getDocs(collRef);
                         snapshot.forEach(doc => batch.delete(doc.ref));
                     }
@@ -956,13 +1031,13 @@ async function loadAllUserData(currentUserId) {
                     await batch.commit();
                     window.showTempMessage('Datos limpiados. La página se recargará.', 'info');
                     setTimeout(() => location.reload(), 2000);
-                } catch(error) {
+                } catch (error) {
                     window.showTempMessage(`Error al limpiar: ${error.message}`, 'error');
                 }
             }
         }
     })();
-    
+
     // --- Status Counters ---
     (() => {
         const checklistCountElement = document.getElementById('checklist-count');
@@ -999,7 +1074,7 @@ if (auth) {
             if (logoutBtn) logoutBtn.style.display = 'inline-block';
             if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
 
-            // 🔹 Recuperar token de Calendar (si existe)
+            // Recuperar token de Calendar (si existe)
             const storedToken = localStorage.getItem(CALENDAR_TOKEN_STORAGE_KEY);
             if (storedToken) {
                 calendarAccessToken = storedToken;
@@ -1010,23 +1085,34 @@ if (auth) {
 
             if (!isLoggingOut) {
                 await loadAllUserData(user.uid);
+                // Después de cargar datos, ir a la vista HOY
+                window.mostrarSeccion('hoy');
             }
             isLoggingOut = false;
         } else {
-            // 🔹 Resetear UI de usuario
+            // Resetear UI de usuario
             if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
             if (userIdDisplay) userIdDisplay.textContent = '';
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
 
-            // 🔹 Limpiar listeners y datos visibles
+            // Limpiar listeners y datos visibles
             cleanupFirestoreListeners();
-            document.getElementById('journalEntriesList').innerHTML = '';
-            document.getElementById('checkList').innerHTML = '';
-            document.getElementById('habitsList').innerHTML = '';
+            const journalEntriesList = document.getElementById('journalEntriesList');
+            const checkList = document.getElementById('checkList');
+            const habitsList = document.getElementById('habitsList');
+            const todayMits = document.getElementById('today-mits');
+            const todayEventsList = document.getElementById('today-calendar-events-list');
+            if (journalEntriesList) journalEntriesList.innerHTML = '';
+            if (checkList) checkList.innerHTML = '';
+            if (habitsList) habitsList.innerHTML = '';
+            if (todayMits) todayMits.innerHTML = '';
+            if (todayEventsList) todayEventsList.innerHTML = '';
 
-            // 🔹 Resetear estado de Calendar
+            // Resetear estado de Calendar
+            const eventsList = document.getElementById('calendar-events-list');
+            if (eventsList) eventsList.innerHTML = '';
             calendarAccessToken = null;
             localStorage.removeItem(CALENDAR_TOKEN_STORAGE_KEY);
             updateCalendarConnectionStatus(false);
@@ -1047,33 +1133,47 @@ if (auth) {
 document.addEventListener('DOMContentLoaded', () => {
     if (!auth) return;
 
-    window.mostrarSeccion('pomodoro');
+    // Vista inicial: HOY
+    window.mostrarSeccion('hoy');
 
-    // 🔹 Login con Google (Firebase + Calendar scope)
- document.getElementById('google-signin-btn').onclick = async () => {
-    try { 
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
+    // Login con Google (Firebase + Calendar)
+    document.getElementById('google-signin-btn').onclick = async () => {
+        try {
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
 
-        console.log('[Auth] Iniciando signInWithPopup...');
-        const result = await signInWithPopup(auth, provider);
-        console.log('[Auth] signInWithPopup result =', result);
+            // AGREGAR SCOPE PARA CALENDAR
+            provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
 
-    } catch (error) { 
-        console.error("Error de inicio de sesión con Google:", error);
+            console.log('[Auth] Iniciando signInWithPopup con scope de Calendar...');
+            const result = await signInWithPopup(auth, provider);
+            console.log('[Auth] signInWithPopup result =', result);
 
-        // Este error aparece cuando el popup se cierra antes de tiempo
-        // o cuando el navegador no deja leer window.closed.
-        if (error.code === 'auth/popup-closed-by-user') {
-            console.log('[Auth] El popup se cerró antes de completar el login (o el navegador bloqueó window.closed).');
-            return;
+            // OBTENER EL TOKEN DE ACCESO PARA CALENDAR
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            if (credential && credential.accessToken) {
+                calendarAccessToken = credential.accessToken;
+                localStorage.setItem(CALENDAR_TOKEN_STORAGE_KEY, credential.accessToken);
+                console.log('[Calendar] Token de acceso guardado.');
+                updateCalendarConnectionStatus(true);
+                // Cargar eventos inmediatamente
+                loadCalendarEvents();
+                window.showTempMessage('Conectado a Google Calendar.', 'success');
+            } else {
+                console.warn('[Calendar] No se pudo obtener el token de acceso.');
+            }
+
+        } catch (error) {
+            console.error("Error de inicio de sesión con Google:", error);
+            if (error.code === 'auth/popup-closed-by-user') {
+                console.log('[Auth] El popup se cerró antes de completar el login.');
+                return;
+            }
+            window.showTempMessage(`Error con Google: ${error.message}`, 'error');
         }
+    };
 
-        window.showTempMessage(`Error con Google: ${error.message}`, 'error');
-    }
-};
-
-    // 🔹 Login anónimo
+    // Login anónimo
     const anonymousBtn = document.getElementById('anonymous-signin-btn');
     if (anonymousBtn) {
         anonymousBtn.onclick = async () => {
@@ -1086,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 🔹 Email (todavía no implementado)
+    // Email (todavía no implementado)
     const emailToggleBtn = document.getElementById('email-signin-toggle-btn');
     if (emailToggleBtn) {
         emailToggleBtn.onclick = () => {
@@ -1094,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 🔹 Logout
+    // Logout
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.onclick = async () => {
@@ -1105,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 🔹 Navegación entre secciones
+    // Navegación entre secciones
     document.querySelectorAll('.nav-tabs button').forEach(button => {
         button.addEventListener('click', () => {
             const sectionId = button.id.replace('btn-', '');
@@ -1113,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 🔹 Permisos de notificaciones
+    // Permisos de notificaciones
     (async () => {
         if (!("Notification" in window)) return;
         if (Notification.permission === 'granted') {
@@ -1124,22 +1224,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })();
 
-    // 🔹 Integración Calendar: handlers de botones
+    // Integración Calendar: handlers de botones
     const connectBtn = document.getElementById('connect-calendar-btn');
     if (connectBtn) {
-        // Si lo dejás deshabilitado en el HTML, lo habilitamos acá:
         connectBtn.disabled = false;
-
         connectBtn.onclick = () => {
             if (!calendarAccessToken) {
                 window.showTempMessage(
-                    'Inicia sesión con Google (arriba) para conectar tu calendario.',
+                    'Primero inicia sesión con Google usando el botón "Iniciar con Google" en la parte superior.',
                     'warning'
                 );
                 return;
             }
             updateCalendarConnectionStatus(true);
             loadCalendarEvents();
+            window.showTempMessage('Cargando eventos de Google Calendar...', 'info');
         };
     }
 
@@ -1147,5 +1246,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (disconnectBtn) {
         disconnectBtn.onclick = handleDisconnectCalendar;
     }
-});
 
+    // Enlace desde HOY -> Calendario
+    const goToCalendarFromHoy = document.getElementById('go-to-calendar-from-hoy');
+    if (goToCalendarFromHoy) {
+        goToCalendarFromHoy.onclick = (e) => {
+            e.preventDefault();
+            window.mostrarSeccion('calendario');
+        };
+    }
+
+    // Controles de Pomodoro en la vista HOY (gatillan los botones del Pomodoro principal)
+    const startToday = document.getElementById('pomodoro-start-today');
+    const pauseToday = document.getElementById('pomodoro-pause-today');
+    const resetToday = document.getElementById('pomodoro-reset-today');
+
+    if (startToday) {
+        startToday.onclick = () => {
+            const btn = document.getElementById('start-timer-btn');
+            if (btn) btn.click();
+        };
+    }
+    if (pauseToday) {
+        pauseToday.onclick = () => {
+            const btn = document.getElementById('pause-pomodoro-btn');
+            if (btn) btn.click();
+        };
+    }
+    if (resetToday) {
+        resetToday.onclick = () => {
+            const btn = document.getElementById('reset-timer-btn');
+            if (btn) btn.click();
+        };
+    }
+});
