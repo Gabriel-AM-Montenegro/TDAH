@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App TDAH</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/styles1.css">
 </head>
 
@@ -172,6 +173,17 @@
         <p class="subtitle">Un espacio para tus pensamientos, reflexiones y logros diarios.</p>
         <textarea id="journalEntry" placeholder="Escribe aquí tu entrada de hoy..."></textarea>
         <button id="save-journal-entry-btn">Guardar Entrada</button>
+
+        <div id="journal-calendar" class="journal-calendar">
+          <div class="journal-calendar-header">
+            <button id="journal-cal-prev" type="button" aria-label="Mes anterior">‹</button>
+            <span id="journal-cal-month-label"></span>
+            <button id="journal-cal-next" type="button" aria-label="Mes siguiente">›</button>
+          </div>
+          <div id="journal-cal-weekdays" class="journal-calendar-weekdays"></div>
+          <div id="journal-cal-grid" class="journal-calendar-grid"></div>
+        </div>
+
         <h3>Tus Entradas Anteriores</h3>
         <ul id="journalEntriesList">
           <!-- Las entradas del journal se cargarán aquí -->

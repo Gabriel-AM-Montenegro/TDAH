@@ -1210,3 +1210,66 @@ a:focus-visible,
   cursor: pointer;
   margin-right: 5px;
 }
+
+/* Mini-calendario del Journal: marca los días con entradas */
+.journal-calendar {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+}
+
+.journal-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.journal-calendar-header button {
+  min-width: unset;
+  padding: 4px 10px;
+  font-size: 16px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+}
+
+.journal-calendar-weekdays,
+.journal-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.journal-calendar-weekdays span {
+  font-size: 0.75em;
+  color: var(--text-medium);
+  font-weight: 600;
+}
+
+.journal-cal-day {
+  position: relative;
+  padding: 6px 0;
+  border-radius: 8px;
+  font-size: 0.85em;
+}
+
+.journal-cal-day.is-today {
+  border: 1px solid var(--primary-color);
+}
+
+.journal-cal-day.has-entry::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  margin: 2px auto 0;
+}

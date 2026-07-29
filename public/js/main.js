@@ -288,6 +288,19 @@ window.triggerConfetti = () => {
     }
 };
 
+const SECTION_TITLES = {
+    hoy: 'Hoy',
+    pomodoro: 'Pomodoro',
+    calendario: 'Calendario',
+    checklist: 'Checklist Rápido',
+    journal: 'Journal',
+    habitos: 'Hábitos',
+    tareas: 'Tareas Trello',
+    notas: 'Notas Blog',
+    nutricion: 'Nutrición',
+    config: 'Configuración'
+};
+
 window.mostrarSeccion = (seccionId) => {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
@@ -295,6 +308,7 @@ window.mostrarSeccion = (seccionId) => {
     const botonActivo = document.getElementById(`btn-${seccionId}`);
     if (seccionActiva) seccionActiva.classList.add('active');
     if (botonActivo) botonActivo.classList.add('active');
+    document.title = SECTION_TITLES[seccionId] ? `App TDAH - ${SECTION_TITLES[seccionId]}` : 'App TDAH';
 };
 
 // =================================================================================
@@ -473,9 +487,74 @@ async function loadAllUserData(currentUserId) {
         const journalEntriesList = document.getElementById('journalEntriesList');
         if (!journalEntryTextarea || !saveJournalEntryButton || !journalEntriesList) return;
 
+        // --- Mini-calendario: marca los días con entradas ---
+        const calMonthLabel = document.getElementById('journal-cal-month-label');
+        const calGrid = document.getElementById('journal-cal-grid');
+        const calWeekdays = document.getElementById('journal-cal-weekdays');
+        const calPrevBtn = document.getElementById('journal-cal-prev');
+        const calNextBtn = document.getElementById('journal-cal-next');
+        const WEEKDAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+        let currentCalendarDate = new Date();
+        currentCalendarDate.setDate(1);
+        let journalEntryDates = new Set();
+
+        const renderJournalCalendar = () => {
+            if (!calGrid || !calMonthLabel) return;
+            calGrid.innerHTML = '';
+
+            if (calWeekdays && !calWeekdays.childElementCount) {
+                WEEKDAY_LABELS.forEach(label => {
+                    const span = document.createElement('span');
+                    span.textContent = label;
+                    calWeekdays.appendChild(span);
+                });
+            }
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            calMonthLabel.textContent = currentCalendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+            const startOffset = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayString = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < startOffset; i++) {
+                calGrid.appendChild(document.createElement('span'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEl = document.createElement('span');
+                dayEl.className = 'journal-cal-day';
+                dayEl.textContent = day;
+                if (journalEntryDates.has(dateString)) dayEl.classList.add('has-entry');
+                if (dateString === todayString) dayEl.classList.add('is-today');
+                calGrid.appendChild(dayEl);
+            }
+        };
+
+        if (calPrevBtn) {
+            calPrevBtn.onclick = () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderJournalCalendar();
+            };
+        }
+        if (calNextBtn) {
+            calNextBtn.onclick = () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderJournalCalendar();
+            };
+        }
+
         const q = query(journalCollectionRef, orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             journalEntriesList.innerHTML = '';
+
+            journalEntryDates = new Set(
+                snapshot.docs.map(docSnap => new Date(docSnap.data().timestamp).toISOString().split('T')[0])
+            );
+            renderJournalCalendar();
+
             if (snapshot.empty) {
                 journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
                 return;
