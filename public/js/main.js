@@ -335,9 +335,11 @@ async function loadAllUserData(currentUserId) {
         const tourTitle = document.getElementById('tour-title');
         const tourDescription = document.getElementById('tour-description');
         const tourHighlightImage = document.getElementById('tour-highlight-image');
+        const tourStepCounter = document.getElementById('tour-step-counter');
         const tourBackBtn = document.getElementById('tour-back-btn');
         const tourNextBtn = document.getElementById('tour-next-btn');
         const tourSkipBtn = document.getElementById('tour-skip-btn');
+        const tourStartBtn = document.getElementById('tour-start-btn');
         const tourDotsContainer = document.getElementById('tour-dots');
 
         if (!tourOverlay || !tourTitle || !tourDescription || !tourHighlightImage || !tourBackBtn || !tourNextBtn || !tourSkipBtn || !tourDotsContainer) {
@@ -346,12 +348,41 @@ async function loadAllUserData(currentUserId) {
 
         let currentTourStep = 0;
         const tourSteps = [
-            { title: "¡Bienvenido a TDAH Helper App!", description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!", image: "" },
-            { title: "⏱️ Temporizador Pomodoro", description: "Usa el temporizador Pomodoro para trabajar en bloques de tiempo concentrado (25 min) seguidos de descansos cortos (5 min). ¡Ideal para mantener el foco y evitar el agotamiento!", image: "https://placehold.co/400x200/4F46E5/FFFFFF?text=Pomodoro+Timer" },
-            { title: "✅ Checklist Rápido", description: "Añade y gestiona tus tareas diarias de forma sencilla. Marca las completadas y prioriza tus 'Tareas Más Importantes' (MITs) para un día productivo.", image: "https://placehold.co/400x200/7C3AED/FFFFFF?text=Checklist" },
-            { title: "📝 Journal Personal", description: "Un espacio seguro para escribir tus pensamientos, emociones, logros y desafíos. Reflexionar te ayudará a entenderte mejor y a gestionar tu bienestar.", image: "https://placehold.co/400x200/667eea/FFFFFF?text=Journal" },
-            { title: "🌱 Hábitos Diarios", description: "Establece y sigue tus hábitos diarios, como beber agua o meditar. ¡Construye rutinas saludables y visualiza tu progreso día a día!", image: "https://placehold.co/400x200/764ba2/FFFFFF?text=Habits" },
-            { title: "¡Listo para Empezar!", description: "Explora las secciones, personaliza tu experiencia y descubre cómo TDAH Helper App puede transformar tu productividad y bienestar. ¡Estamos aquí para apoyarte!", image: "" }
+            {
+                title: "¡Bienvenido a TDAH Helper App!",
+                description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
+                image: ""
+            },
+            {
+                title: "📅 HOY",
+                description: "Este es tu punto de partida diario. Acá ves tus 3 tareas más importantes, tu foco con Pomodoro y tu agenda del día, todo en una sola vista.",
+                image: ""
+            },
+            {
+                title: "⏱️ Pomodoro",
+                description: "Trabajá en bloques de foco y descanso para mantener la concentración. Podés ajustar los tiempos según lo que mejor funcione para vos.",
+                image: ""
+            },
+            {
+                title: "✅ Checklist Rápido",
+                description: "Organizá tareas simples y marcá lo que vas completando para avanzar sin sobrepensar.",
+                image: ""
+            },
+            {
+                title: "📝 Journal Personal",
+                description: "Un espacio seguro para escribir pensamientos, emociones y logros. Reflexionar también es productividad.",
+                image: ""
+            },
+            {
+                title: "🌱 Hábitos Diarios",
+                description: "Construí rutinas pequeñas y sostenibles, y visualizá tu progreso día a día.",
+                image: ""
+            },
+            {
+                title: "🚀 Cierre del tour",
+                description: "Explorá la app y adaptala a vos. No hay una forma correcta de usarla, solo la que te funciona.",
+                image: ""
+            }
         ];
 
         const renderTourStep = () => {
@@ -360,9 +391,34 @@ async function loadAllUserData(currentUserId) {
             tourDescription.textContent = step.description;
             tourHighlightImage.src = step.image || '';
             tourHighlightImage.style.display = step.image ? 'block' : 'none';
+
+            // Ocultar también el contenedor para evitar espacios vacíos
+            if (tourHighlightImage.parentElement) {
+                tourHighlightImage.parentElement.style.display = step.image ? 'flex' : 'none';
+            }
+
+            // Actualizar contador
+            if (tourStepCounter) {
+                tourStepCounter.textContent = `Paso ${currentTourStep + 1} de ${tourSteps.length}`;
+            }
+
+            // Botón atrás
             tourBackBtn.style.display = currentTourStep === 0 ? 'none' : 'block';
-            tourNextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente ➡️';
-            tourSkipBtn.style.display = currentTourStep === tourSteps.length - 1 ? 'none' : 'block';
+
+            // Botones de acción final
+            const isLastStep = currentTourStep === tourSteps.length - 1;
+
+            if (isLastStep) {
+                tourNextBtn.style.display = 'none';
+                tourSkipBtn.style.display = 'none';
+                if (tourStartBtn) tourStartBtn.style.display = 'block';
+            } else {
+                tourNextBtn.style.display = 'block';
+                tourNextBtn.textContent = 'Siguiente ➡️';
+                tourSkipBtn.style.display = 'block';
+                if (tourStartBtn) tourStartBtn.style.display = 'none';
+            }
+
             updateTourDots();
         };
 
@@ -405,6 +461,7 @@ async function loadAllUserData(currentUserId) {
         tourNextBtn.onclick = () => (currentTourStep < tourSteps.length - 1) ? (currentTourStep++, renderTourStep()) : completeTour();
         tourBackBtn.onclick = () => (currentTourStep > 0) ? (currentTourStep--, renderTourStep()) : null;
         tourSkipBtn.onclick = completeTour;
+        if (tourStartBtn) tourStartBtn.onclick = completeTour;
     })();
 
     // --- Journal Logic ---
@@ -446,8 +503,10 @@ async function loadAllUserData(currentUserId) {
     (() => {
         let timer;
         let isRunning = false;
-        let timeLeft = 25 * 60;
-        let totalTimeForPomodoro = 25 * 60;
+        let focusTime = 25; // en minutos
+        let breakTime = 5; // en minutos
+        let timeLeft = focusTime * 60;
+        let totalTimeForPomodoro = focusTime * 60;
         let isBreakTime = false;
         const timerDisplay = document.getElementById('timer');
         const todayTimerDisplay = document.getElementById('pomodoro-timer-today');
@@ -456,6 +515,12 @@ async function loadAllUserData(currentUserId) {
         const resetTimerBtn = document.getElementById('reset-timer-btn');
         const progressCircle = document.querySelector('.pomodoro-progress-ring-progress');
         const progressCircleToday = document.querySelector('.pomodoro-progress-ring-progress-today');
+
+        // Elementos de configuración
+        const focusTimeInput = document.getElementById('focus-time-input');
+        const breakTimeInput = document.getElementById('break-time-input');
+        const savePomodoroConfigBtn = document.getElementById('save-pomodoro-config-btn');
+
         if (!timerDisplay || !progressCircle || !startTimerBtn || !pausePomodoroBtn || !resetTimerBtn) return;
 
         const radius = progressCircle.r.baseVal.value;
@@ -497,6 +562,8 @@ async function loadAllUserData(currentUserId) {
                     timeLeft: newTime,
                     isRunning: newRunning,
                     isBreakTime: newBreak,
+                    focusTime: focusTime,
+                    breakTime: breakTime,
                     lastUpdated: new Date().toISOString()
                 });
             } catch (error) { console.error("Pomodoro: Error al guardar estado:", error); }
@@ -513,10 +580,10 @@ async function loadAllUserData(currentUserId) {
                 if (notificationPermissionGranted) new Notification('¡Pomodoro Terminado!', { body: '¡Excelente trabajo! Es hora de un descanso.' });
 
                 setTimeout(async () => {
-                    if (await window.showCustomConfirm('¡Excelente trabajo! ¿Comenzar descanso de 5 minutos?')) {
+                    if (await window.showCustomConfirm(`¡Excelente trabajo! ¿Comenzar descanso de ${breakTime} minutos?`)) {
                         isBreakTime = true;
-                        timeLeft = 5 * 60;
-                        totalTimeForPomodoro = 5 * 60;
+                        timeLeft = breakTime * 60;
+                        totalTimeForPomodoro = breakTime * 60;
                         document.getElementById('sound-break').play().catch(e => console.error(e));
                         startTimer();
                     } else {
@@ -554,18 +621,60 @@ async function loadAllUserData(currentUserId) {
             clearInterval(timer);
             isRunning = false;
             isBreakTime = false;
-            timeLeft = 25 * 60;
-            totalTimeForPomodoro = 25 * 60;
+            timeLeft = focusTime * 60;
+            totalTimeForPomodoro = focusTime * 60;
             updateTimerDisplay();
             savePomodoroState(timeLeft, false, isBreakTime);
             window.showTempMessage('Temporizador reiniciado.', 'info');
         };
 
+        // Guardar configuración de tiempos
+        if (savePomodoroConfigBtn) {
+            savePomodoroConfigBtn.onclick = async () => {
+                const newFocusTime = parseInt(focusTimeInput.value);
+                const newBreakTime = parseInt(breakTimeInput.value);
+
+                if (isNaN(newFocusTime) || newFocusTime < 1 || newFocusTime > 120) {
+                    window.showTempMessage('El tiempo de concentración debe estar entre 1 y 120 minutos.', 'warning');
+                    return;
+                }
+
+                if (isNaN(newBreakTime) || newBreakTime < 1 || newBreakTime > 60) {
+                    window.showTempMessage('El tiempo de descanso debe estar entre 1 y 60 minutos.', 'warning');
+                    return;
+                }
+
+                focusTime = newFocusTime;
+                breakTime = newBreakTime;
+
+                // Si no está corriendo, resetear con los nuevos tiempos
+                if (!isRunning) {
+                    timeLeft = focusTime * 60;
+                    totalTimeForPomodoro = focusTime * 60;
+                    updateTimerDisplay();
+                }
+
+                await savePomodoroState(timeLeft, isRunning, isBreakTime);
+                window.showTempMessage('Configuración guardada exitosamente.', 'success');
+            };
+        }
+
         const unsubscribe = onSnapshot(pomodoroSettingsDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const settings = docSnap.data();
+
+                // Cargar tiempos configurados
+                if (settings.focusTime) {
+                    focusTime = settings.focusTime;
+                    if (focusTimeInput) focusTimeInput.value = focusTime;
+                }
+                if (settings.breakTime) {
+                    breakTime = settings.breakTime;
+                    if (breakTimeInput) breakTimeInput.value = breakTime;
+                }
+
                 isBreakTime = settings.isBreakTime || false;
-                totalTimeForPomodoro = isBreakTime ? (5 * 60) : (25 * 60);
+                totalTimeForPomodoro = isBreakTime ? (breakTime * 60) : (focusTime * 60);
 
                 if (settings.isRunning && settings.lastUpdated) {
                     const elapsed = Math.floor((Date.now() - new Date(settings.lastUpdated).getTime()) / 1000);
@@ -590,6 +699,15 @@ async function loadAllUserData(currentUserId) {
         startTimerBtn.onclick = startTimer;
         pausePomodoroBtn.onclick = pauseTimer;
         resetTimerBtn.onclick = resetTimer;
+
+        // Los botones de la sección Hoy también controlan el mismo temporizador
+        const startTodayBtn = document.getElementById('pomodoro-start-today');
+        const pauseTodayBtn = document.getElementById('pomodoro-pause-today');
+        const resetTodayBtn = document.getElementById('pomodoro-reset-today');
+
+        if (startTodayBtn) startTodayBtn.onclick = startTimer;
+        if (pauseTodayBtn) pauseTodayBtn.onclick = pauseTimer;
+        if (resetTodayBtn) resetTodayBtn.onclick = resetTimer;
     })();
 
     // --- Checklist Logic (también alimenta MITs de HOY) ---

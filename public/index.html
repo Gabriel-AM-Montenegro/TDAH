@@ -48,46 +48,61 @@
       <section id="hoy" class="seccion active">
         <h2>📅 Hoy</h2>
         <p class="subtitle">Tus prioridades, foco y agenda del día en una sola vista.</p>
-
-        <div class="card">
-          <h3>Prioridades (MITs) de hoy</h3>
-          <ul id="today-mits" class="list"></ul>
+        <div class="pomodoro-timer-container">
+          <svg class="pomodoro-progress-ring" width="200" height="200">
+            <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
+              cx="100" cy="100" />
+            <circle class="pomodoro-progress-ring-progress-today" stroke="var(--primary-color)" stroke-width="10"
+              fill="transparent" r="90" cx="100" cy="100" />
+          </svg>
+          <p id="pomodoro-timer-today">25:00</p>
         </div>
-
-        <div class="card">
-          <h3>Foco (Pomodoro)</h3>
-          <div class="pomodoro-timer-container" style="margin: 20px auto;">
-            <svg class="pomodoro-progress-ring" width="200" height="200">
-              <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
-                cx="100" cy="100" />
-              <circle class="pomodoro-progress-ring-progress-today" stroke="var(--primary-color)" stroke-width="10"
-                fill="transparent" r="90" cx="100" cy="100" />
-            </svg>
-            <p id="pomodoro-timer-today">25:00</p>
-          </div>
-          <div class="pomodoro-buttons">
-            <button id="pomodoro-start-today">Iniciar</button>
-            <button id="pomodoro-pause-today">Pausar</button>
-            <button id="pomodoro-reset-today">Reiniciar</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Agenda de hoy</h3>
-          <ul id="today-calendar-events-list" class="list">
-            <!-- Se llena desde main.js usando los eventos del Calendar -->
-          </ul>
-          <p class="muted">
-            Los eventos se sincronizan desde tu Google Calendar.
-            <a href="#" id="go-to-calendar-from-hoy" class="trello-link">Ver calendario completo ↗</a>
-          </p>
+        <div class="pomodoro-buttons">
+          <button id="pomodoro-start-today">Iniciar</button>
+          <button id="pomodoro-pause-today">Pausar</button>
+          <button id="pomodoro-reset-today">Reiniciar</button>
         </div>
       </section>
 
       <!-- Sección Pomodoro -->
       <section id="pomodoro" class="seccion">
         <h2>⏱️ Temporizador Pomodoro</h2>
-        <p class="subtitle">Enfócate en tus tareas con bloques de tiempo definidos.</p>
+
+        <!-- Mensajes motivacionales (arriba) -->
+        <div class="motivational-container">
+          <div class="motivational-box tip">
+            <p>💡 Podés ajustar el tiempo de foco y descanso según lo que mejor funcione para vos. No hay un tiempo
+              "correcto", solo el tuyo.</p>
+          </div>
+          <div class="motivational-box info">
+            <p>ℹ️ Tu energía cambia, y está bien. Ajustá el foco y el descanso para acompañar tu día.</p>
+          </div>
+        </div>
+
+        <!-- Configuración de tiempos -->
+        <div class="config-container">
+          <div class="config-header">
+            <span>⚙️ Configuración de tiempos</span>
+          </div>
+
+          <div class="config-row">
+            <label for="focus-time-input" class="config-label">Tiempo de concentración (minutos):</label>
+            <div class="config-input-wrapper">
+              <input type="number" id="focus-time-input" min="1" max="120" value="25" placeholder="25" />
+            </div>
+          </div>
+
+          <div class="config-row">
+            <label for="break-time-input" class="config-label">Tiempo de descanso (minutos):</label>
+            <div class="config-input-wrapper">
+              <input type="number" id="break-time-input" min="1" max="60" value="5" placeholder="5" />
+            </div>
+          </div>
+
+          <button id="save-pomodoro-config-btn" class="save-config-btn">Guardar configuración</button>
+        </div>
+
+        <!-- Temporizador (abajo) -->
         <div class="pomodoro-timer-container">
           <svg class="pomodoro-progress-ring" width="200" height="200">
             <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
@@ -272,6 +287,7 @@
   <div id="welcome-tour-overlay">
     <div class="welcome-tour-modal-inner">
       <div class="welcome-tour-content">
+        <span id="tour-step-counter">Paso 1 de 7</span>
         <h3 id="tour-title"></h3>
         <p id="tour-description"></p>
         <div class="tour-highlight-image-container">
@@ -283,6 +299,7 @@
         <button id="tour-back-btn" class="tour-nav-btn">⬅️ Anterior</button>
         <div id="tour-dots"></div>
         <button id="tour-next-btn" class="tour-nav-btn">Siguiente ➡️</button>
+        <button id="tour-start-btn" class="tour-nav-btn" style="display: none;">🚀 Empezar</button>
         <button id="tour-skip-btn" class="tour-nav-btn button-danger">Omitir Tour</button>
       </div>
     </div>
