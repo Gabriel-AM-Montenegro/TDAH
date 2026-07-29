@@ -9,7 +9,9 @@ import {
     signInAnonymously,
     onAuthStateChanged,
     signOut,
-    signInWithCustomToken
+    signInWithCustomToken,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
     getFirestore,
@@ -481,7 +483,20 @@ async function loadAllUserData(currentUserId) {
             snapshot.forEach((docSnap) => {
                 const entry = docSnap.data();
                 const listItem = document.createElement('li');
-                listItem.innerHTML = `<span class="journal-date">${new Date(entry.timestamp).toLocaleString('es-ES')}</span><div>${entry.text.replace(/\n/g, '<br>')}</div>`;
+
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'journal-date';
+                dateSpan.textContent = new Date(entry.timestamp).toLocaleString('es-ES');
+
+                const textDiv = document.createElement('div');
+                const lines = entry.text.split('\n');
+                lines.forEach((line, idx) => {
+                    textDiv.appendChild(document.createTextNode(line));
+                    if (idx < lines.length - 1) textDiv.appendChild(document.createElement('br'));
+                });
+
+                listItem.appendChild(dateSpan);
+                listItem.appendChild(textDiv);
                 journalEntriesList.appendChild(listItem);
             });
         }, (error) => console.error("Journal: Error al escuchar:", error));
@@ -753,13 +768,14 @@ async function loadAllUserData(currentUserId) {
                 li.innerHTML = `
                     <input type="checkbox" class="completion-checkbox" id="check-${itemId}" ${item.completed ? 'checked' : ''}>
                     <label for="check-${itemId}">
-                        <span class="item-text ${item.completed ? 'task-completed' : ''}" data-item-id="${itemId}" contenteditable="false">${item.text}</span>
+                        <span class="item-text ${item.completed ? 'task-completed' : ''}" data-item-id="${itemId}" contenteditable="false"></span>
                     </label>
                     <div class="mit-controls">
                         <input type="checkbox" class="mit-checkbox" id="mit-${itemId}" ${item.isMIT ? 'checked' : ''}> MIT
                     </div>
                     <button class="edit-item-btn">✏️</button>
                     <button class="button-danger delete-item-btn" data-id="${itemId}">❌</button>`;
+                li.querySelector('.item-text').textContent = item.text;
                 checkListUl.appendChild(li);
             });
 
@@ -785,8 +801,9 @@ async function loadAllUserData(currentUserId) {
                         li.innerHTML = `
                             <label>
                               <input type="checkbox" class="completion-checkbox" data-id="${it.id}" />
-                              <span>${it.text || '(Sin título)'}</span>
+                              <span></span>
                             </label>`;
+                        li.querySelector('span').textContent = it.text || '(Sin título)';
                         todayMits.appendChild(li);
                     });
                 }
@@ -955,7 +972,8 @@ async function loadAllUserData(currentUserId) {
                 }).join('');
 
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${habit.name}</span><div class="habit-tracking-dots">${dailyTrackingHtml}</div><button class="button-danger" data-id="${habitId}">❌</button>`;
+                li.innerHTML = `<span></span><div class="habit-tracking-dots">${dailyTrackingHtml}</div><button class="button-danger" data-id="${habitId}">❌</button>`;
+                li.querySelector('span').textContent = habit.name;
                 habitsList.appendChild(li);
             });
         }, error => console.error("Hábitos: Error al escuchar:", error));
@@ -1195,6 +1213,7 @@ if (auth) {
         const userDisplayNameElement = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
         const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
+        const emailAuthFormEl = document.getElementById('email-auth-form');
         const userIdDisplay = document.getElementById('user-id-display');
         const userInfoArea = document.getElementById('user-info-area');
 
@@ -1204,6 +1223,11 @@ if (auth) {
             }
             if (userIdDisplay) userIdDisplay.textContent = `ID: ${user.uid}`;
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
+            if (emailAuthFormEl) {
+                emailAuthFormEl.style.display = 'none';
+                document.getElementById('email-auth-email').value = '';
+                document.getElementById('email-auth-password').value = '';
+            }
             if (logoutBtn) logoutBtn.style.display = 'inline-block';
             if (userInfoArea) userInfoArea.classList.remove('auth-options-visible');
 
@@ -1319,11 +1343,78 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Email (todavía no implementado)
+    // Login con Email/Contraseña
     const emailToggleBtn = document.getElementById('email-signin-toggle-btn');
-    if (emailToggleBtn) {
+    const emailAuthForm = document.getElementById('email-auth-form');
+    const emailAuthEmailInput = document.getElementById('email-auth-email');
+    const emailAuthPasswordInput = document.getElementById('email-auth-password');
+    const emailSigninBtn = document.getElementById('email-signin-btn');
+    const emailRegisterBtn = document.getElementById('email-register-btn');
+    const emailAuthCancelBtn = document.getElementById('email-auth-cancel-btn');
+
+    const getEmailAuthErrorMessage = (error) => {
+        switch (error.code) {
+            case 'auth/invalid-email':
+                return 'El email ingresado no es válido.';
+            case 'auth/email-already-in-use':
+                return 'Ya existe una cuenta con ese email.';
+            case 'auth/weak-password':
+                return 'La contraseña debe tener al menos 6 caracteres.';
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+                return 'Email o contraseña incorrectos.';
+            default:
+                return error.message;
+        }
+    };
+
+    if (emailToggleBtn && emailAuthForm) {
         emailToggleBtn.onclick = () => {
-            window.showTempMessage('Inicio de sesión con Email no implementado aún.', 'info');
+            emailAuthForm.style.display = emailAuthForm.style.display === 'none' ? 'flex' : 'none';
+        };
+    }
+
+    if (emailAuthCancelBtn && emailAuthForm) {
+        emailAuthCancelBtn.onclick = () => {
+            emailAuthForm.style.display = 'none';
+            emailAuthEmailInput.value = '';
+            emailAuthPasswordInput.value = '';
+        };
+    }
+
+    if (emailSigninBtn) {
+        emailSigninBtn.onclick = async () => {
+            const email = emailAuthEmailInput.value.trim();
+            const password = emailAuthPasswordInput.value;
+            if (!email || !password) {
+                window.showTempMessage('Completa email y contraseña.', 'warning');
+                return;
+            }
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Error de inicio de sesión con email:", error);
+                window.showTempMessage(getEmailAuthErrorMessage(error), 'error');
+            }
+        };
+    }
+
+    if (emailRegisterBtn) {
+        emailRegisterBtn.onclick = async () => {
+            const email = emailAuthEmailInput.value.trim();
+            const password = emailAuthPasswordInput.value;
+            if (!email || !password) {
+                window.showTempMessage('Completa email y contraseña.', 'warning');
+                return;
+            }
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                window.showTempMessage('Cuenta creada exitosamente.', 'success');
+            } catch (error) {
+                console.error("Error de registro con email:", error);
+                window.showTempMessage(getEmailAuthErrorMessage(error), 'error');
+            }
         };
     }
 

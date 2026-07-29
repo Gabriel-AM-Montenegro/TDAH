@@ -116,6 +116,33 @@ header p {
   max-width: 200px;
 }
 
+.email-auth-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin: 10px auto 0;
+}
+
+.email-auth-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.email-auth-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
 .nav-tabs {
   display: flex;
   justify-content: center;

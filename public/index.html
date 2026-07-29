@@ -23,6 +23,15 @@
           <button id="anonymous-signin-btn" class="auth-btn">Iniciar Anónimamente</button>
           <button id="email-signin-toggle-btn" class="auth-btn">Iniciar con Email</button>
         </div>
+        <div id="email-auth-form" class="email-auth-form" style="display: none;">
+          <input type="email" id="email-auth-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="email-auth-password" placeholder="Contraseña" autocomplete="current-password">
+          <div class="email-auth-buttons">
+            <button id="email-signin-btn" class="auth-btn">Ingresar</button>
+            <button id="email-register-btn" class="auth-btn">Registrarme</button>
+            <button id="email-auth-cancel-btn" class="auth-btn">Cancelar</button>
+          </div>
+        </div>
         <button id="logout-btn" style="display: none;">Cerrar Sesión</button>
         <p id="user-id-display" style="font-size: 0.8em; color: rgba(255,255,255,0.7); margin-top: 5px;"></p>
       </div>
