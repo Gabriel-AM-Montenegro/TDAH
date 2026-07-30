@@ -41,6 +41,7 @@ export function initJournal(db, userId) {
     };
 
     if (moodOptionsContainer) {
+        moodOptionsContainer.innerHTML = '';
         MOOD_OPTIONS.forEach(mood => {
             const btn = document.createElement('button');
             btn.type = 'button';
