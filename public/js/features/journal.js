@@ -12,7 +12,11 @@ export function initJournal(db, userId) {
     const journalEntryTextarea = document.getElementById('journalEntry');
     const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
     const journalEntriesList = document.getElementById('journalEntriesList');
+    const searchInput = document.getElementById('journal-search-input');
     if (!journalEntryTextarea || !saveJournalEntryButton || !journalEntriesList) return;
+
+    let allEntries = [];
+    let searchTerm = '';
 
     // --- Mini-calendario: marca los días con entradas ---
     const calMonthLabel = document.getElementById('journal-cal-month-label');
@@ -73,16 +77,10 @@ export function initJournal(db, userId) {
         };
     }
 
-    const q = query(journalCollectionRef, orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const renderEntriesList = () => {
         journalEntriesList.innerHTML = '';
 
-        journalEntryDates = new Set(
-            snapshot.docs.map(docSnap => new Date(docSnap.data().timestamp).toISOString().split('T')[0])
-        );
-        renderJournalCalendar();
-
-        if (snapshot.empty) {
+        if (!allEntries.length) {
             renderEmptyState(journalEntriesList, {
                 message: 'Todavía no escribiste nada en tu diario.',
                 actionLabel: '📝 Escribir tu primera entrada',
@@ -90,8 +88,19 @@ export function initJournal(db, userId) {
             });
             return;
         }
-        snapshot.forEach((docSnap) => {
-            const entry = docSnap.data();
+
+        const filtered = searchTerm
+            ? allEntries.filter(entry => entry.text.toLowerCase().includes(searchTerm))
+            : allEntries;
+
+        if (!filtered.length) {
+            renderEmptyState(journalEntriesList, {
+                message: `No hay entradas que coincidan con "${searchTerm}".`
+            });
+            return;
+        }
+
+        filtered.forEach((entry) => {
             const listItem = document.createElement('li');
 
             const dateSpan = document.createElement('span');
@@ -109,6 +118,24 @@ export function initJournal(db, userId) {
             listItem.appendChild(textDiv);
             journalEntriesList.appendChild(listItem);
         });
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            searchTerm = searchInput.value.trim().toLowerCase();
+            renderEntriesList();
+        });
+    }
+
+    const q = query(journalCollectionRef, orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        allEntries = snapshot.docs.map(docSnap => docSnap.data());
+
+        journalEntryDates = new Set(
+            allEntries.map(entry => new Date(entry.timestamp).toISOString().split('T')[0])
+        );
+        renderJournalCalendar();
+        renderEntriesList();
     }, (error) => console.error("Journal: Error al escuchar:", error));
     registerListener(unsubscribe);
 

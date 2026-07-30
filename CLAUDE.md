@@ -81,7 +81,9 @@ Backlog — **BAJA completo**:
 - **Contraste de colores (WCAG AA)**: auditados los pares texto/fondo con la fórmula de luminancia relativa de WCAG. Se oscurecieron `--success-dark`, `--error-dark`, `--warning-dark`, `--info-dark` (mensajes de estado/badges, antes ~2-2.4:1, ahora 5.2-6.8:1), se igualó `--text-light` a `--text-medium` (antes 2.54:1), y se cambió el fondo de `.button-danger` de `#ef4444` a `#dc2626` (el texto blanco no llegaba a 4.5:1). Verificado con script Node que calcula el ratio real, no a ojo.
 - **Control global de sonido**: nuevo `public/js/sound.js` (`playSound()`, toggle persistido en localStorage), reemplaza los `.play()` directos en `pomodoro.js` y `checklist.js`. Toggle en Configuración.
 
-**Token de Calendar**: se implementó el refresco silencioso (ver nota más abajo) — el usuario lo está probando en uso real de un día completo, resultado pendiente de confirmar.
+**Token de Calendar**: se implementó el refresco silencioso (ver nota más abajo) y se encontró+arregló un bug real de condición de carrera (GIS carga async y el código se rendía antes de que estuviera listo, borrando el token guardado). Confirmado por el usuario en su cuenta real: reconectó una vez después del fix y quedó andando. Falta confirmar que se sostenga sin reconectar durante horas de uso real (si vuelve a fallar solo, ahí sí sería la limitación de fondo — cookies de terceros — y toca evaluar el backend).
+
+Se sacó el UID de Firebase que se mostraba junto al nombre del usuario en el header (`#user-id-display` en `index.html`, y su lógica en `auth.js`) — no aportaba nada al usuario y no correspondía mostrarlo.
 
 **Vista Hoy completada**: mostraba solo el Pomodoro pese a prometer "prioridades, foco y agenda". Se agregó `#today-mits` (hasta 3 MITs del Checklist, tildables ahí mismo) en `checklist.js`, y `#today-calendar-events-list` (lo que queda de hoy en Google Calendar) en `calendar.js`. Ambos ya existían como código muerto antes del refactor de la sesión Mac (el HTML nunca los tuvo).
 

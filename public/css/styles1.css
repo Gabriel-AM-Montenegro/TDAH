@@ -1475,6 +1475,16 @@ a:focus-visible,
   padding: 10px 14px;
 }
 
+.journal-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
 .today-mit-item label {
   display: flex;
   align-items: center;
