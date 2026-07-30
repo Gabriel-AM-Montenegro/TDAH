@@ -17,6 +17,7 @@ import { initPomodoro } from './features/pomodoro.js';
 import { initChecklist } from './features/checklist.js';
 import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
+import { wireSoundToggle } from './sound.js';
 
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
@@ -111,4 +112,5 @@ document.addEventListener('DOMContentLoaded', () => {
     requestNotificationPermission();
 
     wireCalendarButtons();
+    wireSoundToggle();
 });

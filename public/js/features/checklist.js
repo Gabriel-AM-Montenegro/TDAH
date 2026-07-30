@@ -6,6 +6,7 @@ import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showTempMessage, showCustomConfirm, renderEmptyState } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
+import { playSound } from '../sound.js';
 
 const TAG_COLORS = ['red', 'orange', 'green', 'blue', 'purple'];
 const REMINDER_CHECK_INTERVAL_MS = 30000;
@@ -220,7 +221,7 @@ export function initChecklist(db, userId) {
 
         if (target.classList.contains('completion-checkbox')) {
             await updateDoc(itemRef, { completed: target.checked });
-            if (target.checked) document.getElementById('sound-task-done').play().catch(err => console.error(err));
+            if (target.checked) playSound('sound-task-done');
         } else if (target.classList.contains('mit-checkbox')) {
             // limitar a 3 MITs
             const snapshot = await getDocs(query(checklistCollectionRef));

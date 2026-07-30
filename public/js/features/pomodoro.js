@@ -6,6 +6,7 @@ import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showTempMessage, showCustomConfirm, triggerConfetti } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
+import { playSound } from '../sound.js';
 
 export function initPomodoro(db, userId) {
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pomodoroSettings', 'current');
@@ -85,7 +86,7 @@ export function initPomodoro(db, userId) {
 
         if (!isBreakTime) {
             triggerConfetti();
-            document.getElementById('sound-complete').play().catch(e => console.error(e));
+            playSound('sound-complete');
             if (isNotificationPermissionGranted()) new Notification('¡Pomodoro Terminado!', { body: '¡Excelente trabajo! Es hora de un descanso.' });
 
             setTimeout(async () => {
@@ -93,7 +94,7 @@ export function initPomodoro(db, userId) {
                     isBreakTime = true;
                     timeLeft = breakTime * 60;
                     totalTimeForPomodoro = breakTime * 60;
-                    document.getElementById('sound-break').play().catch(e => console.error(e));
+                    playSound('sound-break');
                     startTimer();
                 } else {
                     resetTimer();
