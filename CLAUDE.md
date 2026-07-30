@@ -18,10 +18,10 @@ Del backlog de Trello, ya implementado y probado en el navegador:
 - "Estilo del Checkbox MIT (Refactorización)" ya estaba resuelto de antes (sin estilos inline) — falta marcarla Done en Trello.
 
 Pendiente en el backlog (lista "To Do" del board):
-- **BAJA**: Mensajes/sugerencias en secciones vacías, optimizar contraste de colores (accesibilidad), control global de sonido.
+- **BAJA: hecho** — Mensajes/sugerencias en secciones vacías, contraste de colores (WCAG AA), control global de sonido. Ver sección "Sesión 2026-07-30" más abajo.
 - **MEDIA**: bloque de Journal (buscar por palabra clave, registrar ánimo/energía, etiquetar y filtrar), unificar estilos, temas de color, config. de sonidos/volumen, guías de respiración en Pomodoro, sistema de puntos.
 - **MEDIA — Checklist: hecho** (subtareas, etiquetas de color, recordatorios por hora) — ver detalle en la sección de sesión Mac más abajo.
-- Hay una tarjeta suelta "traea 2" en la lista "Doing" sin contenido real (parece de prueba, fecha vencida) — confirmar con el usuario si se archiva.
+- La tarjeta "traea 2" en la lista "Doing" **no es un descarte**: el usuario la usa a propósito como tarjeta de prueba manual (le cambia la fecha de vencimiento para verificar que la app la muestre correctamente como "por vencer"). No tocar/archivar.
 
 Refactor de `public/js/main.js` en módulos por feature: **hecho** (ver sección de abajo).
 
@@ -69,6 +69,19 @@ Cada `initX(db, userId)` construye sus propios refs de Firestore y llama a `regi
 - Subtareas: agregar/tildar/borrar, mismo patrón que `habits.js` usa para `dailyCompletions` (`getDoc` → mutar array → `updateDoc`).
 - Recordatorio: `<input type="time">` por ítem + `setInterval` cada 30s que compara la hora actual contra los recordatorios activos y dispara `showTempMessage` + `Notification` (si el permiso está concedido) una vez por día por ítem. **Limitación**: solo dispara mientras la pestaña esté abierta (no hay service worker/backend), igual que las notificaciones del Pomodoro.
 - Verificado en el navegador con cuenta anónima de prueba: panel persiste tras re-render, las 5 etiquetas + "sin color", agregar/tildar/borrar subtarea, disparo del recordatorio, y que MIT/edición inline/borrado/drag-reorder existentes siguen funcionando igual.
+
+## Sesión 2026-07-30 (Windows, tras el pull de la sesión Mac)
+
+Cross-platform y tooling de desarrollo:
+- `.claude/launch.json`: el server local pasó de `python`/`python3` (distinto nombre según SO) a `npx serve` (mismo comando en Windows y Mac). Se agregó una segunda config `firebase-emulators`.
+- Emulador de Firebase configurado y probado (auth+firestore+ui). Requiere Java — instalado en Windows vía winget (Temurin 21); instalar también en Mac si hace falta.
+
+Backlog — **BAJA completo**:
+- **Mensajes en secciones vacías**: `renderEmptyState()` en `ui.js`, usado en checklist/journal/hábitos/trello/blog/nutrición (mensaje + botón de acción que enfoca el input o navega a Configuración). De paso se arregló un bug preexistente en `trello.js`: para un usuario sin `trelloConfig`, la lista quedaba trabada en "Cargando..." para siempre porque `cargarTareasTrello()` nunca se ejecutaba si el doc no existía.
+- **Contraste de colores (WCAG AA)**: auditados los pares texto/fondo con la fórmula de luminancia relativa de WCAG. Se oscurecieron `--success-dark`, `--error-dark`, `--warning-dark`, `--info-dark` (mensajes de estado/badges, antes ~2-2.4:1, ahora 5.2-6.8:1), se igualó `--text-light` a `--text-medium` (antes 2.54:1), y se cambió el fondo de `.button-danger` de `#ef4444` a `#dc2626` (el texto blanco no llegaba a 4.5:1). Verificado con script Node que calcula el ratio real, no a ojo.
+- **Control global de sonido**: nuevo `public/js/sound.js` (`playSound()`, toggle persistido en localStorage), reemplaza los `.play()` directos en `pomodoro.js` y `checklist.js`. Toggle en Configuración.
+
+**Token de Calendar**: se implementó el refresco silencioso (ver nota más abajo) — el usuario lo está probando en uso real de un día completo, resultado pendiente de confirmar.
 
 ## Notas importantes para trabajar en este repo
 
