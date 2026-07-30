@@ -35,14 +35,12 @@ export function initAuthStateListener(onLogin) {
         const logoutBtn = document.getElementById('logout-btn');
         const authButtonsWrapper = document.querySelector('.auth-buttons-wrapper');
         const emailAuthFormEl = document.getElementById('email-auth-form');
-        const userIdDisplay = document.getElementById('user-id-display');
         const userInfoArea = document.getElementById('user-info-area');
 
         if (user) {
             if (userDisplayNameElement) {
                 userDisplayNameElement.textContent = `Bienvenido, ${user.displayName || user.email || user.uid.substring(0, 8)}!`;
             }
-            if (userIdDisplay) userIdDisplay.textContent = `ID: ${user.uid}`;
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'none';
             if (emailAuthFormEl) {
                 emailAuthFormEl.style.display = 'none';
@@ -64,7 +62,6 @@ export function initAuthStateListener(onLogin) {
         } else {
             // Resetear UI de usuario
             if (userDisplayNameElement) userDisplayNameElement.textContent = 'Por favor, inicia sesión:';
-            if (userIdDisplay) userIdDisplay.textContent = '';
             if (authButtonsWrapper) authButtonsWrapper.style.display = 'flex';
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfoArea) userInfoArea.classList.add('auth-options-visible');
