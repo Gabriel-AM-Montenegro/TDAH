@@ -91,6 +91,12 @@ Se sacó el UID de Firebase que se mostraba junto al nombre del usuario en el he
 - Etiquetas: campo de texto libre separado por comas (`#journal-tags-input`), normalizadas a minúsculas y sin duplicados (`parseTags`), campo `tags: string[]` en el doc. Se muestran como chips en cada entrada y como filtro clickeable arriba de la lista (`#journal-tag-filters`); búsqueda y filtro por etiqueta se combinan con AND.
 - **Decidido con el usuario**: la parte de la historia de Trello que pedía etiquetar los artículos de "Notas Blog" se descarta — son contenido compartido de solo lectura (`firestore.rules`: `write: false`), no tiene sentido taguearlos por usuario. No tocar `content-feed.js` para esto.
 
+**Unificar estilos (MEDIA): hecho.** Auditoría real de `styles1.css` (no solo a ojo), tres hallazgos concretos:
+- La regla base de inputs solo cubría `type="text"` — cada input de otro tipo (search, email, password, number) reinventaba el mismo estilo con pequeñas diferencias sin razón. Se amplió el selector compartido; `.email-auth-form input` (que sí necesita verse distinto, vive sobre el header traslúcido sin tarjeta blanca) se reubicó DESPUÉS de la regla compartida en el archivo — con la misma especificidad, el override necesita ganar por orden de aparición, si no la regla general lo pisa (esto pasó y hubo que arreglarlo).
+- `.button-danger` tenía un rojo hardcodeado que quedó desalineado de `--error-dark` después del fix de contraste de la sesión anterior — ahora usa la variable.
+- Varios `border-radius: 5px` sueltos se consolidaron a `--border-radius-sm`.
+- **No se tocaron** `body { border: 5px solid rgb(35,129,23) }` ni `#css-check` — son intencionales, dejarlos así.
+
 **Vista Hoy completada**: mostraba solo el Pomodoro pese a prometer "prioridades, foco y agenda". Se agregó `#today-mits` (hasta 3 MITs del Checklist, tildables ahí mismo) en `checklist.js`, y `#today-calendar-events-list` (lo que queda de hoy en Google Calendar) en `calendar.js`. Ambos ya existían como código muerto antes del refactor de la sesión Mac (el HTML nunca los tuvo).
 
 ## Notas importantes para trabajar en este repo
