@@ -59,6 +59,12 @@
       <section id="hoy" class="seccion active">
         <h2>📅 Hoy</h2>
         <p class="subtitle">Tus prioridades, foco y agenda del día en una sola vista.</p>
+
+        <div class="hoy-block">
+          <h3>🎯 Tus prioridades de hoy</h3>
+          <ul id="today-mits" class="today-mits-list"></ul>
+        </div>
+
         <div class="pomodoro-timer-container">
           <svg class="pomodoro-progress-ring" width="200" height="200">
             <circle class="pomodoro-progress-ring-track" stroke="#e6e6e6" stroke-width="10" fill="transparent" r="90"
@@ -72,6 +78,11 @@
           <button id="pomodoro-start-today">Iniciar</button>
           <button id="pomodoro-pause-today">Pausar</button>
           <button id="pomodoro-reset-today">Reiniciar</button>
+        </div>
+
+        <div class="hoy-block">
+          <h3>🗓️ Agenda de hoy</h3>
+          <ul id="today-calendar-events-list" class="today-agenda-list"></ul>
         </div>
       </section>
 

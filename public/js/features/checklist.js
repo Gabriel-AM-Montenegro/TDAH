@@ -26,6 +26,28 @@ export function initChecklist(db, userId) {
     const expandedItemIds = new Set();
     let activeItemsForReminders = [];
     const firedRemindersToday = new Map();
+    const todayMitsList = document.getElementById('today-mits');
+
+    const renderTodayMits = (mitItems) => {
+        if (!todayMitsList) return;
+        if (!mitItems.length) {
+            renderEmptyState(todayMitsList, {
+                message: 'No definiste MITs para hoy. Marcá hasta 3 tareas como MIT en el Checklist.'
+            });
+            return;
+        }
+        todayMitsList.innerHTML = '';
+        mitItems.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'today-mit-item';
+            li.dataset.id = item.id;
+            li.innerHTML = `
+                <input type="checkbox" class="today-mit-checkbox" id="today-mit-${item.id}">
+                <label for="today-mit-${item.id}"><span></span></label>`;
+            li.querySelector('span').textContent = item.text;
+            todayMitsList.appendChild(li);
+        });
+    };
 
     const renderTagPicker = (itemId, currentColor) => {
         const swatches = TAG_COLORS.map(color => `
@@ -57,6 +79,7 @@ export function initChecklist(db, userId) {
 
         checkListUl.innerHTML = '';
         activeItemsForReminders = [];
+        const mitItems = [];
 
         if (snapshot.empty) {
             renderEmptyState(checkListUl, {
@@ -64,6 +87,7 @@ export function initChecklist(db, userId) {
                 actionLabel: '➕ Añadir tu primera tarea',
                 onAction: () => checkItemInput.focus()
             });
+            renderTodayMits([]);
             return;
         }
 
@@ -79,6 +103,10 @@ export function initChecklist(db, userId) {
                 completed: !!item.completed,
                 reminderTime: item.reminderTime || null
             });
+
+            if (item.isMIT && !item.completed && mitItems.length < 3) {
+                mitItems.push({ id: itemId, text: item.text });
+            }
 
             const li = document.createElement('li');
             li.dataset.id = itemId;
@@ -121,6 +149,8 @@ export function initChecklist(db, userId) {
             checkListUl.appendChild(li);
         });
 
+        renderTodayMits(mitItems);
+
         if (focusedElementId && focusedElementIsEditing) {
             const newFocusedElement = checkListUl.querySelector(`[data-id="${focusedElementId}"] .item-text`);
             if (newFocusedElement) {
@@ -135,6 +165,20 @@ export function initChecklist(db, userId) {
         });
     }, error => console.error("Checklist: Error al escuchar:", error));
     registerListener(unsubscribe);
+
+    if (todayMitsList) {
+        todayMitsList.addEventListener('change', async (e) => {
+            if (!e.target.classList.contains('today-mit-checkbox')) return;
+            const itemId = e.target.closest('li[data-id]')?.dataset.id;
+            if (!itemId) return;
+            try {
+                await updateDoc(doc(checklistCollectionRef, itemId), { completed: e.target.checked });
+                if (e.target.checked) playSound('sound-task-done');
+            } catch (error) {
+                console.error("Checklist: Error al completar MIT desde Hoy:", error);
+            }
+        });
+    }
 
     addCheckItemBtn.onclick = async () => {
         const itemText = checkItemInput.value.trim();

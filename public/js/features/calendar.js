@@ -6,7 +6,7 @@
 // el navegador mantenga la sesión de Google activa (prompt: '' = silencioso;
 // si falla, se cae al estado "desconectado" y hay que reconectar a mano).
 // =================================================================================
-import { showTempMessage } from '../ui.js';
+import { showTempMessage, renderEmptyState, mostrarSeccion } from '../ui.js';
 
 export const CALENDAR_API_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const CALENDAR_TOKEN_STORAGE_KEY = 'calendarAccessToken';
@@ -155,6 +155,14 @@ export function resetCalendarState() {
     localStorage.removeItem(CALENDAR_TOKEN_STORAGE_KEY);
     const eventsList = document.getElementById('calendar-events-list');
     if (eventsList) eventsList.innerHTML = '';
+    const todayEventsList = document.getElementById('today-calendar-events-list');
+    if (todayEventsList) {
+        renderEmptyState(todayEventsList, {
+            message: 'Conectá Google Calendar para ver acá lo que te queda por hoy.',
+            actionLabel: '🗓️ Ir a Calendario',
+            onAction: () => mostrarSeccion('calendario')
+        });
+    }
     updateCalendarConnectionStatus(false);
 }
 
@@ -164,18 +172,54 @@ export function handleDisconnectCalendar() {
     showTempMessage('Desconectado de Google Calendar.', 'info');
 }
 
+function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function buildEventListItem(event, { timeOnly = false } = {}) {
+    const li = document.createElement('li');
+    li.className = 'calendar-event';
+    const start = event.start.dateTime || event.start.date;
+    const dateObj = new Date(start);
+
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'event-time';
+    timeSpan.textContent = timeOnly
+        ? dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        : dateObj.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+
+    const summarySpan = document.createElement('span');
+    summarySpan.className = 'event-summary';
+    summarySpan.textContent = event.summary || '(Sin título)';
+
+    li.appendChild(timeSpan);
+    li.appendChild(summarySpan);
+    return li;
+}
+
 export async function loadCalendarEvents() {
     console.log('[Calendar] Loading events. calendarAccessToken exists:', !!calendarAccessToken);
     const eventsList = document.getElementById('calendar-events-list');
+    const todayEventsList = document.getElementById('today-calendar-events-list');
 
-    if (!eventsList) return;
+    if (!eventsList && !todayEventsList) return;
 
     if (!calendarAccessToken) {
-        eventsList.innerHTML = '<li>Para ver tu calendario, haz clic en "Iniciar con Google" en la parte superior de la página.</li>';
+        if (eventsList) {
+            eventsList.innerHTML = '<li>Para ver tu calendario, haz clic en "Iniciar con Google" en la parte superior de la página.</li>';
+        }
+        if (todayEventsList) {
+            renderEmptyState(todayEventsList, {
+                message: 'Conectá Google Calendar para ver acá lo que te queda por hoy.',
+                actionLabel: '🗓️ Ir a Calendario',
+                onAction: () => mostrarSeccion('calendario')
+            });
+        }
         return;
     }
 
-    eventsList.innerHTML = '<li>Cargando eventos...</li>';
+    if (eventsList) eventsList.innerHTML = '<li>Cargando eventos...</li>';
+    if (todayEventsList) todayEventsList.innerHTML = '<li>Cargando agenda de hoy...</li>';
 
     try {
         const now = new Date();
@@ -216,7 +260,8 @@ export async function loadCalendarEvents() {
                 );
                 updateCalendarConnectionStatus(false);
             }
-            eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+            if (eventsList) eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+            if (todayEventsList) todayEventsList.innerHTML = '<li>Error al cargar la agenda de hoy.</li>';
             return;
         }
 
@@ -224,32 +269,35 @@ export async function loadCalendarEvents() {
         const events = data.items || [];
         console.log('[Calendar] Events received:', events);
 
-        if (!events.length) {
-            eventsList.innerHTML = '<li>No hay eventos para hoy o mañana.</li>';
-            return;
+        if (eventsList) {
+            eventsList.innerHTML = '';
+            if (!events.length) {
+                renderEmptyState(eventsList, { message: 'No hay eventos para hoy o mañana.' });
+            } else {
+                events.forEach(event => eventsList.appendChild(buildEventListItem(event)));
+            }
         }
 
-        eventsList.innerHTML = '';
-
-        events.forEach(event => {
-            const li = document.createElement('li');
-            li.className = 'calendar-event';
-            const start = event.start.dateTime || event.start.date;
-            const dateObj = new Date(start);
-            const timeStr = dateObj.toLocaleString('es-ES', {
-                dateStyle: 'short',
-                timeStyle: 'short'
+        if (todayEventsList) {
+            const now2 = new Date();
+            const remainingToday = events.filter(event => {
+                const start = event.start.dateTime || event.start.date;
+                const dateObj = new Date(start);
+                return isSameDay(dateObj, now2) && dateObj >= now2;
             });
-            li.innerHTML = `
-                <span class="event-time">${timeStr}</span>
-                <span class="event-summary">${event.summary || '(Sin título)'}</span>
-            `;
-            eventsList.appendChild(li);
-        });
+
+            todayEventsList.innerHTML = '';
+            if (!remainingToday.length) {
+                renderEmptyState(todayEventsList, { message: 'No te queda nada más agendado por hoy. 🎉' });
+            } else {
+                remainingToday.forEach(event => todayEventsList.appendChild(buildEventListItem(event, { timeOnly: true })));
+            }
+        }
 
     } catch (err) {
         console.error('[Calendar] Error loading events:', err);
-        eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+        if (eventsList) eventsList.innerHTML = '<li>Error al cargar eventos.</li>';
+        if (todayEventsList) todayEventsList.innerHTML = '<li>Error al cargar la agenda de hoy.</li>';
         showTempMessage('Error al cargar eventos de Google Calendar.', 'error');
     }
 }
