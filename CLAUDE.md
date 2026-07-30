@@ -97,6 +97,16 @@ Se sacó el UID de Firebase que se mostraba junto al nombre del usuario en el he
 - Varios `border-radius: 5px` sueltos se consolidaron a `--border-radius-sm`.
 - **No se tocaron** `body { border: 5px solid rgb(35,129,23) }` ni `#css-check` — son intencionales, dejarlos así.
 
+**Temas de color (MEDIA): hecho.** Claro/Oscuro/Suave, selector en Configuración (`public/js/features/theme.js`), persistido en `settings/appSettings` (Firestore) + `localStorage` (aplicado por un script inline en el `<head>` de `index.html` antes del primer paint, para evitar parpadeo). Todo vía `document.documentElement.dataset.theme` + overrides `:root[data-theme="dark"]` / `[data-theme="soft"]` en `styles1.css`.
+
+Para que el tema oscuro funcionara de verdad (no solo cambiar 2 variables) hubo que separar variables que antes estaban mezcladas:
+- `--white` (color de texto sobre botones/header, no cambia por tema) vs `--surface-bg`/`--card-bg` (fondos de tarjetas, sí cambian).
+- `--primary-color`/`--secondary-color` (fondo de botón + texto blanco, no cambian por tema porque ya pasan AA en cualquier tema) vs `--accent-text`/`--accent-text-secondary` (mismo tono pero más claro, usado cuando el color va como TEXTO o BORDE sobre una superficie que sí se oscurece — el primary-color original solo da 2.33:1 sobre el fondo oscuro, muy por debajo de AA).
+- `--timer-gradient-start/end` (relleno de texto del cronómetro vía `background-clip: text`) vs `--bg-gradient-start/end` (fondo de página) — si compartieran variable, oscurecer el fondo dejaría el cronómetro illegible.
+- `pomodoro.js` fijaba el stroke del anillo por JS con `var(--primary-color)`/`var(--secondary-color)` (pisaba cualquier cambio en la regla CSS) — se cambió a `--accent-text`/`--accent-text-secondary`.
+
+Todos los tonos verificados con cálculo real de contraste (script Node, fórmula WCAG), no a ojo. Si en algún momento se agrega un color nuevo a la paleta, hay que decidir conscientemente si es "texto sobre superficie" (usar `--accent-text`) o "fondo de botón con texto blanco" (usar `--primary-color` directo) — mezclarlos rompe el tema oscuro.
+
 **Vista Hoy completada**: mostraba solo el Pomodoro pese a prometer "prioridades, foco y agenda". Se agregó `#today-mits` (hasta 3 MITs del Checklist, tildables ahí mismo) en `checklist.js`, y `#today-calendar-events-list` (lo que queda de hoy en Google Calendar) en `calendar.js`. Ambos ya existían como código muerto antes del refactor de la sesión Mac (el HTML nunca los tuvo).
 
 ## Notas importantes para trabajar en este repo
