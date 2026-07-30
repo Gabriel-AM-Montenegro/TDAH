@@ -19,7 +19,8 @@ Del backlog de Trello, ya implementado y probado en el navegador:
 
 Pendiente en el backlog (lista "To Do" del board):
 - **BAJA**: Mensajes/sugerencias en secciones vacías, optimizar contraste de colores (accesibilidad), control global de sonido.
-- **MEDIA**: casi todo el bloque de Journal (buscar por palabra clave, registrar ánimo/energía, etiquetar y filtrar) y Checklist (subtareas, etiquetas de color, recordatorios por hora), unificar estilos, temas de color, config. de sonidos/volumen, guías de respiración en Pomodoro, sistema de puntos.
+- **MEDIA**: bloque de Journal (buscar por palabra clave, registrar ánimo/energía, etiquetar y filtrar), unificar estilos, temas de color, config. de sonidos/volumen, guías de respiración en Pomodoro, sistema de puntos.
+- **MEDIA — Checklist: hecho** (subtareas, etiquetas de color, recordatorios por hora) — ver detalle en la sección de sesión Mac más abajo.
 - Hay una tarjeta suelta "traea 2" en la lista "Doing" sin contenido real (parece de prueba, fecha vencida) — confirmar con el usuario si se archiva.
 
 Refactor de `public/js/main.js` en módulos por feature: **hecho** (ver sección de abajo).
@@ -60,6 +61,14 @@ Cada `initX(db, userId)` construye sus propios refs de Firestore y llama a `regi
 - `publicDataDocId` (en `firebase.js`, con comentario) **no se tocó**: sigue difiriendo en un dígito de `appId` a propósito, porque cambiarlo movería la ruta de Firestore donde ya vive la data real de producción.
 
 **Bug preexistente encontrado y arreglado durante la verificación** (no lo introdujo el refactor, confirmado contra el commit anterior a esta sesión): la bandera `isLoggingOut` (ahora vive en `auth.js`) solo se reseteaba a `false` en la rama de login (`onAuthStateChanged` con `user` truthy), nunca en la rama de logout. Efecto: cerrar sesión y volver a loguearse sin recargar la página hacía que el primer login no ejecutara `loadAllUserData` (había que loguearse dos veces, o recargar). Se agregó `isLoggingOut = false;` también al final de la rama `else` en `auth.js` y se verificó en el navegador (logout → login anónimo sin recargar, carga los datos al primer intento).
+
+**Checklist: subtareas, etiquetas de color y recordatorios por hora — hecho** (los 3 items MEDIA del backlog para Checklist). Todo vive en `public/js/features/checklist.js` + CSS nuevo en `public/css/styles1.css`, sin tocar `index.html` ni `firestore.rules`:
+- Nuevos campos opcionales en el doc de cada ítem: `subtasks: Array<{id, text, completed}>`, `tagColor: 'red'|'orange'|'green'|'blue'|'purple'|null`, `reminderTime: "HH:MM"|null`.
+- La fila principal del ítem no cambió (checkbox, texto, MIT, editar, borrar) — se agregó un botón "🔽 Detalles" que abre/cierra un panel por ítem (estado `expandedItemIds` en memoria, se preserva entre re-renders del `onSnapshot` igual que ya se preservaba el foco de edición).
+- Etiqueta de color: paleta fija de 5 colores + "sin color" (sin selector RGB libre), se ve como un punto de color en la fila principal.
+- Subtareas: agregar/tildar/borrar, mismo patrón que `habits.js` usa para `dailyCompletions` (`getDoc` → mutar array → `updateDoc`).
+- Recordatorio: `<input type="time">` por ítem + `setInterval` cada 30s que compara la hora actual contra los recordatorios activos y dispara `showTempMessage` + `Notification` (si el permiso está concedido) una vez por día por ítem. **Limitación**: solo dispara mientras la pestaña esté abierta (no hay service worker/backend), igual que las notificaciones del Pomodoro.
+- Verificado en el navegador con cuenta anónima de prueba: panel persiste tras re-render, las 5 etiquetas + "sin color", agregar/tildar/borrar subtarea, disparo del recordatorio, y que MIT/edición inline/borrado/drag-reorder existentes siguen funcionando igual.
 
 ## Notas importantes para trabajar en este repo
 

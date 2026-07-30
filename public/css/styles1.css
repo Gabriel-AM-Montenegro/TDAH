@@ -23,6 +23,11 @@ body {
   --info-light: #e0f2fe;
   --info-dark: #0ea5e9;
   --mit-color: #FFD700;
+  --tag-red: #ef4444;
+  --tag-orange: #f97316;
+  --tag-green: #22c55e;
+  --tag-blue: #3b82f6;
+  --tag-purple: #a855f7;
   --spacing-xs: 5px;
   --spacing-sm: 10px;
   --spacing-md: 15px;
@@ -550,6 +555,152 @@ li button {
 .task-completed {
   text-decoration: line-through;
   color: var(--text-medium);
+}
+
+/* ========== CHECKLIST: ETIQUETAS, SUBTAREAS Y RECORDATORIOS ========== */
+
+.item-tag-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-dot-red { background-color: var(--tag-red); }
+.tag-dot-orange { background-color: var(--tag-orange); }
+.tag-dot-green { background-color: var(--tag-green); }
+.tag-dot-blue { background-color: var(--tag-blue); }
+.tag-dot-purple { background-color: var(--tag-purple); }
+
+.details-toggle-btn {
+  background-color: var(--info-light);
+  color: var(--info-dark);
+  border: none;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.item-details-panel {
+  display: none;
+  flex-basis: 100%;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--white);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+li.expanded .item-details-panel {
+  display: block;
+}
+
+.details-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.details-row:last-child {
+  margin-bottom: 0;
+}
+
+.details-label {
+  font-size: 0.85em;
+  color: var(--text-medium);
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.tag-color-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.tag-dot.selected,
+.tag-color-picker .tag-dot.selected {
+  outline: 2px solid var(--text-dark);
+  outline-offset: 2px;
+}
+
+.tag-color-picker .tag-dot {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  color: var(--text-medium);
+}
+
+.tag-dot-none {
+  background-color: var(--light-bg);
+  border: 1px solid var(--border-color);
+}
+
+.reminder-time-input {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+}
+
+.subtasks-section {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.subtask-list {
+  list-style: none;
+  margin: var(--spacing-xs) 0;
+  padding: 0;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--light-bg);
+  border-left-width: 2px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: 4px 0;
+}
+
+.subtask-item .subtask-text {
+  flex-grow: 1;
+}
+
+.subtask-delete-btn {
+  background: none;
+  border: none;
+  color: var(--error-dark);
+  cursor: pointer;
+  padding: 2px 6px;
+  min-width: unset;
+}
+
+.subtask-empty {
+  color: var(--text-light);
+  font-size: 0.85em;
+  font-style: italic;
+  background: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+  padding: var(--spacing-xs) 0 !important;
+}
+
+.subtask-input-group {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.subtask-input-group .subtask-input {
+  flex-grow: 1;
 }
 
 input[type="checkbox"] {
