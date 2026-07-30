@@ -83,6 +83,8 @@ Backlog — **BAJA completo**:
 
 **Token de Calendar**: se implementó el refresco silencioso (ver nota más abajo) — el usuario lo está probando en uso real de un día completo, resultado pendiente de confirmar.
 
+**Vista Hoy completada**: mostraba solo el Pomodoro pese a prometer "prioridades, foco y agenda". Se agregó `#today-mits` (hasta 3 MITs del Checklist, tildables ahí mismo) en `checklist.js`, y `#today-calendar-events-list` (lo que queda de hoy en Google Calendar) en `calendar.js`. Ambos ya existían como código muerto antes del refactor de la sesión Mac (el HTML nunca los tuvo).
+
 ## Notas importantes para trabajar en este repo
 
 - **No tocar el backend de producción sin avisar antes.** El proyecto de Firebase es real (`tdah-app-efca9`).
