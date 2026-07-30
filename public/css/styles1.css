@@ -130,15 +130,6 @@ header p {
   margin: 10px auto 0;
 }
 
-.email-auth-form input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
 .email-auth-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -349,12 +340,12 @@ button:active {
 }
 
 .button-danger {
-  background: #dc2626 !important;
+  background: var(--error-dark) !important;
   box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
 }
 
 .button-danger:hover {
-  background: #b91c1c !important;
+  background: #991b1b !important;
 }
 
 .button-clicked {
@@ -376,6 +367,10 @@ button:active {
 }
 
 input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
 textarea {
   width: 100%;
   padding: 12px;
@@ -385,13 +380,27 @@ textarea {
   margin-bottom: var(--spacing-sm);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
 textarea:focus {
   border-color: var(--primary-color);
   outline: none;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* El formulario de email vive sobre el header traslúcido, no sobre una
+   tarjeta blanca: sin borde y con su propio spacing (el flex gap del
+   contenedor ya separa los campos). */
+.email-auth-form input {
+  padding: 10px 12px;
+  border: none;
+  margin-bottom: 0;
 }
 
 textarea {
@@ -481,12 +490,7 @@ textarea {
 }
 
 .config-input-wrapper input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
   margin-bottom: 0;
-  /* Override */
 }
 
 .save-config-btn {
@@ -577,7 +581,7 @@ li button {
   color: var(--info-dark);
   border: none;
   padding: 5px 8px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   margin-right: 5px;
 }
@@ -645,7 +649,7 @@ li.expanded .item-details-panel {
 
 .reminder-time-input {
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-sm);
   border: 1px solid var(--border-color);
 }
 
@@ -1337,9 +1341,9 @@ a:focus-visible,
 .calendar-event {
   background-color: var(--info-light);
   border-left: 4px solid var(--info-dark);
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  border-radius: 5px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
 }
 
 .event-time {
@@ -1356,7 +1360,7 @@ a:focus-visible,
   color: var(--warning-dark);
   border: none;
   padding: 5px 8px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   margin-right: 5px;
 }
@@ -1475,16 +1479,6 @@ a:focus-visible,
   padding: 10px 14px;
 }
 
-.journal-search-input {
-  width: 100%;
-  padding: 10px 14px;
-  margin-bottom: var(--spacing-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
 .journal-mood-picker {
   margin: var(--spacing-sm) 0 var(--spacing-md);
 }
@@ -1517,16 +1511,6 @@ a:focus-visible,
 .journal-mood-btn.selected {
   border-color: var(--primary-color);
   background: var(--info-light);
-}
-
-.journal-tags-input {
-  width: 100%;
-  padding: 10px 14px;
-  margin-bottom: var(--spacing-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  font-size: 14px;
-  box-sizing: border-box;
 }
 
 .journal-tag-filters {
