@@ -22,11 +22,23 @@ export function initJournal(db, userId) {
     const journalEntriesList = document.getElementById('journalEntriesList');
     const searchInput = document.getElementById('journal-search-input');
     const moodOptionsContainer = document.getElementById('journal-mood-options');
+    const tagsInput = document.getElementById('journal-tags-input');
+    const tagFiltersContainer = document.getElementById('journal-tag-filters');
     if (!journalEntryTextarea || !saveJournalEntryButton || !journalEntriesList) return;
 
     let allEntries = [];
     let searchTerm = '';
     let selectedMood = null;
+    let activeTagFilter = null;
+
+    const parseTags = (rawValue) => {
+        const seen = new Set();
+        rawValue.split(',').forEach(t => {
+            const tag = t.trim().toLowerCase();
+            if (tag) seen.add(tag);
+        });
+        return [...seen];
+    };
 
     if (moodOptionsContainer) {
         MOOD_OPTIONS.forEach(mood => {
@@ -105,6 +117,28 @@ export function initJournal(db, userId) {
         };
     }
 
+    const renderTagFilters = () => {
+        if (!tagFiltersContainer) return;
+        const allTags = [...new Set(allEntries.flatMap(entry => Array.isArray(entry.tags) ? entry.tags : []))].sort();
+
+        tagFiltersContainer.innerHTML = '';
+        if (!allTags.length) return;
+
+        allTags.forEach(tag => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'journal-tag-chip';
+            chip.classList.toggle('active', tag === activeTagFilter);
+            chip.textContent = `#${tag}`;
+            chip.onclick = () => {
+                activeTagFilter = activeTagFilter === tag ? null : tag;
+                renderTagFilters();
+                renderEntriesList();
+            };
+            tagFiltersContainer.appendChild(chip);
+        });
+    };
+
     const renderEntriesList = () => {
         journalEntriesList.innerHTML = '';
 
@@ -117,13 +151,17 @@ export function initJournal(db, userId) {
             return;
         }
 
-        const filtered = searchTerm
-            ? allEntries.filter(entry => entry.text.toLowerCase().includes(searchTerm))
-            : allEntries;
+        const filtered = allEntries.filter(entry => {
+            const matchesSearch = !searchTerm || entry.text.toLowerCase().includes(searchTerm);
+            const matchesTag = !activeTagFilter || (Array.isArray(entry.tags) && entry.tags.includes(activeTagFilter));
+            return matchesSearch && matchesTag;
+        });
 
         if (!filtered.length) {
             renderEmptyState(journalEntriesList, {
-                message: `No hay entradas que coincidan con "${searchTerm}".`
+                message: searchTerm
+                    ? `No hay entradas que coincidan con "${searchTerm}".`
+                    : `No hay entradas con la etiqueta #${activeTagFilter}.`
             });
             return;
         }
@@ -147,6 +185,19 @@ export function initJournal(db, userId) {
 
             listItem.appendChild(dateSpan);
             listItem.appendChild(textDiv);
+
+            if (Array.isArray(entry.tags) && entry.tags.length) {
+                const tagsDiv = document.createElement('div');
+                tagsDiv.className = 'journal-entry-tags';
+                entry.tags.forEach(tag => {
+                    const tagSpan = document.createElement('span');
+                    tagSpan.className = 'journal-tag-chip';
+                    tagSpan.textContent = `#${tag}`;
+                    tagsDiv.appendChild(tagSpan);
+                });
+                listItem.appendChild(tagsDiv);
+            }
+
             journalEntriesList.appendChild(listItem);
         });
     };
@@ -166,6 +217,7 @@ export function initJournal(db, userId) {
             allEntries.map(entry => new Date(entry.timestamp).toISOString().split('T')[0])
         );
         renderJournalCalendar();
+        renderTagFilters();
         renderEntriesList();
     }, (error) => console.error("Journal: Error al escuchar:", error));
     registerListener(unsubscribe);
@@ -177,10 +229,12 @@ export function initJournal(db, userId) {
                 await addDoc(journalCollectionRef, {
                     text: entryText,
                     timestamp: new Date().toISOString(),
-                    mood: selectedMood
+                    mood: selectedMood,
+                    tags: tagsInput ? parseTags(tagsInput.value) : []
                 });
                 journalEntryTextarea.value = '';
                 selectedMood = null;
+                if (tagsInput) tagsInput.value = '';
                 if (moodOptionsContainer) {
                     moodOptionsContainer.querySelectorAll('.journal-mood-btn').forEach(b => b.classList.remove('selected'));
                 }

@@ -1519,6 +1519,57 @@ a:focus-visible,
   background: var(--info-light);
 }
 
+.journal-tags-input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.journal-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.journal-tag-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 12px;
+  background: var(--light-bg);
+  color: var(--text-medium);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+button.journal-tag-chip:hover {
+  transform: none;
+  box-shadow: none;
+  background: var(--border-color);
+}
+
+.journal-tag-chip.active {
+  background: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+}
+
+.journal-entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.journal-entry-tags .journal-tag-chip {
+  cursor: default;
+}
+
 .today-mit-item label {
   display: flex;
   align-items: center;
