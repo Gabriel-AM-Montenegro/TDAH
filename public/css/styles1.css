@@ -10,18 +10,18 @@ body {
   --bg-gradient-end: #764ba2;
   --text-dark: #374151;
   --text-medium: #6b7280;
-  --text-light: #9ca3af;
+  --text-light: #6b7280;
   --white: white;
   --light-bg: #f8fafc;
   --border-color: #e5e7eb;
   --success-light: #ecfdf5;
-  --success-dark: #10b981;
+  --success-dark: #047857;
   --error-light: #fef2f2;
-  --error-dark: #dc2626;
+  --error-dark: #b91c1c;
   --warning-light: #fffbeb;
-  --warning-dark: #f59e0b;
+  --warning-dark: #92400e;
   --info-light: #e0f2fe;
-  --info-dark: #0ea5e9;
+  --info-dark: #0369a1;
   --mit-color: #FFD700;
   --tag-red: #ef4444;
   --tag-orange: #f97316;
@@ -80,7 +80,6 @@ header h1 {
 
 header p {
   margin: 0;
-  opacity: 0.9;
   font-size: 1.1em;
 }
 
@@ -350,12 +349,12 @@ button:active {
 }
 
 .button-danger {
-  background: #ef4444 !important;
+  background: #dc2626 !important;
   box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
 }
 
 .button-danger:hover {
-  background: #dc2626 !important;
+  background: #b91c1c !important;
 }
 
 .button-clicked {
