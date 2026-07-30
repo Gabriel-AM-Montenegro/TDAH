@@ -3,9 +3,15 @@
   "configurations": [
     {
       "name": "tdah-app",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8791", "--directory", "public"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "public", "-l", "8791"],
       "port": 8791
+    },
+    {
+      "name": "firebase-emulators",
+      "runtimeExecutable": "firebase",
+      "runtimeArgs": ["emulators:start"],
+      "port": 4000
     }
   ]
 }

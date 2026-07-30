@@ -2,8 +2,8 @@
 // FIREBASE: CONFIGURACIÓN E INICIALIZACIÓN
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
@@ -27,11 +27,23 @@ export let app;
 export let db;
 export let auth;
 
+// Modo opt-in para desarrollo: abrir la app con ?emulator=1 conecta Auth y
+// Firestore a los emuladores locales (firebase emulators:start) en vez de
+// producción. Sin ese parámetro, el comportamiento no cambia.
+const useEmulator = new URLSearchParams(location.search).get('emulator') === '1';
+
 try {
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    console.log("Firebase inicializado exitosamente.");
+
+    if (useEmulator) {
+        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+        console.log('Firebase conectado a los EMULADORES locales (Auth :9099, Firestore :8080).');
+    } else {
+        console.log("Firebase inicializado exitosamente.");
+    }
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
     document.addEventListener('DOMContentLoaded', () => {
