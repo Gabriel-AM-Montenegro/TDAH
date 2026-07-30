@@ -18,6 +18,7 @@ import { initChecklist } from './features/checklist.js';
 import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
 import { wireSoundToggle } from './sound.js';
+import { initTheme } from './features/theme.js';
 
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
@@ -42,6 +43,7 @@ async function loadAllUserData(currentUserId) {
     const userSettingsRef = doc(db, 'artifacts', publicDataDocId, 'users', currentUserId, 'settings', 'appSettings');
 
     initWelcomeTour(db, currentUserId);
+    initTheme(db, currentUserId);
     initJournal(db, currentUserId);
     initPomodoro(db, currentUserId);
     initChecklist(db, currentUserId);

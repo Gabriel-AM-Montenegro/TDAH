@@ -58,7 +58,7 @@ export function initPomodoro(db, userId) {
         timerDisplay.textContent = formatted;
         if (todayTimerDisplay) todayTimerDisplay.textContent = formatted;
         setProgress((timeLeft / totalTimeForPomodoro) * 100);
-        const strokeColor = isBreakTime ? 'var(--secondary-color)' : 'var(--primary-color)';
+        const strokeColor = isBreakTime ? 'var(--accent-text-secondary)' : 'var(--accent-text)';
         progressCircle.style.stroke = strokeColor;
         // Actualizar también el color del círculo de la sección Hoy
         if (progressCircleToday) {
