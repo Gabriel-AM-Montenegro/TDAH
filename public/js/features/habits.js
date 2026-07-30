@@ -4,7 +4,7 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showCustomConfirm } from '../ui.js';
+import { showCustomConfirm, renderEmptyState } from '../ui.js';
 
 export function initHabits(db, userId) {
     const habitsCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'habits');
@@ -18,7 +18,11 @@ export function initHabits(db, userId) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
         habitsList.innerHTML = '';
         if (snapshot.empty) {
-            habitsList.innerHTML = '<li class="empty-section-message">Aún no tienes hábitos.</li>';
+            renderEmptyState(habitsList, {
+                message: 'Aún no tenés hábitos. Empezá con uno chico y sostenible.',
+                actionLabel: '🌱 Agregar tu primer hábito',
+                onAction: () => newHabitInput.focus()
+            });
             return;
         }
         snapshot.forEach(docSnap => {

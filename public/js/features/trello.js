@@ -4,7 +4,7 @@
 import { doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showTempMessage, mostrarSeccion } from '../ui.js';
+import { showTempMessage, mostrarSeccion, renderEmptyState } from '../ui.js';
 
 export function initTrello(db, userId) {
     const trelloConfigDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'trelloConfig', 'settings');
@@ -26,10 +26,13 @@ export function initTrello(db, userId) {
 
     const cargarTareasTrello = async () => {
         const configSnap = await getDoc(trelloConfigDocRef);
-        if (!configSnap.exists()) return;
-        const { apiKey, token, boardId } = configSnap.data();
+        const { apiKey, token, boardId } = configSnap.exists() ? configSnap.data() : {};
         if (!apiKey || !token || !boardId) {
-            listaTareasUl.innerHTML = '<li class="empty-section-message">Configura Trello para ver tus tareas.</li>';
+            renderEmptyState(listaTareasUl, {
+                message: 'Conectá tu cuenta de Trello para ver acá tus tareas de la semana.',
+                actionLabel: '⚙️ Configurar Trello',
+                onAction: () => mostrarSeccion('config')
+            });
             return;
         }
         listaTareasUl.innerHTML = '<li>Cargando tareas...</li>';
@@ -56,7 +59,9 @@ export function initTrello(db, userId) {
             if (filteredCards.length > 0) {
                 listaTareasUl.innerHTML = filteredCards.map(card => `<li>${card.name} (Vence: ${new Date(card.due).toLocaleDateString()})</li>`).join('');
             } else {
-                listaTareasUl.innerHTML = '<li class="empty-section-message">No hay tareas que venzan esta semana.</li>';
+                renderEmptyState(listaTareasUl, {
+                    message: '¡Nada vence esta semana! Buen momento para adelantar algo o descansar.'
+                });
             }
         } catch (error) {
             listaTareasUl.innerHTML = `<li class="empty-section-message">Error al cargar tareas: ${error.message}</li>`;
@@ -96,6 +101,8 @@ export function initTrello(db, userId) {
             trelloTokenInput.value = config.token || '';
             trelloBoardIdInput.value = config.boardId || '';
             probarConexionTrello();
+        } else {
+            cargarTareasTrello();
         }
     });
     registerListener(unsubscribe);

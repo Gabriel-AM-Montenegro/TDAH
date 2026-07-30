@@ -4,7 +4,7 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, onSnapshot, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showTempMessage, showCustomConfirm } from '../ui.js';
+import { showTempMessage, showCustomConfirm, renderEmptyState } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
 
 const TAG_COLORS = ['red', 'orange', 'green', 'blue', 'purple'];
@@ -58,7 +58,11 @@ export function initChecklist(db, userId) {
         activeItemsForReminders = [];
 
         if (snapshot.empty) {
-            checkListUl.innerHTML = '<li class="empty-section-message">No hay ítems en el checklist.</li>';
+            renderEmptyState(checkListUl, {
+                message: 'Todavía no tenés tareas. ¡Sumá la primera y arrancá con foco!',
+                actionLabel: '➕ Añadir tu primera tarea',
+                onAction: () => checkItemInput.focus()
+            });
             return;
         }
 

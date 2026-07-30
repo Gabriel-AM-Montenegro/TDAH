@@ -3,8 +3,9 @@
 // =================================================================================
 import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
+import { renderEmptyState } from '../ui.js';
 
-function createContentLoader(collectionRef, contentDivId, refreshBtnId) {
+function createContentLoader(collectionRef, contentDivId, refreshBtnId, emptyMessage) {
     const contentDiv = document.getElementById(contentDivId);
     const refreshBtn = document.getElementById(refreshBtnId);
     if (!contentDiv || !refreshBtn) return;
@@ -15,7 +16,7 @@ function createContentLoader(collectionRef, contentDivId, refreshBtnId) {
             const q = query(collectionRef, orderBy('timestamp', 'desc'));
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
-                contentDiv.innerHTML = '<p class="empty-section-message">No hay contenido disponible.</p>';
+                renderEmptyState(contentDiv, { message: emptyMessage, tag: 'div' });
                 return;
             }
             contentDiv.innerHTML = snapshot.docs.map(docSnap => {
@@ -38,10 +39,16 @@ function createContentLoader(collectionRef, contentDivId, refreshBtnId) {
 
 export function initBlog(db) {
     const blogArticlesCollectionRef = collection(db, 'artifacts', publicDataDocId, 'blogArticles');
-    createContentLoader(blogArticlesCollectionRef, 'blog-content', 'refresh-blog-btn');
+    createContentLoader(
+        blogArticlesCollectionRef, 'blog-content', 'refresh-blog-btn',
+        'Todavía no hay artículos cargados. Volvé a intentarlo más tarde.'
+    );
 }
 
 export function initNutricion(db) {
     const nutricionCollectionRef = collection(db, 'artifacts', publicDataDocId, 'public', 'data', 'nutritionContent');
-    createContentLoader(nutricionCollectionRef, 'nutricion-content', 'refresh-nutricion-btn');
+    createContentLoader(
+        nutricionCollectionRef, 'nutricion-content', 'refresh-nutricion-btn',
+        'Todavía no hay contenido de nutrición cargado. Volvé a intentarlo más tarde.'
+    );
 }

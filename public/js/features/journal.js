@@ -4,7 +4,7 @@
 import { collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showTempMessage } from '../ui.js';
+import { showTempMessage, renderEmptyState } from '../ui.js';
 
 export function initJournal(db, userId) {
     const journalCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'journalEntries');
@@ -83,7 +83,11 @@ export function initJournal(db, userId) {
         renderJournalCalendar();
 
         if (snapshot.empty) {
-            journalEntriesList.innerHTML = '<li>No hay entradas en el diario aún.</li>';
+            renderEmptyState(journalEntriesList, {
+                message: 'Todavía no escribiste nada en tu diario.',
+                actionLabel: '📝 Escribir tu primera entrada',
+                onAction: () => journalEntryTextarea.focus()
+            });
             return;
         }
         snapshot.forEach((docSnap) => {

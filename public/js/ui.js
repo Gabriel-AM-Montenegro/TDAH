@@ -63,6 +63,27 @@ export function triggerConfetti() {
     }
 }
 
+export function renderEmptyState(container, { message, actionLabel, onAction, tag = 'li' } = {}) {
+    container.innerHTML = '';
+    const wrapper = document.createElement(tag);
+    wrapper.className = 'empty-section-message';
+
+    const text = document.createElement('p');
+    text.textContent = message;
+    wrapper.appendChild(text);
+
+    if (actionLabel && onAction) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'empty-state-action';
+        btn.textContent = actionLabel;
+        btn.onclick = onAction;
+        wrapper.appendChild(btn);
+    }
+
+    container.appendChild(wrapper);
+}
+
 export function mostrarSeccion(seccionId) {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
