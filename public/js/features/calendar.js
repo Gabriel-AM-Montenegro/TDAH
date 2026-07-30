@@ -96,7 +96,21 @@ export function setCalendarAccessToken(token) {
     scheduleTokenRefresh(DEFAULT_TOKEN_LIFETIME_MS);
 }
 
-export function restoreCalendarToken() {
+// GIS se carga con <script async defer>, así que puede no estar listo todavía
+// cuando restoreCalendarToken() se ejecuta al cargar la página. Esperamos un
+// poco en vez de rendirnos al toque (eso causaba una desconexión falsa).
+function waitForGis(timeoutMs = 8000, intervalMs = 200) {
+    return new Promise(resolve => {
+        const start = Date.now();
+        (function check() {
+            if (window.google?.accounts?.oauth2) return resolve(true);
+            if (Date.now() - start > timeoutMs) return resolve(false);
+            setTimeout(check, intervalMs);
+        })();
+    });
+}
+
+export async function restoreCalendarToken() {
     const raw = localStorage.getItem(CALENDAR_TOKEN_STORAGE_KEY);
     if (!raw) {
         updateCalendarConnectionStatus(false);
@@ -118,14 +132,21 @@ export function restoreCalendarToken() {
 
     if (remainingMs > TOKEN_REFRESH_BUFFER_MS) {
         scheduleTokenRefresh(remainingMs);
+        return;
+    }
+
+    // El token ya venció o está por vencer: intentar refrescarlo ya mismo.
+    const gisReady = await waitForGis();
+    if (!gisReady) {
+        console.error('[Calendar] Google Identity Services no cargó a tiempo, no se pudo refrescar el token.');
+        resetCalendarState();
+        return;
+    }
+    const client = getTokenClient();
+    if (client) {
+        client.requestAccessToken({ prompt: '' });
     } else {
-        // El token ya venció o está por vencer: intentar refrescarlo ya mismo.
-        const client = getTokenClient();
-        if (client) {
-            client.requestAccessToken({ prompt: '' });
-        } else {
-            resetCalendarState();
-        }
+        resetCalendarState();
     }
 }
 
