@@ -6,6 +6,14 @@ import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showTempMessage, renderEmptyState } from '../ui.js';
 
+const MOOD_OPTIONS = [
+    { value: 'great', emoji: '🤩', label: 'Con mucha energía' },
+    { value: 'good', emoji: '🙂', label: 'Bien' },
+    { value: 'okay', emoji: '😐', label: 'Más o menos' },
+    { value: 'low', emoji: '😔', label: 'Bajón' },
+    { value: 'bad', emoji: '😣', label: 'Mal' },
+];
+
 export function initJournal(db, userId) {
     const journalCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'journalEntries');
 
@@ -13,10 +21,30 @@ export function initJournal(db, userId) {
     const saveJournalEntryButton = document.getElementById('save-journal-entry-btn');
     const journalEntriesList = document.getElementById('journalEntriesList');
     const searchInput = document.getElementById('journal-search-input');
+    const moodOptionsContainer = document.getElementById('journal-mood-options');
     if (!journalEntryTextarea || !saveJournalEntryButton || !journalEntriesList) return;
 
     let allEntries = [];
     let searchTerm = '';
+    let selectedMood = null;
+
+    if (moodOptionsContainer) {
+        MOOD_OPTIONS.forEach(mood => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'journal-mood-btn';
+            btn.dataset.value = mood.value;
+            btn.title = mood.label;
+            btn.textContent = mood.emoji;
+            btn.onclick = () => {
+                selectedMood = selectedMood === mood.value ? null : mood.value;
+                moodOptionsContainer.querySelectorAll('.journal-mood-btn').forEach(b => {
+                    b.classList.toggle('selected', b.dataset.value === selectedMood);
+                });
+            };
+            moodOptionsContainer.appendChild(btn);
+        });
+    }
 
     // --- Mini-calendario: marca los días con entradas ---
     const calMonthLabel = document.getElementById('journal-cal-month-label');
@@ -105,7 +133,10 @@ export function initJournal(db, userId) {
 
             const dateSpan = document.createElement('span');
             dateSpan.className = 'journal-date';
-            dateSpan.textContent = new Date(entry.timestamp).toLocaleString('es-ES');
+            let dateText = new Date(entry.timestamp).toLocaleString('es-ES');
+            const mood = MOOD_OPTIONS.find(m => m.value === entry.mood);
+            if (mood) dateText = `${mood.emoji} ${dateText}`;
+            dateSpan.textContent = dateText;
 
             const textDiv = document.createElement('div');
             const lines = entry.text.split('\n');
@@ -143,8 +174,16 @@ export function initJournal(db, userId) {
         const entryText = journalEntryTextarea.value.trim();
         if (entryText) {
             try {
-                await addDoc(journalCollectionRef, { text: entryText, timestamp: new Date().toISOString() });
+                await addDoc(journalCollectionRef, {
+                    text: entryText,
+                    timestamp: new Date().toISOString(),
+                    mood: selectedMood
+                });
                 journalEntryTextarea.value = '';
+                selectedMood = null;
+                if (moodOptionsContainer) {
+                    moodOptionsContainer.querySelectorAll('.journal-mood-btn').forEach(b => b.classList.remove('selected'));
+                }
                 showTempMessage('Entrada guardada.', 'success');
             } catch (error) { showTempMessage(`Error al guardar: ${error.message}`, 'error'); }
         }

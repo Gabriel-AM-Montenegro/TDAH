@@ -1485,6 +1485,40 @@ a:focus-visible,
   box-sizing: border-box;
 }
 
+.journal-mood-picker {
+  margin: var(--spacing-sm) 0 var(--spacing-md);
+}
+
+.journal-mood-picker .details-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.journal-mood-options {
+  display: flex;
+  gap: 8px;
+}
+
+.journal-mood-btn {
+  font-size: 1.4em;
+  line-height: 1;
+  padding: 8px 12px;
+  background: var(--light-bg);
+  border: 2px solid transparent;
+  box-shadow: none;
+}
+
+.journal-mood-btn:hover {
+  transform: none;
+  box-shadow: none;
+  background: var(--border-color);
+}
+
+.journal-mood-btn.selected {
+  border-color: var(--primary-color);
+  background: var(--info-light);
+}
+
 .today-mit-item label {
   display: flex;
   align-items: center;
