@@ -1763,3 +1763,49 @@ button.journal-tag-chip:hover {
   font-weight: 600;
   color: var(--text-dark);
 }
+
+/* Guía de respiración 4-7-8 durante los descansos del Pomodoro */
+.breathing-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) auto;
+}
+
+.breathing-guide[hidden] {
+  display: none;
+}
+
+.breathing-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--accent-text-secondary);
+  opacity: 0.7;
+  animation: breathe 19s ease-in-out infinite;
+}
+
+.breathing-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-medium);
+}
+
+@keyframes breathe {
+  0% {
+    transform: scale(0.7);
+  }
+
+  21% {
+    transform: scale(1);
+  }
+
+  58% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(0.7);
+  }
+}

@@ -16,6 +16,13 @@ export function startFocusOn(text) {
     if (focusOnHandler) focusOnHandler(text);
 }
 
+// Guía de respiración 4-7-8 durante los descansos (Ítem 1, segunda tanda UX ADHD).
+const BREATHING_PHASES = [
+    { label: 'Inhalá... 4', duration: 4000 },
+    { label: 'Sostené... 7', duration: 7000 },
+    { label: 'Exhalá... 8', duration: 8000 },
+];
+
 export function initPomodoro(db, userId) {
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pomodoroSettings', 'current');
 
@@ -34,6 +41,30 @@ export function initPomodoro(db, userId) {
     const progressCircle = document.querySelector('.pomodoro-progress-ring-progress');
     const progressCircleToday = document.querySelector('.pomodoro-progress-ring-progress-today');
     const focusLabel = document.getElementById('pomodoro-today-focus-label');
+    const breathingGuides = [document.getElementById('breathing-guide'), document.getElementById('breathing-guide-today')].filter(Boolean);
+    let breathingTimeoutId = null;
+
+    const runBreathingPhase = (phaseIndex) => {
+        const phase = BREATHING_PHASES[phaseIndex];
+        breathingGuides.forEach(guide => {
+            const label = guide.querySelector('.breathing-label');
+            if (label) label.textContent = phase.label;
+        });
+        breathingTimeoutId = setTimeout(() => {
+            runBreathingPhase((phaseIndex + 1) % BREATHING_PHASES.length);
+        }, phase.duration);
+    };
+
+    const startBreathingGuide = () => {
+        if (!breathingGuides.length) return;
+        breathingGuides.forEach(guide => { guide.hidden = false; });
+        runBreathingPhase(0);
+    };
+
+    const stopBreathingGuide = () => {
+        clearTimeout(breathingTimeoutId);
+        breathingGuides.forEach(guide => { guide.hidden = true; });
+    };
 
     // Elementos de configuración
     const focusTimeInput = document.getElementById('focus-time-input');
@@ -105,6 +136,7 @@ export function initPomodoro(db, userId) {
                     totalTimeForPomodoro = breakTime * 60;
                     playSound('sound-break');
                     startTimer();
+                    startBreathingGuide();
                 } else {
                     resetTimer();
                 }
@@ -146,6 +178,7 @@ export function initPomodoro(db, userId) {
         savePomodoroState(timeLeft, false, isBreakTime);
         showTempMessage('Temporizador reiniciado.', 'info');
         if (focusLabel) focusLabel.textContent = '';
+        stopBreathingGuide();
     };
 
     // Guardar configuración de tiempos
@@ -201,6 +234,7 @@ export function initPomodoro(db, userId) {
                 timeLeft = Math.max(0, settings.timeLeft - elapsed);
                 if (timeLeft > 0 && !timer) {
                     startTimer();
+                    if (isBreakTime) startBreathingGuide();
                 } else if (timeLeft <= 0) {
                     timeLeft = 0;
                     handleTimerEnd();
