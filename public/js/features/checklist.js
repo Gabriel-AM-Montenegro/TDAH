@@ -7,6 +7,7 @@ import { registerListener } from '../listeners.js';
 import { showTempMessage, showCustomConfirm, renderEmptyState, renderProgressSummary } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
+import { startFocusOn } from './pomodoro.js';
 
 const TAG_COLORS = ['red', 'orange', 'green', 'blue', 'purple'];
 const REMINDER_CHECK_INTERVAL_MS = 30000;
@@ -44,8 +45,10 @@ export function initChecklist(db, userId) {
             li.dataset.id = item.id;
             li.innerHTML = `
                 <input type="checkbox" class="today-mit-checkbox" id="today-mit-${item.id}">
-                <label for="today-mit-${item.id}"><span></span></label>`;
+                <label for="today-mit-${item.id}"><span></span></label>
+                <button type="button" class="focus-on-mit-btn">▶ Enfocarme</button>`;
             li.querySelector('span').textContent = item.text;
+            li.querySelector('.focus-on-mit-btn').onclick = () => startFocusOn(item.text);
             todayMitsList.appendChild(li);
         });
     };

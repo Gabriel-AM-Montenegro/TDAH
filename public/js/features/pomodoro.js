@@ -8,6 +8,14 @@ import { showTempMessage, showCustomConfirm, triggerConfetti } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
 
+// initPomodoro asigna esto una vez que arma su propio startTimer/setFocusLabel.
+// Evita un import circular entre checklist.js y pomodoro.js.
+let focusOnHandler = null;
+
+export function startFocusOn(text) {
+    if (focusOnHandler) focusOnHandler(text);
+}
+
 export function initPomodoro(db, userId) {
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pomodoroSettings', 'current');
 
@@ -25,6 +33,7 @@ export function initPomodoro(db, userId) {
     const resetTimerBtn = document.getElementById('reset-timer-btn');
     const progressCircle = document.querySelector('.pomodoro-progress-ring-progress');
     const progressCircleToday = document.querySelector('.pomodoro-progress-ring-progress-today');
+    const focusLabel = document.getElementById('pomodoro-today-focus-label');
 
     // Elementos de configuración
     const focusTimeInput = document.getElementById('focus-time-input');
@@ -136,6 +145,7 @@ export function initPomodoro(db, userId) {
         updateTimerDisplay();
         savePomodoroState(timeLeft, false, isBreakTime);
         showTempMessage('Temporizador reiniciado.', 'info');
+        if (focusLabel) focusLabel.textContent = '';
     };
 
     // Guardar configuración de tiempos
@@ -218,4 +228,10 @@ export function initPomodoro(db, userId) {
     if (startTodayBtn) startTodayBtn.onclick = startTimer;
     if (pauseTodayBtn) pauseTodayBtn.onclick = pauseTimer;
     if (resetTodayBtn) resetTodayBtn.onclick = resetTimer;
+
+    // Fase 2 UX ADHD: permite arrancar el Pomodoro directo desde un MIT de Hoy.
+    focusOnHandler = (text) => {
+        if (focusLabel) focusLabel.textContent = text ? `🎯 Enfocado en: ${text}` : '';
+        if (!isRunning) startTimer();
+    };
 }
