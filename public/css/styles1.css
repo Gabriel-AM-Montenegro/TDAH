@@ -1680,3 +1680,28 @@ button.journal-tag-chip:hover {
   background: var(--info-light);
   color: var(--text-dark);
 }
+
+.progress-summary {
+  margin-bottom: var(--spacing-md);
+}
+
+.progress-summary-label {
+  font-size: 0.85em;
+  color: var(--text-medium);
+  margin: 0 0 6px 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-text);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}

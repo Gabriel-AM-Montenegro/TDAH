@@ -4,7 +4,7 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showCustomConfirm, renderEmptyState } from '../ui.js';
+import { showCustomConfirm, renderEmptyState, renderProgressSummary } from '../ui.js';
 
 export function initHabits(db, userId) {
     const habitsCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'habits');
@@ -12,11 +12,17 @@ export function initHabits(db, userId) {
     const newHabitInput = document.getElementById('newHabitInput');
     const addHabitBtn = document.getElementById('add-habit-btn');
     const habitsList = document.getElementById('habitsList');
+    const habitsProgress = document.getElementById('habits-progress');
     if (!newHabitInput || !addHabitBtn || !habitsList) return;
 
     const q = query(habitsCollectionRef, orderBy('timestamp', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
         habitsList.innerHTML = '';
+
+        const todayString = new Date().toISOString().split('T')[0];
+        const completedToday = snapshot.docs.filter(d => d.data().dailyCompletions?.[todayString]).length;
+        renderProgressSummary(habitsProgress, completedToday, snapshot.size);
+
         if (snapshot.empty) {
             renderEmptyState(habitsList, {
                 message: 'Aún no tenés hábitos. Empezá con uno chico y sostenible.',

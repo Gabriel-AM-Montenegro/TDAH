@@ -4,7 +4,7 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, onSnapshot, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showTempMessage, showCustomConfirm, renderEmptyState } from '../ui.js';
+import { showTempMessage, showCustomConfirm, renderEmptyState, renderProgressSummary } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
 
@@ -19,6 +19,7 @@ export function initChecklist(db, userId) {
     const checkItemInput = document.getElementById('checkItem');
     const addCheckItemBtn = document.getElementById('add-check-item-btn');
     const checkListUl = document.getElementById('checkList');
+    const checklistProgress = document.getElementById('checklist-progress');
     if (!checkItemInput || !addCheckItemBtn || !checkListUl) return;
 
     let originalText = '';
@@ -80,6 +81,9 @@ export function initChecklist(db, userId) {
         checkListUl.innerHTML = '';
         activeItemsForReminders = [];
         const mitItems = [];
+
+        const completedCount = snapshot.docs.filter(d => d.data().completed).length;
+        renderProgressSummary(checklistProgress, completedCount, snapshot.size, 'completados');
 
         if (snapshot.empty) {
             renderEmptyState(checkListUl, {

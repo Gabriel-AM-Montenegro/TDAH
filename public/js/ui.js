@@ -84,6 +84,28 @@ export function renderEmptyState(container, { message, actionLabel, onAction, ta
     container.appendChild(wrapper);
 }
 
+export function renderProgressSummary(container, completed, total, labelSuffix = 'completados hoy') {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!total) return;
+
+    const percent = Math.round((completed / total) * 100);
+
+    const label = document.createElement('p');
+    label.className = 'progress-summary-label';
+    label.textContent = `${completed}/${total} ${labelSuffix}`;
+
+    const bar = document.createElement('div');
+    bar.className = 'progress-bar';
+    const fill = document.createElement('div');
+    fill.className = 'progress-bar-fill';
+    fill.style.width = `${percent}%`;
+    bar.appendChild(fill);
+
+    container.appendChild(label);
+    container.appendChild(bar);
+}
+
 export function mostrarSeccion(seccionId) {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
