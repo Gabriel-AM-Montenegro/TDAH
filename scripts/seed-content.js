@@ -102,6 +102,7 @@ const nutritionArticles = [
         source: 'Aporta hierro, B12 y magnesio — ver "Los déficits que más aparecen en TDAH"',
         url: 'https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2026.1844881/full',
         type: 'recipe',
+        nutrients: ['hierro', 'magnesio', 'vitamina-b'],
     },
     {
         title: 'Receta: Avena overnight con semillas de chía (2 min, se arma la noche anterior)',
@@ -109,6 +110,7 @@ const nutritionArticles = [
         source: 'Aporta omega-3 y evita picos de glucosa — ver "Omega-3: ayuda, pero no es magia"',
         url: 'https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2026.1844881/full',
         type: 'recipe',
+        nutrients: ['omega-3'],
     },
     {
         title: 'Receta: Salmón al horno con batata (20 min, casi sin intervención)',
@@ -116,6 +118,7 @@ const nutritionArticles = [
         source: 'Aporta omega-3 EPA/DHA y magnesio — ver "Omega-3: ayuda, pero no es magia"',
         url: 'https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2026.1844881/full',
         type: 'recipe',
+        nutrients: ['omega-3', 'magnesio'],
     },
     {
         title: 'Receta: Batido de espinaca, banana y mantequilla de maní (5 min, sin cocción)',
@@ -123,6 +126,7 @@ const nutritionArticles = [
         source: 'Aporta hierro, magnesio y proteína — ver "Los déficits que más aparecen en TDAH"',
         url: 'https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2026.1844881/full',
         type: 'recipe',
+        nutrients: ['hierro', 'magnesio'],
     },
     {
         title: 'Receta: Lentejas con arroz integral (30 min, rinde para varios días)',
@@ -130,6 +134,7 @@ const nutritionArticles = [
         source: 'Aporta hierro y zinc — ver "Los déficits que más aparecen en TDAH"',
         url: 'https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2026.1844881/full',
         type: 'recipe',
+        nutrients: ['hierro', 'zinc'],
     },
 ];
 

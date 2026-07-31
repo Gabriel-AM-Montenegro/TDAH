@@ -58,22 +58,59 @@ function buildArticleCard(item) {
     return card;
 }
 
-function createContentLoader(collectionRef, contentDivId, refreshBtnId, emptyMessage) {
+function createContentLoader(collectionRef, contentDivId, refreshBtnId, emptyMessage, nutrientFilterContainerId = null) {
     const contentDiv = document.getElementById(contentDivId);
     const refreshBtn = document.getElementById(refreshBtnId);
+    const nutrientFiltersContainer = nutrientFilterContainerId ? document.getElementById(nutrientFilterContainerId) : null;
     if (!contentDiv || !refreshBtn) return;
+
+    let allItems = [];
+    let activeNutrientFilter = null;
+
+    const renderItems = () => {
+        const filtered = activeNutrientFilter
+            ? allItems.filter(item => Array.isArray(item.nutrients) && item.nutrients.includes(activeNutrientFilter))
+            : allItems;
+
+        contentDiv.innerHTML = '';
+        if (!filtered.length) {
+            renderEmptyState(contentDiv, { message: emptyMessage, tag: 'div' });
+            return;
+        }
+        filtered.forEach(item => contentDiv.appendChild(buildArticleCard(item)));
+    };
+
+    const renderNutrientFilters = () => {
+        if (!nutrientFiltersContainer) return;
+        const allNutrients = [...new Set(allItems.flatMap(item => Array.isArray(item.nutrients) ? item.nutrients : []))].sort();
+
+        nutrientFiltersContainer.innerHTML = '';
+        if (!allNutrients.length) return;
+
+        allNutrients.forEach(nutrient => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'journal-tag-chip';
+            chip.classList.toggle('active', nutrient === activeNutrientFilter);
+            chip.textContent = `#${nutrient}`;
+            chip.onclick = () => {
+                activeNutrientFilter = activeNutrientFilter === nutrient ? null : nutrient;
+                renderNutrientFilters();
+                renderItems();
+            };
+            nutrientFiltersContainer.appendChild(chip);
+        });
+    };
 
     const loadContent = async () => {
         contentDiv.innerHTML = '<p>Cargando...</p>';
         try {
             const q = query(collectionRef, orderBy('timestamp', 'desc'));
             const snapshot = await getDocs(q);
-            if (snapshot.empty) {
-                renderEmptyState(contentDiv, { message: emptyMessage, tag: 'div' });
-                return;
-            }
-            contentDiv.innerHTML = '';
-            snapshot.docs.forEach(docSnap => contentDiv.appendChild(buildArticleCard(docSnap.data())));
+            allItems = snapshot.docs.map(docSnap => docSnap.data());
+            activeNutrientFilter = null;
+            renderNutrientFilters();
+            renderItems();
         } catch (error) {
             console.error(`Error al cargar ${contentDivId}:`, error);
             contentDiv.innerHTML = `<p class="empty-section-message">Error al cargar contenido. Es posible que falte un índice en Firestore. Revisa la consola para más detalles.</p>`;
@@ -95,6 +132,7 @@ export function initNutricion(db) {
     const nutricionCollectionRef = collection(db, 'artifacts', publicDataDocId, 'public', 'data', 'nutritionContent');
     createContentLoader(
         nutricionCollectionRef, 'nutricion-content', 'refresh-nutricion-btn',
-        'Todavía no hay contenido de nutrición cargado. Volvé a intentarlo más tarde.'
+        'Todavía no hay contenido de nutrición cargado. Volvé a intentarlo más tarde.',
+        'nutricion-nutrient-filters'
     );
 }
