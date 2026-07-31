@@ -92,6 +92,9 @@ export function mostrarSeccion(seccionId) {
     if (seccionActiva) seccionActiva.classList.add('active');
     if (botonActivo) botonActivo.classList.add('active');
     document.title = SECTION_TITLES[seccionId] ? `App TDAH - ${SECTION_TITLES[seccionId]}` : 'App TDAH';
+
+    // No dejar el grupo de navegación abierto después de elegir una sección.
+    document.querySelectorAll('.nav-tabs details[open]').forEach(d => d.removeAttribute('open'));
 }
 
 // Se mantienen expuestos en window: no hay uso interno que lo requiera hoy,

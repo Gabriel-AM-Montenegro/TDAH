@@ -49,14 +49,33 @@
     <nav class="nav-tabs">
       <!-- Ahora la idea es que la vista principal sea HOY -->
       <button id="btn-hoy" class="active">📅 Hoy</button>
-      <button id="btn-pomodoro">⏱️ Pomodoro</button>
-      <button id="btn-calendario">🗓️ Calendario</button>
-      <button id="btn-checklist">✅ Checklist Rápido</button>
-      <button id="btn-journal">📝 Journal</button>
-      <button id="btn-habitos">🌱 Hábitos</button>
-      <button id="btn-tareas">📋 Tareas Trello</button>
-      <button id="btn-notas">📚 Notas Blog</button>
-      <button id="btn-nutricion">🍎 Nutrición</button>
+
+      <details class="nav-group" name="nav-accordion">
+        <summary>🗂️ Organizar</summary>
+        <div class="nav-group-buttons">
+          <button id="btn-pomodoro">⏱️ Pomodoro</button>
+          <button id="btn-checklist">✅ Checklist Rápido</button>
+          <button id="btn-habitos">🌱 Hábitos</button>
+          <button id="btn-tareas">📋 Tareas Trello</button>
+        </div>
+      </details>
+
+      <details class="nav-group" name="nav-accordion">
+        <summary>🧭 Reflexionar</summary>
+        <div class="nav-group-buttons">
+          <button id="btn-journal">📝 Journal</button>
+          <button id="btn-calendario">🗓️ Calendario</button>
+        </div>
+      </details>
+
+      <details class="nav-group" name="nav-accordion">
+        <summary>📚 Aprender</summary>
+        <div class="nav-group-buttons">
+          <button id="btn-notas">📚 Notas Blog</button>
+          <button id="btn-nutricion">🍎 Nutrición</button>
+        </div>
+      </details>
+
       <button id="btn-config">⚙️ Configuración</button>
     </nav>
 
