@@ -19,6 +19,7 @@ import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
 import { wireSoundToggle } from './sound.js';
 import { initTheme } from './features/theme.js';
+import { initPoints } from './features/points.js';
 
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
@@ -44,6 +45,7 @@ async function loadAllUserData(currentUserId) {
 
     initWelcomeTour(db, currentUserId);
     initTheme(db, currentUserId);
+    initPoints(db, currentUserId);
     initJournal(db, currentUserId);
     initPomodoro(db, currentUserId);
     initChecklist(db, currentUserId);

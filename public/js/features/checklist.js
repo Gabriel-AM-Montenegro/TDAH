@@ -9,6 +9,7 @@ import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
 import { startFocusOn } from './pomodoro.js';
 import { setMitsState } from './next-step.js';
+import { addPoints, POINTS_PER_MIT } from './points.js';
 
 const TAG_COLORS = ['red', 'orange', 'green', 'blue', 'purple'];
 const REMINDER_CHECK_INTERVAL_MS = 30000;
@@ -183,7 +184,10 @@ export function initChecklist(db, userId) {
             if (!itemId) return;
             try {
                 await updateDoc(doc(checklistCollectionRef, itemId), { completed: e.target.checked });
-                if (e.target.checked) playSound('sound-task-done');
+                if (e.target.checked) {
+                    playSound('sound-task-done');
+                    addPoints(POINTS_PER_MIT);
+                }
             } catch (error) {
                 console.error("Checklist: Error al completar MIT desde Hoy:", error);
             }
@@ -275,7 +279,10 @@ export function initChecklist(db, userId) {
 
         if (target.classList.contains('completion-checkbox')) {
             await updateDoc(itemRef, { completed: target.checked });
-            if (target.checked) playSound('sound-task-done');
+            if (target.checked) {
+                playSound('sound-task-done');
+                if (listItem.classList.contains('mit-task')) addPoints(POINTS_PER_MIT);
+            }
         } else if (target.classList.contains('mit-checkbox')) {
             // limitar a 3 MITs
             const snapshot = await getDocs(query(checklistCollectionRef));

@@ -73,11 +73,13 @@ export function initAuthStateListener(onLogin) {
             const habitsList = document.getElementById('habitsList');
             const todayMitsList = document.getElementById('today-mits');
             const todayNextStep = document.getElementById('today-next-step');
+            const pointsDisplay = document.getElementById('points-display');
             if (journalEntriesList) journalEntriesList.innerHTML = '';
             if (checkList) checkList.innerHTML = '';
             if (habitsList) habitsList.innerHTML = '';
             if (todayMitsList) todayMitsList.innerHTML = '';
             if (todayNextStep) todayNextStep.innerHTML = '';
+            if (pointsDisplay) pointsDisplay.textContent = '';
 
             // Resetear estado de Calendar
             resetCalendarState();

@@ -6,6 +6,7 @@ import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showCustomConfirm, renderEmptyState, renderProgressSummary } from '../ui.js';
 import { setHabitsState } from './next-step.js';
+import { addPoints, POINTS_PER_HABIT } from './points.js';
 
 export function initHabits(db, userId) {
     const habitsCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'habits');
@@ -73,8 +74,11 @@ export function initHabits(db, userId) {
                 const docSnap = await getDoc(habitRef);
                 if (docSnap.exists()) {
                     const completions = docSnap.data().dailyCompletions || {};
-                    const newCompletions = { ...completions, [date]: !completions[date] };
+                    const wasCompleted = !!completions[date];
+                    const newCompletions = { ...completions, [date]: !wasCompleted };
                     await updateDoc(habitRef, { dailyCompletions: newCompletions });
+                    const todayString = new Date().toISOString().split('T')[0];
+                    if (!wasCompleted && date === todayString) addPoints(POINTS_PER_HABIT);
                 }
             } catch (error) { console.error("Hábitos: Error al actualizar:", error); }
         } else if (target.classList.contains('button-danger')) {
