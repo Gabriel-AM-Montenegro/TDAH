@@ -8,8 +8,9 @@ import { renderEmptyState } from '../ui.js';
 const TRUNCATE_LENGTH = 120;
 
 function buildArticleCard(item) {
+    const isRecipe = item.type === 'recipe';
     const card = document.createElement('div');
-    card.className = 'blog-article-card';
+    card.className = isRecipe ? 'blog-article-card recipe-card' : 'blog-article-card';
 
     const h4 = document.createElement('h4');
     h4.textContent = item.title;
@@ -41,7 +42,7 @@ function buildArticleCard(item) {
     card.appendChild(p);
 
     const small = document.createElement('small');
-    small.textContent = `Fuente: ${item.source}`;
+    small.textContent = isRecipe ? `🍳 ${item.source}` : `Fuente: ${item.source}`;
     card.appendChild(small);
 
     if (item.url) {

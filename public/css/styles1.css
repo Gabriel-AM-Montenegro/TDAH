@@ -926,6 +926,10 @@ input[type="checkbox"] {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
+.recipe-card {
+  border-left: 4px solid var(--accent-text-secondary);
+}
+
 .blog-article-card h4,
 .nutricion-card h4 {
   margin: 0 0 var(--spacing-xs) 0;
@@ -936,6 +940,7 @@ input[type="checkbox"] {
 .nutricion-card p {
   margin: 0 0 var(--spacing-xs) 0;
   color: var(--text-medium);
+  white-space: pre-line;
   line-height: 1.5;
   font-size: 0.95em;
 }

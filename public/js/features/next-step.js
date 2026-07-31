@@ -12,7 +12,7 @@ import { mostrarSeccion } from '../ui.js';
 let latestMits = [];
 let latestHabits = { total: 0, firstIncomplete: null };
 
-function renderCard(message, actionLabel, onAction) {
+function renderCard(message, actions = []) {
     const container = document.getElementById('today-next-step');
     if (!container) return;
 
@@ -24,13 +24,13 @@ function renderCard(message, actionLabel, onAction) {
     p.textContent = message;
     card.appendChild(p);
 
-    if (actionLabel && onAction) {
+    actions.forEach(({ label, onAction }) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = actionLabel;
+        btn.textContent = label;
         btn.onclick = onAction;
         card.appendChild(btn);
-    }
+    });
 
     container.appendChild(card);
 }
@@ -38,16 +38,18 @@ function renderCard(message, actionLabel, onAction) {
 function render() {
     if (latestMits.length) {
         const next = latestMits[0];
-        renderCard(`👉 Próximo paso: ${next.text}`, '▶ Enfocarme ahora', () => startFocusOn(next.text));
+        renderCard(`👉 Próximo paso: ${next.text}`, [
+            { label: '▶ Enfocarme ahora', onAction: () => startFocusOn(next.text) }
+        ]);
         return;
     }
 
     if (latestHabits.firstIncomplete) {
-        renderCard(
-            `👉 Próximo paso: marcar el hábito "${latestHabits.firstIncomplete.name}"`,
-            '🌱 Ir a Hábitos',
-            () => mostrarSeccion('habitos')
-        );
+        const habitName = latestHabits.firstIncomplete.name;
+        renderCard(`👉 Próximo paso: marcar el hábito "${habitName}"`, [
+            { label: '🌱 Ir a Hábitos', onAction: () => mostrarSeccion('habitos') },
+            { label: '▶ Enfocarme ahora', onAction: () => startFocusOn(habitName) }
+        ]);
         return;
     }
 
