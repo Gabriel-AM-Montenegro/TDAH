@@ -8,6 +8,7 @@ import { showTempMessage, showCustomConfirm, renderEmptyState, renderProgressSum
 import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
 import { startFocusOn } from './pomodoro.js';
+import { setMitsState } from './next-step.js';
 
 const TAG_COLORS = ['red', 'orange', 'green', 'blue', 'purple'];
 const REMINDER_CHECK_INTERVAL_MS = 30000;
@@ -95,6 +96,7 @@ export function initChecklist(db, userId) {
                 onAction: () => checkItemInput.focus()
             });
             renderTodayMits([]);
+            setMitsState([]);
             return;
         }
 
@@ -157,6 +159,7 @@ export function initChecklist(db, userId) {
         });
 
         renderTodayMits(mitItems);
+        setMitsState(mitItems);
 
         if (focusedElementId && focusedElementIsEditing) {
             const newFocusedElement = checkListUl.querySelector(`[data-id="${focusedElementId}"] .item-text`);

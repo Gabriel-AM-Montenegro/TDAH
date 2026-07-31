@@ -5,6 +5,7 @@ import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, onSnapshot, quer
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showCustomConfirm, renderEmptyState, renderProgressSummary } from '../ui.js';
+import { setHabitsState } from './next-step.js';
 
 export function initHabits(db, userId) {
     const habitsCollectionRef = collection(db, 'artifacts', publicDataDocId, 'users', userId, 'habits');
@@ -20,8 +21,10 @@ export function initHabits(db, userId) {
         habitsList.innerHTML = '';
 
         const todayString = new Date().toISOString().split('T')[0];
-        const completedToday = snapshot.docs.filter(d => d.data().dailyCompletions?.[todayString]).length;
+        const habitsData = snapshot.docs.map(d => ({ id: d.id, name: d.data().name, dailyCompletions: d.data().dailyCompletions }));
+        const completedToday = habitsData.filter(h => h.dailyCompletions?.[todayString]).length;
         renderProgressSummary(habitsProgress, completedToday, snapshot.size);
+        setHabitsState(habitsData, todayString);
 
         if (snapshot.empty) {
             renderEmptyState(habitsList, {

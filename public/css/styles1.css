@@ -1738,3 +1738,23 @@ button.journal-tag-chip:hover {
   box-shadow: none;
   text-decoration: underline;
 }
+
+.next-step-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-align: center;
+  background: var(--info-light);
+  border: 2px solid var(--accent-text);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.next-step-card p {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-dark);
+}
