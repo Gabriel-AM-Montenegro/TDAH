@@ -1705,3 +1705,20 @@ button.journal-tag-chip:hover {
   border-radius: 999px;
   transition: width 0.3s ease;
 }
+
+.read-more-btn {
+  display: inline;
+  padding: 0;
+  background: none;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 0.9em;
+  box-shadow: none;
+  vertical-align: baseline;
+}
+
+.read-more-btn:hover {
+  transform: none;
+  box-shadow: none;
+  text-decoration: underline;
+}

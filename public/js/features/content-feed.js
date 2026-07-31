@@ -5,6 +5,58 @@ import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/fir
 import { publicDataDocId } from '../firebase.js';
 import { renderEmptyState } from '../ui.js';
 
+const TRUNCATE_LENGTH = 120;
+
+function buildArticleCard(item) {
+    const card = document.createElement('div');
+    card.className = 'blog-article-card';
+
+    const h4 = document.createElement('h4');
+    h4.textContent = item.title;
+    card.appendChild(h4);
+
+    const p = document.createElement('p');
+    const fullText = item.content || '';
+    const isLong = fullText.length > TRUNCATE_LENGTH;
+    const truncatedText = isLong ? `${fullText.slice(0, TRUNCATE_LENGTH).trimEnd()}…` : fullText;
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = truncatedText;
+    p.appendChild(textSpan);
+
+    if (isLong) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'read-more-btn';
+        toggleBtn.textContent = 'Leer más';
+        let expanded = false;
+        toggleBtn.onclick = () => {
+            expanded = !expanded;
+            textSpan.textContent = expanded ? fullText : truncatedText;
+            toggleBtn.textContent = expanded ? 'Leer menos' : 'Leer más';
+        };
+        p.appendChild(document.createTextNode(' '));
+        p.appendChild(toggleBtn);
+    }
+    card.appendChild(p);
+
+    const small = document.createElement('small');
+    small.textContent = `Fuente: ${item.source}`;
+    card.appendChild(small);
+
+    if (item.url) {
+        const link = document.createElement('a');
+        link.href = item.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'article-link';
+        link.textContent = 'Leer Más ↗';
+        card.appendChild(link);
+    }
+
+    return card;
+}
+
 function createContentLoader(collectionRef, contentDivId, refreshBtnId, emptyMessage) {
     const contentDiv = document.getElementById(contentDivId);
     const refreshBtn = document.getElementById(refreshBtnId);
@@ -19,15 +71,8 @@ function createContentLoader(collectionRef, contentDivId, refreshBtnId, emptyMes
                 renderEmptyState(contentDiv, { message: emptyMessage, tag: 'div' });
                 return;
             }
-            contentDiv.innerHTML = snapshot.docs.map(docSnap => {
-                const item = docSnap.data();
-                return `<div class="blog-article-card">
-                            <h4>${item.title}</h4>
-                            <p>${item.content}</p>
-                            <small>Fuente: ${item.source}</small>
-                            ${item.url ? `<a href="${item.url}" target="_blank" class="article-link">Leer Más ↗</a>` : ''}
-                        </div>`;
-            }).join('');
+            contentDiv.innerHTML = '';
+            snapshot.docs.forEach(docSnap => contentDiv.appendChild(buildArticleCard(docSnap.data())));
         } catch (error) {
             console.error(`Error al cargar ${contentDivId}:`, error);
             contentDiv.innerHTML = `<p class="empty-section-message">Error al cargar contenido. Es posible que falte un índice en Firestore. Revisa la consola para más detalles.</p>`;
