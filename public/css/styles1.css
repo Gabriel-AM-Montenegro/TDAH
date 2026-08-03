@@ -57,6 +57,18 @@ body {
   --nav-btn-bg: rgba(255, 255, 255, 0.2);
   --nav-btn-bg-active: rgba(255, 255, 255, 0.3);
   --li-hover-bg: #f1f5f9;
+  /* Tamaño de texto (Ítem 2, plan neurodivergencia): la mayoría del CSS usa
+     em, así que escalar esto en body escala en cascada casi toda la app. */
+  --base-font-size: 16px;
+  --base-line-height: 1.5;
+  --base-letter-spacing: normal;
+}
+
+/* ========== TEXTO GRANDE Y ESPACIADO ========== */
+:root[data-text-size="large"] {
+  --base-font-size: 19px;
+  --base-line-height: 1.7;
+  --base-letter-spacing: 0.02em;
 }
 
 /* ========== TEMA OSCURO ========== */
@@ -97,6 +109,9 @@ body {
 
 body {
   font-family: 'Segoe UI', sans-serif;
+  font-size: var(--base-font-size);
+  line-height: var(--base-line-height);
+  letter-spacing: var(--base-letter-spacing);
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
@@ -207,7 +222,7 @@ header p {
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875em;
   list-style: none;
   user-select: none;
 }
@@ -246,7 +261,7 @@ header p {
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875em;
   flex-shrink: 0;
 }
 
@@ -1664,7 +1679,7 @@ button.journal-tag-chip:hover {
 
 .focus-on-mit-btn {
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: 0.75em;
   min-width: unset;
   flex-shrink: 0;
 }

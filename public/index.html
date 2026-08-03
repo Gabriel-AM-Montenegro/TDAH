@@ -12,6 +12,8 @@
     (function () {
       var theme = localStorage.getItem('theme');
       if (theme) document.documentElement.setAttribute('data-theme', theme);
+      var textSize = localStorage.getItem('textSize');
+      if (textSize) document.documentElement.setAttribute('data-text-size', textSize);
     })();
     // Igual que el tema, pero el default (antes de elegir algo) respeta la
     // preferencia del sistema operativo en vez de asumir movimiento normal.
@@ -324,6 +326,12 @@
         <h3>Tema de color</h3>
         <div class="config-step">
           <div id="theme-options" class="theme-options"></div>
+        </div>
+
+        <h3>Tamaño de texto</h3>
+        <div class="config-step">
+          <div id="text-size-options" class="theme-options"></div>
+          <p class="help-text">Aumenta el tamaño de letra, el interlineado y el espaciado en toda la app.</p>
         </div>
 
         <h3>Configuración de Trello API</h3>
