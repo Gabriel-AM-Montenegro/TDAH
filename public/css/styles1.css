@@ -1604,6 +1604,10 @@ a:focus-visible,
   gap: 8px;
 }
 
+.trello-task-item {
+  cursor: pointer;
+}
+
 .today-mit-item {
   display: flex;
   align-items: center;
