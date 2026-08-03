@@ -18,6 +18,7 @@ import { initChecklist } from './features/checklist.js';
 import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
 import { wireSoundToggle } from './sound.js';
+import { wireMotionToggle } from './motion.js';
 import { initTheme } from './features/theme.js';
 import { initPoints } from './features/points.js';
 
@@ -118,4 +119,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     wireCalendarButtons();
     wireSoundToggle();
+    wireMotionToggle();
 });

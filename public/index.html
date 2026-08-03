@@ -13,6 +13,14 @@
       var theme = localStorage.getItem('theme');
       if (theme) document.documentElement.setAttribute('data-theme', theme);
     })();
+    // Igual que el tema, pero el default (antes de elegir algo) respeta la
+    // preferencia del sistema operativo en vez de asumir movimiento normal.
+    (function () {
+      var stored = localStorage.getItem('reducedMotion');
+      var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var reduceMotion = stored !== null ? stored === 'true' : prefersReduced;
+      if (reduceMotion) document.documentElement.setAttribute('data-reduced-motion', 'true');
+    })();
   </script>
   <link rel="stylesheet" href="css/styles1.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -344,6 +352,12 @@
         <div class="config-step">
           <button id="sound-toggle-btn" type="button" aria-pressed="true">🔊 Sonidos activados</button>
           <p class="help-text">Silencia los sonidos del Pomodoro y del Checklist en toda la app.</p>
+        </div>
+
+        <h3>Movimiento</h3>
+        <div class="config-step">
+          <button id="motion-toggle-btn" type="button" aria-pressed="false">🎬 Movimiento normal</button>
+          <p class="help-text">Reduce animaciones, confetti y el círculo de respiración en toda la app.</p>
         </div>
 
         <h3>Gestión de Datos</h3>

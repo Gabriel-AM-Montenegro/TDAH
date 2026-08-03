@@ -1804,3 +1804,25 @@ button.journal-tag-chip:hover {
   padding: var(--spacing-xs) var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
+
+/* Movimiento reducido (Ítem 1, plan neurodivergencia): desactiva las
+   animaciones/transiciones identificadas, sin un !important global. El
+   círculo de respiración sí necesita !important porque pomodoro.js le fija
+   transform/transition por JS (estilo inline), que gana sobre cualquier
+   regla de hoja de estilos sin !important. */
+:root[data-reduced-motion="true"] .seccion.active {
+  animation: none;
+}
+
+:root[data-reduced-motion="true"] .button-clicked {
+  animation: none;
+}
+
+:root[data-reduced-motion="true"] .timer-active #timer {
+  animation: none;
+}
+
+:root[data-reduced-motion="true"] .breathing-circle {
+  transition: none !important;
+  transform: scale(1) !important;
+}

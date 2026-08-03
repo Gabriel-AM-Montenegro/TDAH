@@ -1,6 +1,7 @@
 // =================================================================================
 // HELPERS DE UI COMPARTIDOS ENTRE FEATURES
 // =================================================================================
+import { isReducedMotionEnabled } from './motion.js';
 
 export const SECTION_TITLES = {
     hoy: 'Hoy',
@@ -50,6 +51,7 @@ export function showCustomConfirm(message) {
 }
 
 export function triggerConfetti() {
+    if (isReducedMotionEnabled()) return;
     const container = document.getElementById('confetti-container');
     if (!container) return;
     for (let i = 0; i < 100; i++) {
