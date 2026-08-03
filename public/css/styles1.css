@@ -1783,31 +1783,14 @@ button.journal-tag-chip:hover {
   border-radius: 50%;
   background: var(--accent-text-secondary);
   opacity: 0.7;
-  animation: breathe 19s ease-in-out infinite;
+  transform: scale(0.7);
+  transition: transform 4000ms ease-in-out;
 }
 
 .breathing-label {
   margin: 0;
   font-weight: 600;
   color: var(--text-medium);
-}
-
-@keyframes breathe {
-  0% {
-    transform: scale(0.7);
-  }
-
-  21% {
-    transform: scale(1);
-  }
-
-  58% {
-    transform: scale(1);
-  }
-
-  100% {
-    transform: scale(0.7);
-  }
 }
 
 /* Contador de puntos (Ítem 2, segunda tanda UX ADHD) */

@@ -46,9 +46,20 @@ export function initPomodoro(db, userId) {
 
     const runBreathingPhase = (phaseIndex) => {
         const phase = BREATHING_PHASES[phaseIndex];
+        // El círculo se expande en "Inhalá", se mantiene en "Sostené" y se
+        // contrae en "Exhalá" — manejado por JS (no @keyframes) para que el
+        // estado visual y el texto nunca se desincronicen: si la sección
+        // estaba en display:none (otra pestaña activa) una animación CSS
+        // reiniciaría desde 0%, pero un estilo inline no depende de eso.
+        const scale = phaseIndex === 2 ? 0.7 : 1;
         breathingGuides.forEach(guide => {
             const label = guide.querySelector('.breathing-label');
             if (label) label.textContent = phase.label;
+            const circle = guide.querySelector('.breathing-circle');
+            if (circle) {
+                circle.style.transitionDuration = `${phase.duration}ms`;
+                circle.style.transform = `scale(${scale})`;
+            }
         });
         breathingTimeoutId = setTimeout(() => {
             runBreathingPhase((phaseIndex + 1) % BREATHING_PHASES.length);
