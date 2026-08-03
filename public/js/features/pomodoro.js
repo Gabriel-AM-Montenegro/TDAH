@@ -16,12 +16,39 @@ export function startFocusOn(text) {
     if (focusOnHandler) focusOnHandler(text);
 }
 
-// Guía de respiración 4-7-8 durante los descansos (Ítem 1, segunda tanda UX ADHD).
-const BREATHING_PHASES = [
-    { label: 'Inhalá... 4', duration: 4000 },
-    { label: 'Sostené... 7', duration: 7000 },
-    { label: 'Exhalá... 8', duration: 8000 },
-];
+// Guía de respiración durante los descansos (Ítem 1, segunda tanda UX ADHD).
+// 3 patrones fijos a elegir (mismo criterio que el resto de la app: paleta
+// fija, no un editor libre de tiempos). `scale` es el tamaño del círculo en
+// esa fase: 1 = expandido (inhalando/sosteniendo con aire), 0.7 = contraído
+// (exhalando/sosteniendo vacío).
+const BREATHING_PATTERNS = {
+    '478': {
+        label: '4-7-8 (relajación)',
+        phases: [
+            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
+            { label: 'Sostené... 7', duration: 7000, scale: 1 },
+            { label: 'Exhalá... 8', duration: 8000, scale: 0.7 },
+        ],
+    },
+    box: {
+        label: 'Cuadrada (4-4-4-4)',
+        phases: [
+            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
+            { label: 'Sostené... 4', duration: 4000, scale: 1 },
+            { label: 'Exhalá... 4', duration: 4000, scale: 0.7 },
+            { label: 'Sostené... 4', duration: 4000, scale: 0.7 },
+        ],
+    },
+    triangle: {
+        label: 'Triangular (4-4-4)',
+        phases: [
+            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
+            { label: 'Sostené... 4', duration: 4000, scale: 1 },
+            { label: 'Exhalá... 4', duration: 4000, scale: 0.7 },
+        ],
+    },
+};
+const DEFAULT_BREATHING_PATTERN = '478';
 
 export function initPomodoro(db, userId) {
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pomodoroSettings', 'current');
@@ -33,6 +60,7 @@ export function initPomodoro(db, userId) {
     let timeLeft = focusTime * 60;
     let totalTimeForPomodoro = focusTime * 60;
     let isBreakTime = false;
+    let breathingPattern = DEFAULT_BREATHING_PATTERN;
     const timerDisplay = document.getElementById('timer');
     const todayTimerDisplay = document.getElementById('pomodoro-timer-today');
     const startTimerBtn = document.getElementById('start-timer-btn');
@@ -45,24 +73,24 @@ export function initPomodoro(db, userId) {
     let breathingTimeoutId = null;
 
     const runBreathingPhase = (phaseIndex) => {
-        const phase = BREATHING_PHASES[phaseIndex];
-        // El círculo se expande en "Inhalá", se mantiene en "Sostené" y se
-        // contrae en "Exhalá" — manejado por JS (no @keyframes) para que el
-        // estado visual y el texto nunca se desincronicen: si la sección
-        // estaba en display:none (otra pestaña activa) una animación CSS
-        // reiniciaría desde 0%, pero un estilo inline no depende de eso.
-        const scale = phaseIndex === 2 ? 0.7 : 1;
+        const phases = (BREATHING_PATTERNS[breathingPattern] || BREATHING_PATTERNS[DEFAULT_BREATHING_PATTERN]).phases;
+        const phase = phases[phaseIndex % phases.length];
+        // El círculo se expande o contrae según phase.scale — manejado por JS
+        // (no @keyframes) para que el estado visual y el texto nunca se
+        // desincronicen: si la sección estaba en display:none (otra pestaña
+        // activa) una animación CSS reiniciaría desde 0%, pero un estilo
+        // inline no depende de eso.
         breathingGuides.forEach(guide => {
             const label = guide.querySelector('.breathing-label');
             if (label) label.textContent = phase.label;
             const circle = guide.querySelector('.breathing-circle');
             if (circle) {
                 circle.style.transitionDuration = `${phase.duration}ms`;
-                circle.style.transform = `scale(${scale})`;
+                circle.style.transform = `scale(${phase.scale})`;
             }
         });
         breathingTimeoutId = setTimeout(() => {
-            runBreathingPhase((phaseIndex + 1) % BREATHING_PHASES.length);
+            runBreathingPhase((phaseIndex + 1) % phases.length);
         }, phase.duration);
     };
 
@@ -81,6 +109,38 @@ export function initPomodoro(db, userId) {
     const focusTimeInput = document.getElementById('focus-time-input');
     const breakTimeInput = document.getElementById('break-time-input');
     const savePomodoroConfigBtn = document.getElementById('save-pomodoro-config-btn');
+    const breathingPatternOptions = document.getElementById('breathing-pattern-options');
+
+    const highlightBreathingPattern = (value) => {
+        if (!breathingPatternOptions) return;
+        breathingPatternOptions.querySelectorAll('.theme-option-btn').forEach(b => {
+            b.classList.toggle('selected', b.dataset.value === value);
+        });
+    };
+
+    if (breathingPatternOptions) {
+        breathingPatternOptions.innerHTML = '';
+        Object.entries(BREATHING_PATTERNS).forEach(([value, pattern]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theme-option-btn';
+            btn.dataset.value = value;
+            btn.textContent = pattern.label;
+            btn.onclick = () => {
+                breathingPattern = value;
+                highlightBreathingPattern(value);
+                savePomodoroState(timeLeft, isRunning, isBreakTime);
+                // Si el círculo ya está animando, reiniciar con el patrón
+                // nuevo en vez de esperar a que termine la fase en curso.
+                if (isBreakTime && isRunning) {
+                    clearTimeout(breathingTimeoutId);
+                    runBreathingPhase(0);
+                }
+            };
+            breathingPatternOptions.appendChild(btn);
+        });
+        highlightBreathingPattern(breathingPattern);
+    }
 
     if (!timerDisplay || !progressCircle || !startTimerBtn || !pausePomodoroBtn || !resetTimerBtn) return;
 
@@ -125,6 +185,7 @@ export function initPomodoro(db, userId) {
                 isBreakTime: newBreak,
                 focusTime: focusTime,
                 breakTime: breakTime,
+                breathingPattern: breathingPattern,
                 lastUpdated: new Date().toISOString()
             });
         } catch (error) { console.error("Pomodoro: Error al guardar estado:", error); }
@@ -236,6 +297,8 @@ export function initPomodoro(db, userId) {
                 breakTime = settings.breakTime;
                 if (breakTimeInput) breakTimeInput.value = breakTime;
             }
+            breathingPattern = BREATHING_PATTERNS[settings.breathingPattern] ? settings.breathingPattern : DEFAULT_BREATHING_PATTERN;
+            highlightBreathingPattern(breathingPattern);
 
             isBreakTime = settings.isBreakTime || false;
             totalTimeForPomodoro = isBreakTime ? (breakTime * 60) : (focusTime * 60);
