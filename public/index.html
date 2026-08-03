@@ -116,7 +116,10 @@
           <p id="pomodoro-timer-today">25:00</p>
         </div>
         <div id="breathing-guide-today" class="breathing-guide" hidden>
-          <div class="breathing-circle"></div>
+          <svg class="breathing-path" viewBox="0 0 260 70" width="260" height="70">
+            <g class="breathing-segments"></g>
+            <circle class="breathing-dot" cx="0" cy="0" r="7"></circle>
+          </svg>
           <p class="breathing-label"></p>
         </div>
         <div class="pomodoro-buttons">
@@ -185,7 +188,10 @@
           <p id="timer">25:00</p>
         </div>
         <div id="breathing-guide" class="breathing-guide" hidden>
-          <div class="breathing-circle"></div>
+          <svg class="breathing-path" viewBox="0 0 260 70" width="260" height="70">
+            <g class="breathing-segments"></g>
+            <circle class="breathing-dot" cx="0" cy="0" r="7"></circle>
+          </svg>
           <p class="breathing-label"></p>
         </div>
         <div class="pomodoro-buttons">
@@ -365,6 +371,13 @@
         <div class="config-step">
           <button id="sound-toggle-btn" type="button" aria-pressed="true">🔊 Sonidos activados</button>
           <p class="help-text">Silencia los sonidos del Pomodoro y del Checklist en toda la app.</p>
+        </div>
+        <div class="config-step">
+          <div class="config-row">
+            <label for="sound-volume-input" class="config-label">Volumen:</label>
+            <input type="range" id="sound-volume-input" min="0" max="100" value="100">
+            <span id="sound-volume-label" class="config-value-label">100%</span>
+          </div>
         </div>
 
         <h3>Movimiento</h3>

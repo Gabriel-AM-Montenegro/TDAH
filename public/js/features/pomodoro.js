@@ -23,7 +23,7 @@ export function startFocusOn(text) {
 // (exhalando/sosteniendo vacío).
 const BREATHING_PATTERNS = {
     '478': {
-        label: '4-7-8 (relajación)',
+        label: '4-7-8 (relajación profunda)',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 7', duration: 7000, scale: 1 },
@@ -31,7 +31,7 @@ const BREATHING_PATTERNS = {
         ],
     },
     box: {
-        label: 'Cuadrada (4-4-4-4)',
+        label: 'Cuadrada (enfoque y calma)',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 4', duration: 4000, scale: 1 },
@@ -40,7 +40,7 @@ const BREATHING_PATTERNS = {
         ],
     },
     triangle: {
-        label: 'Triangular (4-4-4)',
+        label: 'Triangular (simple y rápida)',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 4', duration: 4000, scale: 1 },
@@ -49,6 +49,40 @@ const BREATHING_PATTERNS = {
     },
 };
 const DEFAULT_BREATHING_PATTERN = '478';
+
+// Geometría del gráfico de línea del patrón de respiración: un punto se mueve
+// sobre segmentos rectos (inhalar sube, sostener queda plano, exhalar baja),
+// igual al diagrama que dibuja gente para explicarse la técnica. El ancho de
+// cada segmento es proporcional a su duración real, así el punto llega a cada
+// vértice justo cuando esa fase termina, usando el mismo dato (`duration`,
+// `scale`) que ya mueve el texto — no hace falta otra fuente de verdad.
+const PATH_WIDTH = 260;
+const PATH_Y_HIGH = 15;
+const PATH_Y_LOW = 55;
+
+function phaseColorVar(label) {
+    if (label.startsWith('Inhalá')) return 'var(--success-dark)';
+    if (label.startsWith('Sostené')) return 'var(--info-dark)';
+    return 'var(--warning-dark)'; // Exhalá
+}
+
+function getBreathingGeometry(patternKey) {
+    const phases = (BREATHING_PATTERNS[patternKey] || BREATHING_PATTERNS[DEFAULT_BREATHING_PATTERN]).phases;
+    const totalDuration = phases.reduce((sum, p) => sum + p.duration, 0);
+    let x = 0;
+    let y = phases[phases.length - 1].scale === 1 ? PATH_Y_HIGH : PATH_Y_LOW;
+    const points = [[x, y]];
+    const segments = [];
+    phases.forEach(phase => {
+        const xEnd = x + (phase.duration / totalDuration) * PATH_WIDTH;
+        const yEnd = phase.scale === 1 ? PATH_Y_HIGH : PATH_Y_LOW;
+        segments.push({ x1: x, y1: y, x2: xEnd, y2: yEnd, color: phaseColorVar(phase.label) });
+        x = xEnd;
+        y = yEnd;
+        points.push([x, y]);
+    });
+    return { phases, points, segments };
+}
 
 export function initPomodoro(db, userId) {
     const pomodoroSettingsDocRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pomodoroSettings', 'current');
@@ -73,20 +107,45 @@ export function initPomodoro(db, userId) {
     let breathingTimeoutId = null;
 
     const runBreathingPhase = (phaseIndex) => {
-        const phases = (BREATHING_PATTERNS[breathingPattern] || BREATHING_PATTERNS[DEFAULT_BREATHING_PATTERN]).phases;
+        const { phases, points, segments } = getBreathingGeometry(breathingPattern);
         const phase = phases[phaseIndex % phases.length];
-        // El círculo se expande o contrae según phase.scale — manejado por JS
-        // (no @keyframes) para que el estado visual y el texto nunca se
-        // desincronicen: si la sección estaba en display:none (otra pestaña
-        // activa) una animación CSS reiniciaría desde 0%, pero un estilo
-        // inline no depende de eso.
+        // El punto se mueve por transform (no @keyframes) para que el estado
+        // visual y el texto nunca se desincronicen: si la sección estaba en
+        // display:none (otra pestaña activa) una animación CSS reiniciaría
+        // desde 0%, pero un estilo inline no depende de eso.
         breathingGuides.forEach(guide => {
             const label = guide.querySelector('.breathing-label');
             if (label) label.textContent = phase.label;
-            const circle = guide.querySelector('.breathing-circle');
-            if (circle) {
-                circle.style.transitionDuration = `${phase.duration}ms`;
-                circle.style.transform = `scale(${phase.scale})`;
+
+            const dot = guide.querySelector('.breathing-dot');
+            if (phaseIndex === 0) {
+                // Redibuja la línea (el patrón pudo cambiar) y devuelve el
+                // punto al inicio del ciclo sin animar ese salto.
+                const segmentsGroup = guide.querySelector('.breathing-segments');
+                if (segmentsGroup) {
+                    segmentsGroup.innerHTML = '';
+                    segments.forEach(seg => {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', seg.x1);
+                        line.setAttribute('y1', seg.y1);
+                        line.setAttribute('x2', seg.x2);
+                        line.setAttribute('y2', seg.y2);
+                        line.setAttribute('stroke', seg.color);
+                        line.setAttribute('stroke-width', '4');
+                        line.setAttribute('stroke-linecap', 'round');
+                        segmentsGroup.appendChild(line);
+                    });
+                }
+                if (dot) {
+                    dot.style.transitionDuration = '0ms';
+                    dot.style.transform = `translate(${points[0][0]}px, ${points[0][1]}px)`;
+                    dot.getBoundingClientRect(); // fuerza reflow: el próximo cambio sí debe animar
+                }
+            }
+            if (dot) {
+                const target = points[phaseIndex + 1];
+                dot.style.transitionDuration = `${phase.duration}ms`;
+                dot.style.transform = `translate(${target[0]}px, ${target[1]}px)`;
             }
         });
         breathingTimeoutId = setTimeout(() => {
