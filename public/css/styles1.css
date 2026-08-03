@@ -604,6 +604,18 @@ textarea {
   font-weight: 500;
 }
 
+.sound-test-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.sound-test-buttons button {
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.85em;
+}
+
 .config-input-wrapper input {
   margin-bottom: 0;
 }

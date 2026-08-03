@@ -199,9 +199,9 @@
           <button id="pause-pomodoro-btn">Pausar</button>
           <button id="reset-timer-btn">Reiniciar</button>
         </div>
-        <audio id="sound-complete" src="sounds/beep-07.mp3" preload="auto"></audio>
-        <audio id="sound-break" src="sounds/bell-ringing-05.mp3" preload="auto"></audio>
-        <audio id="sound-task-done" src="sounds/button-20.mp3" preload="auto"></audio>
+        <audio id="sound-complete" src="sounds/beep-07.wav" preload="auto"></audio>
+        <audio id="sound-break" src="sounds/bell-ringing-05.wav" preload="auto"></audio>
+        <audio id="sound-task-done" src="sounds/button-20.wav" preload="auto"></audio>
       </section>
 
       <!-- Sección Calendario -->
@@ -377,6 +377,14 @@
             <label for="sound-volume-input" class="config-label">Volumen:</label>
             <input type="range" id="sound-volume-input" min="0" max="100" value="100">
             <span id="sound-volume-label" class="config-value-label">100%</span>
+          </div>
+        </div>
+        <div class="config-step">
+          <p class="help-text">Probar cada sonido (se escucha aunque los sonidos estén silenciados):</p>
+          <div class="sound-test-buttons">
+            <button type="button" id="test-sound-task-done">▶ Tarea completada (Checklist)</button>
+            <button type="button" id="test-sound-complete">▶ Foco terminado (Pomodoro)</button>
+            <button type="button" id="test-sound-break">▶ Empieza el descanso</button>
           </div>
         </div>
 

@@ -26,9 +26,16 @@ export function setSoundVolume(volume) {
 
 export function playSound(elementId) {
     if (!isSoundEnabled()) return;
+    playSoundPreview(elementId);
+}
+
+// Igual que playSound(), pero ignora el mute — para el botón "Probar sonido"
+// de Configuración, donde el usuario pide explícitamente escucharlo.
+export function playSoundPreview(elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
     el.volume = getSoundVolume();
+    el.currentTime = 0;
     el.play().catch(err => console.error(err));
 }
 
@@ -67,4 +74,16 @@ export function wireSoundVolumeControl() {
         setSoundVolume(percent / 100);
         updateLabel(percent);
     };
+}
+
+export function wireSoundTestButtons() {
+    const buttonToSound = {
+        'test-sound-task-done': 'sound-task-done',
+        'test-sound-complete': 'sound-complete',
+        'test-sound-break': 'sound-break',
+    };
+    Object.entries(buttonToSound).forEach(([btnId, soundId]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.onclick = () => playSoundPreview(soundId);
+    });
 }

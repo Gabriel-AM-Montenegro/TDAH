@@ -17,7 +17,7 @@ import { initPomodoro } from './features/pomodoro.js';
 import { initChecklist } from './features/checklist.js';
 import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
-import { wireSoundToggle, wireSoundVolumeControl } from './sound.js';
+import { wireSoundToggle, wireSoundVolumeControl, wireSoundTestButtons } from './sound.js';
 import { wireMotionToggle } from './motion.js';
 import { initTheme } from './features/theme.js';
 import { initPoints } from './features/points.js';
@@ -120,5 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     wireCalendarButtons();
     wireSoundToggle();
     wireSoundVolumeControl();
+    wireSoundTestButtons();
     wireMotionToggle();
 });
