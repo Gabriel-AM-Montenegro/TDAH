@@ -240,7 +240,10 @@ export function initJournal(db, userId) {
                     moodOptionsContainer.querySelectorAll('.journal-mood-btn').forEach(b => b.classList.remove('selected'));
                 }
                 showTempMessage('Entrada guardada.', 'success');
-            } catch (error) { showTempMessage(`Error al guardar: ${error.message}`, 'error'); }
+            } catch (error) {
+                console.error("Journal: Error al guardar entrada:", error);
+                showTempMessage('No se pudo guardar la entrada. Probá de nuevo.', 'error');
+            }
         }
     };
 }

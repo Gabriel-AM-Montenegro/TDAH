@@ -133,7 +133,7 @@ export function wireAuthButtons() {
                 console.log('[Auth] El popup se cerró antes de completar el login.');
                 return;
             }
-            showTempMessage(`Error con Google: ${error.message}`, 'error');
+            showTempMessage('No se pudo conectar con Google. Probá de nuevo.', 'error');
         }
     };
 
@@ -145,7 +145,7 @@ export function wireAuthButtons() {
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Error de inicio de sesión anónimo:", error);
-                showTempMessage(`Error de sesión anónima: ${error.message}`, 'error');
+                showTempMessage('No se pudo iniciar sesión. Probá de nuevo.', 'error');
             }
         };
     }
@@ -172,7 +172,8 @@ export function wireAuthButtons() {
             case 'auth/invalid-credential':
                 return 'Email o contraseña incorrectos.';
             default:
-                return error.message;
+                console.error("Auth: Error de email/contraseña no traducido:", error);
+                return 'No se pudo completar la acción. Probá de nuevo.';
         }
     };
 

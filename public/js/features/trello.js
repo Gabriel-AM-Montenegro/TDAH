@@ -64,7 +64,8 @@ export function initTrello(db, userId) {
                 });
             }
         } catch (error) {
-            listaTareasUl.innerHTML = `<li class="empty-section-message">Error al cargar tareas: ${error.message}</li>`;
+            console.error("Trello: Error al cargar tareas:", error);
+            listaTareasUl.innerHTML = `<li class="empty-section-message">No se pudieron cargar las tareas de Trello. Probá de nuevo.</li>`;
         }
     };
 
@@ -88,7 +89,8 @@ export function initTrello(db, userId) {
                 throw new Error('Respuesta no válida de Trello');
             }
         } catch (error) {
-            trelloStatusDiv.textContent = `❌ Error: ${error.message}`;
+            console.error("Trello: Error al probar conexión:", error);
+            trelloStatusDiv.textContent = '❌ No se pudo conectar con Trello';
             trelloStatusDiv.className = 'status-indicator status-disconnected';
             trelloSuccessMessage.style.display = 'none';
         }

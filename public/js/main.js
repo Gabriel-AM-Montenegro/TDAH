@@ -73,7 +73,8 @@ async function loadAllUserData(currentUserId) {
                     showTempMessage('Datos limpiados. La página se recargará.', 'info');
                     setTimeout(() => location.reload(), 2000);
                 } catch (error) {
-                    showTempMessage(`Error al limpiar: ${error.message}`, 'error');
+                    console.error("Error al limpiar datos:", error);
+                    showTempMessage('No se pudieron borrar los datos. Probá de nuevo.', 'error');
                 }
             }
         }
