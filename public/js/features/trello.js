@@ -1,7 +1,7 @@
 // =================================================================================
 // INTEGRACIÓN TRELLO
 // =================================================================================
-import { collection, doc, addDoc, getDocs, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, doc, getDocs, setDoc, getDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
 import { showTempMessage, mostrarSeccion, renderEmptyState } from '../ui.js';
@@ -43,7 +43,16 @@ export function initTrello(db, userId) {
             const li = document.createElement('li');
             li.className = 'trello-task-item';
             li.textContent = `${card.name} (Vence: ${new Date(card.due).toLocaleDateString()})`;
-            li.onclick = () => window.open(card.shortUrl || boardUrl, '_blank');
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('role', 'button');
+            const abrirTarjeta = () => window.open(card.shortUrl || boardUrl, '_blank');
+            li.onclick = abrirTarjeta;
+            li.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    abrirTarjeta();
+                }
+            };
             container.appendChild(li);
         });
     };
@@ -62,8 +71,9 @@ export function initTrello(db, userId) {
             if (!newCards.length) return;
 
             let nextPosition = existingSnapshot.docs.reduce((max, d) => Math.max(max, d.data().position ?? -1), -1) + 1;
-            for (const card of newCards) {
-                await addDoc(checklistCollectionRef, {
+            const batch = writeBatch(db);
+            newCards.forEach(card => {
+                batch.set(doc(checklistCollectionRef), {
                     text: card.name,
                     completed: false,
                     isMIT: false,
@@ -71,7 +81,8 @@ export function initTrello(db, userId) {
                     position: nextPosition++,
                     trelloCardId: card.id
                 });
-            }
+            });
+            await batch.commit();
             showTempMessage(`Se agregaron ${newCards.length} tarea(s) de Trello al Checklist.`, 'success');
         } catch (error) {
             console.error("Trello: Error al sincronizar con Checklist:", error);
@@ -95,12 +106,10 @@ export function initTrello(db, userId) {
             const listsResponse = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${apiKey}&token=${token}`);
             if (!listsResponse.ok) throw new Error('Error al obtener listas de Trello.');
             const lists = await listsResponse.json();
-            let allCards = [];
-            for (const list of lists) {
-                const cardsResponse = await fetch(`https://api.trello.com/1/lists/${list.id}/cards?key=${apiKey}&token=${token}&fields=${fields}`);
-                const cards = await cardsResponse.json();
-                allCards = allCards.concat(cards);
-            }
+            const cardsPerList = await Promise.all(lists.map(list =>
+                fetch(`https://api.trello.com/1/lists/${list.id}/cards?key=${apiKey}&token=${token}&fields=${fields}`).then(res => res.json())
+            ));
+            const allCards = cardsPerList.flat();
             const today = new Date();
             const monday = new Date(today);
             monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
