@@ -114,11 +114,11 @@ export function initTrello(db, userId) {
             const monday = new Date(today);
             monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
             monday.setHours(0, 0, 0, 0);
-            const friday = new Date(monday);
-            friday.setDate(monday.getDate() + 4);
-            friday.setHours(23, 59, 59, 999);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23, 59, 59, 999);
 
-            const filteredCards = allCards.filter(card => card.due && !card.dueComplete && new Date(card.due) >= monday && new Date(card.due) <= friday);
+            const filteredCards = allCards.filter(card => card.due && !card.dueComplete && new Date(card.due) >= monday && new Date(card.due) <= sunday);
 
             renderTareasList(listaTareasUl, filteredCards, '¡Nada vence esta semana! Buen momento para adelantar algo o descansar.');
             renderTareasList(todayTrelloTasksList, filteredCards.filter(card => isToday(card.due)), 'Nada de Trello vence hoy.');
