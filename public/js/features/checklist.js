@@ -29,6 +29,7 @@ export function initChecklist(db, userId) {
     let draggedItem = null;
     const expandedItemIds = new Set();
     let activeItemsForReminders = [];
+    let currentMitCount = 0;
     const firedRemindersToday = new Map();
     const todayMitsList = document.getElementById('today-mits');
 
@@ -98,6 +99,7 @@ export function initChecklist(db, userId) {
             });
             renderTodayMits([]);
             setMitsState([]);
+            currentMitCount = 0;
             return;
         }
 
@@ -161,6 +163,7 @@ export function initChecklist(db, userId) {
 
         renderTodayMits(mitItems);
         setMitsState(mitItems);
+        currentMitCount = mitItems.length;
 
         if (focusedElementId && focusedElementIsEditing) {
             const newFocusedElement = checkListUl.querySelector(`[data-id="${focusedElementId}"] .item-text`);
@@ -285,9 +288,7 @@ export function initChecklist(db, userId) {
             }
         } else if (target.classList.contains('mit-checkbox')) {
             // limitar a 3 MITs
-            const snapshot = await getDocs(query(checklistCollectionRef));
-            const currentMits = snapshot.docs.filter(d => d.data().isMIT).length;
-            if (target.checked && currentMits >= 3) {
+            if (target.checked && currentMitCount >= 3) {
                 showTempMessage('Solo puedes tener 3 MITs a la vez.', 'warning');
                 target.checked = false;
                 return;
