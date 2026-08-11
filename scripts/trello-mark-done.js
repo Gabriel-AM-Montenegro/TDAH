@@ -63,6 +63,7 @@ const CARDS_TO_MARK_DONE = [
     'Sistema de Puntos por Pomodoros Completados',
     // -- Doing (excepto "traea 2", que es la tarjeta de prueba manual del usuario) --
     'Visualizar eventos próximos del calendario para no olvidar citas.',
+    'Tour de bienvenida: mencionar los patrones de respiración editables en Pomodoro',
 ];
 
 async function trelloFetch(path, apiKey, token, options) {
