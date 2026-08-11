@@ -2,6 +2,10 @@
 
 App web (HTML/CSS/JS vanilla, sin build step) para ayudar a adultos con TDAH a organizarse: Pomodoro, checklist, journal, hábitos, integración con Google Calendar y Trello. Backend: Firebase (Auth + Firestore), proyecto `tdah-app-efca9`. Deploy: Firebase Hosting, sirviendo desde `public/`.
 
+**URLs de producción (2026-08-11)**: el proyecto tiene 2 "sites" de Hosting, mismo contenido de `public/` en ambos — `firebase deploy --only hosting` publica en los dos a la vez (ver `firebase.json`/`.firebaserc`, targets `principal` y `neurokit`):
+- https://neurokit-app.web.app — URL corta, la que el usuario quiere usar/recordar día a día ("NeuroKit").
+- https://tdah-app-efca9.web.app — la original (nombre de proyecto autogenerado), sigue activa, no se tocó ni se va a borrar.
+
 Backlog de historias de usuario en Trello: https://trello.com/b/v9GQJQUl (board "TDAH - tareas").
 
 ## Estado al 2026-07-29
