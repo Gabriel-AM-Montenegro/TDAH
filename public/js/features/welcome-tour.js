@@ -26,7 +26,7 @@ export async function initWelcomeTour(db, userId) {
     let currentTourStep = 0;
     const tourSteps = [
         {
-            title: "¡Bienvenido a TDAH Helper App!",
+            title: "¡Bienvenido a NeuroKit!",
             description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
             image: ""
         },
