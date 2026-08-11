@@ -130,7 +130,7 @@ export function mostrarSeccion(seccionId) {
     const botonActivo = document.getElementById(`btn-${seccionId}`);
     if (seccionActiva) seccionActiva.classList.add('active');
     if (botonActivo) botonActivo.classList.add('active');
-    document.title = SECTION_TITLES[seccionId] ? `App TDAH - ${SECTION_TITLES[seccionId]}` : 'App TDAH';
+    document.title = SECTION_TITLES[seccionId] ? `NeuroKit - ${SECTION_TITLES[seccionId]}` : 'NeuroKit';
 
     // No dejar el grupo de navegación abierto después de elegir una sección.
     document.querySelectorAll('.nav-tabs details[open]').forEach(d => d.removeAttribute('open'));

@@ -150,6 +150,13 @@ header p {
   font-size: 1.1em;
 }
 
+.header-byline {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 0.85em;
+  font-style: italic;
+  opacity: 0.85;
+}
+
 #user-info-area {
   margin-top: 10px;
   display: flex;

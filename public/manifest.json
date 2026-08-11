@@ -1,7 +1,7 @@
 {
-  "name": "App TDAH",
-  "short_name": "App TDAH",
-  "description": "Tu asistente personal para organización y productividad.",
+  "name": "NeuroKit",
+  "short_name": "NeuroKit",
+  "description": "Herramientas para organización, foco, bienestar y crecimiento personal.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
