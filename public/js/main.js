@@ -122,4 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     wireSoundVolumeControl();
     wireSoundTestButtons();
     wireMotionToggle();
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .catch(error => console.error('Service Worker: Error al registrar:', error));
+    }
 });

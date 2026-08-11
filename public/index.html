@@ -9,11 +9,15 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#764ba2">
-  <!-- A propósito SIN apple-mobile-web-app-capable: ese meta tag es lo que
-       hace que iOS abra el ícono de pantalla de inicio en modo standalone
-       (pantalla completa, sin barra de Safari) — y ese modo usa un motor
-       de navegador más restringido donde el login con popup de Google se
-       rompe (ver CLAUDE.md). Sin él, el ícono abre en Safari normal. -->
+  <!-- apple-mobile-web-app-capable hace que iOS abra el ícono de pantalla de
+       inicio en modo standalone (pantalla completa, sin barra de Safari).
+       Antes esto rompía el login con Google porque usaba signInWithPopup,
+       que no funciona bien en el WebView restringido de ese modo — se
+       resolvió cambiando el login a signInWithRedirect (ver auth.js), que
+       sí funciona ahí. Si el login vuelve a fallar en modo standalone, ver
+       la nota en CLAUDE.md antes de sacar este meta tag de nuevo. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NeuroKit">
   <script>
     // Aplica el tema guardado antes del primer render, para evitar el
