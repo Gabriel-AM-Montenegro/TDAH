@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "tdah-app-efca9"
-  }
+  },
+  "targets": {
+    "tdah-app-efca9": {
+      "hosting": {
+        "principal": [
+          "tdah-app-efca9"
+        ],
+        "neurokit": [
+          "neurokit-app"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
