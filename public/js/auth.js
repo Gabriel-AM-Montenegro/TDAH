@@ -3,8 +3,7 @@
 // =================================================================================
 import {
     GoogleAuthProvider,
-    signInWithRedirect,
-    getRedirectResult,
+    signInWithPopup,
     signInAnonymously,
     onAuthStateChanged,
     signOut,
@@ -30,25 +29,6 @@ let isLoggingOut = false;
 // Recibe loadAllUserData como callback para evitar un import circular con main.js.
 export function initAuthStateListener(onLogin) {
     if (!auth) return;
-
-    // Con signInWithRedirect (en vez de signInWithPopup, ver wireAuthButtons)
-    // el resultado no llega como valor de retorno del click — hay que
-    // recuperarlo una vez, al volver de Google, para sacar el accessToken
-    // de Calendar. onAuthStateChanged de abajo ya se encarga de loguear al
-    // usuario; esto es solo para el token de Calendar, que no viaja en el User.
-    getRedirectResult(auth).then((result) => {
-        if (!result) return;
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        if (credential && credential.accessToken) {
-            setCalendarAccessToken(credential.accessToken);
-            updateCalendarConnectionStatus(true);
-            loadCalendarEvents();
-            showTempMessage('Conectado a Google Calendar.', 'success');
-        }
-    }).catch((error) => {
-        console.error("Error al procesar el resultado del login con Google:", error);
-        showTempMessage('No se pudo conectar con Google. Probá de nuevo.', 'error');
-    });
 
     onAuthStateChanged(auth, async (user) => {
         console.log('[Auth] onAuthStateChanged fired. user =', user);
@@ -125,19 +105,36 @@ export function initAuthStateListener(onLogin) {
 export function wireAuthButtons() {
     if (!auth) return;
 
-    // Login con Google (Firebase + Calendar). Vía redirect, no popup: un
-    // popup no funciona de forma confiable en webviews restringidas (ej. la
-    // app agregada a la pantalla de inicio en iOS) — el redirect funciona
-    // igual en cualquier contexto. El resultado se procesa en
-    // initAuthStateListener (getRedirectResult), no acá.
+    // Login con Google (Firebase + Calendar) vía popup. Se probó
+    // signInWithRedirect el 2026-08-11 pensando que sería más compatible con
+    // el modo standalone de iOS, pero resultó peor: se rompió incluso en
+    // Safari normal (las protecciones de rastreo entre sitios de Safari
+    // cortan la cadena de redirects que usa Firebase para este flujo). El
+    // popup es lo que realmente funciona en Safari — sigue fallando en el
+    // modo standalone de iOS (ver CLAUDE.md), pero eso ya era así de antes.
     document.getElementById('google-signin-btn').onclick = async () => {
         try {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
+
+            // AGREGAR SCOPE PARA CALENDAR
             provider.addScope(CALENDAR_API_SCOPE);
-            await signInWithRedirect(auth, provider);
+
+            const result = await signInWithPopup(auth, provider);
+
+            // OBTENER EL TOKEN DE ACCESO PARA CALENDAR
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            if (credential && credential.accessToken) {
+                setCalendarAccessToken(credential.accessToken);
+                updateCalendarConnectionStatus(true);
+                loadCalendarEvents();
+                showTempMessage('Conectado a Google Calendar.', 'success');
+            }
         } catch (error) {
             console.error("Error de inicio de sesión con Google:", error);
+            if (error.code === 'auth/popup-closed-by-user') {
+                return;
+            }
             showTempMessage('No se pudo conectar con Google. Probá de nuevo.', 'error');
         }
     };
