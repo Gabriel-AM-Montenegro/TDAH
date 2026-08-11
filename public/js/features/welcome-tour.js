@@ -37,7 +37,7 @@ export async function initWelcomeTour(db, userId) {
         },
         {
             title: "⏱️ Pomodoro",
-            description: "Trabajá en bloques de foco y descanso para mantener la concentración. Podés ajustar los tiempos según lo que mejor funcione para vos.",
+            description: "Trabajá en bloques de foco y descanso para mantener la concentración. Podés ajustar los tiempos, y elegir el patrón de respiración del descanso (4-7-8, Cuadrada o Triangular) desde la configuración de Pomodoro.",
             image: ""
         },
         {
