@@ -5,9 +5,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// El login con Google (popup/redirect) pasa por "authDomain" como puente
+// entre la app y Google — Firebase Hosting expone las rutas reservadas
+// /__/auth/* en CUALQUIER site del proyecto (no solo en .firebaseapp.com),
+// así que usar como authDomain el mismo dominio desde el que se está usando
+// la app evita ese salto a un dominio distinto, que Safari puede bloquear
+// (protecciones de rastreo entre sitios) — pasó justo con neurokit-app.web.app,
+// que redirigía a tdah-app-efca9.firebaseapp.com y el login no completaba.
+// En localhost esas rutas no existen (no es Firebase Hosting), así que ahí
+// se usa el authDomain fijo de siempre.
+const isFirebaseHostingDomain = /\.(web\.app|firebaseapp\.com)$/.test(location.hostname);
+
 const firebaseConfig = {
     apiKey: "AIzaSyDbIABcg4AqeqiUzYhTahgjc2oziM5NLjI",
-    authDomain: "tdah-app-efca9.firebaseapp.com",
+    authDomain: isFirebaseHostingDomain ? location.hostname : "tdah-app-efca9.firebaseapp.com",
     projectId: "tdah-app-efca9",
     storageBucket: "tdah-app-efca9.appspot.com",
     messagingSenderId: "765424831369",

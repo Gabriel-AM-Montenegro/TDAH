@@ -10,7 +10,7 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v2';
+const CACHE_NAME = 'neurokit-shell-v3';
 
 self.addEventListener('install', () => {
     self.skipWaiting();
