@@ -4,7 +4,8 @@
 import { collection, doc, getDocs, setDoc, getDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { publicDataDocId } from '../firebase.js';
 import { registerListener } from '../listeners.js';
-import { showTempMessage, mostrarSeccion, renderEmptyState } from '../ui.js';
+import { showTempMessage, mostrarSeccion, renderEmptyState, makeClickable } from '../ui.js';
+import { setTodayTrelloCards } from './today-agenda.js';
 
 function isToday(dateStr) {
     const d = new Date(dateStr);
@@ -26,7 +27,6 @@ export function initTrello(db, userId) {
     const saveTrelloConfigBtn = document.getElementById('save-trello-config-btn');
     const listaTareasUl = document.getElementById('listaTareas');
     const trelloBoardLinkHeader = document.getElementById('trello-board-link-header');
-    const todayTrelloTasksList = document.getElementById('today-trello-tasks-list');
 
     if (!trelloApiKeyInput || !saveTrelloConfigBtn || !listaTareasUl || !trelloBoardLinkHeader) return;
 
@@ -43,16 +43,7 @@ export function initTrello(db, userId) {
             const li = document.createElement('li');
             li.className = 'trello-task-item';
             li.textContent = `${card.name} (Vence: ${new Date(card.due).toLocaleDateString()})`;
-            li.setAttribute('tabindex', '0');
-            li.setAttribute('role', 'button');
-            const abrirTarjeta = () => window.open(card.shortUrl || boardUrl, '_blank');
-            li.onclick = abrirTarjeta;
-            li.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    abrirTarjeta();
-                }
-            };
+            makeClickable(li, () => window.open(card.shortUrl || boardUrl, '_blank'));
             container.appendChild(li);
         });
     };
@@ -121,7 +112,9 @@ export function initTrello(db, userId) {
             const filteredCards = allCards.filter(card => card.due && !card.dueComplete && new Date(card.due) >= monday && new Date(card.due) <= sunday);
 
             renderTareasList(listaTareasUl, filteredCards, '¡Nada vence esta semana! Buen momento para adelantar algo o descansar.');
-            renderTareasList(todayTrelloTasksList, filteredCards.filter(card => isToday(card.due)), 'Nada de Trello vence hoy.');
+            setTodayTrelloCards(filteredCards.filter(card => isToday(card.due)), {
+                openCard: (card) => window.open(card.shortUrl || boardUrl, '_blank')
+            });
             syncTrelloCardsToChecklist(filteredCards);
         } catch (error) {
             console.error("Trello: Error al cargar tareas:", error);

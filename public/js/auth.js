@@ -22,6 +22,7 @@ import {
     resetCalendarState,
     loadCalendarEvents
 } from './features/calendar.js';
+import { resetTodayAgenda } from './features/today-agenda.js';
 
 let isLoggingOut = false;
 
@@ -74,17 +75,18 @@ export function initAuthStateListener(onLogin) {
             const todayMitsList = document.getElementById('today-mits');
             const todayNextStep = document.getElementById('today-next-step');
             const pointsDisplay = document.getElementById('points-display');
-            const todayTrelloTasksList = document.getElementById('today-trello-tasks-list');
             if (journalEntriesList) journalEntriesList.innerHTML = '';
             if (checkList) checkList.innerHTML = '';
             if (habitsList) habitsList.innerHTML = '';
             if (todayMitsList) todayMitsList.innerHTML = '';
             if (todayNextStep) todayNextStep.innerHTML = '';
             if (pointsDisplay) pointsDisplay.textContent = '';
-            if (todayTrelloTasksList) todayTrelloTasksList.innerHTML = '';
 
             // Resetear estado de Calendar
             resetCalendarState();
+            // Limpia también las tarjetas de Trello del merge (resetCalendarState
+            // solo limpia el lado de Calendar; si no, quedan visibles tras salir).
+            resetTodayAgenda();
 
             if (!isLoggingOut) {
                 try {

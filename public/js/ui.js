@@ -108,6 +108,21 @@ export function renderProgressSummary(container, completed, total, labelSuffix =
     container.appendChild(bar);
 }
 
+// Convierte cualquier elemento en un "botón" clickeable y navegable por
+// teclado (Enter/Espacio), sin depender de que sea un <button> real —
+// usado por listas de tareas clickeables (Trello) que se renderizan como <li>.
+export function makeClickable(el, onActivate) {
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.onclick = onActivate;
+    el.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onActivate();
+        }
+    };
+}
+
 export function mostrarSeccion(seccionId) {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
