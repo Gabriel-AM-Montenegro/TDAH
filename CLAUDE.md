@@ -6,6 +6,10 @@ App web (HTML/CSS/JS vanilla, sin build step) para ayudar a adultos con TDAH a o
 - https://neurokit-app.web.app — URL corta, la que el usuario quiere usar/recordar día a día ("NeuroKit").
 - https://tdah-app-efca9.web.app — la original (nombre de proyecto autogenerado), sigue activa, no se tocó ni se va a borrar.
 
+**Rebrand a "NeuroKit"**: el header, `<title>`, footer, tour de bienvenida y `manifest.json` dicen "NeuroKit" (antes "TDAH Helper App"/"App TDAH") — el proyecto de Firebase (`tdah-app-efca9`) y el tema de la app (TDAH) NO se tocaron, es solo el nombre de marca visible.
+
+**PWA / "Agregar a pantalla de inicio" — `public/manifest.json`**: a propósito con `"display": "browser"`, NO `"standalone"`, y sin el meta tag `apple-mobile-web-app-capable` en `index.html`. Se probó con `"standalone"` + ese meta tag primero (ícono en pantalla completa sin barra de Safari, más "look de app nativa") pero el usuario reportó que el login con Google tiraba "The requested action is invalid" al abrir la app desde el ícono — en iOS, ese meta tag (no el `display` del manifest, que iOS ignora para esto) es lo que fuerza el modo standalone, y ese modo usa un WKWebView más restringido donde `signInWithPopup` de Firebase se rompe. Con `"browser"` y sin el meta tag, el ícono sigue teniendo el nombre/ícono de NeuroKit pero abre en Safari normal (con la barra) — se pierde el look "sin barra" pero el login anda siempre. Si en algún momento se quiere volver a probar modo standalone, habría que resolver el login primero (ej. `signInWithRedirect` en vez de popup, sin garantía de que ande mejor en ese contexto).
+
 Backlog de historias de usuario en Trello: https://trello.com/b/v9GQJQUl (board "TDAH - tareas").
 
 ## Estado al 2026-07-29
