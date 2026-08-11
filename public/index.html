@@ -9,12 +9,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#764ba2">
-  <!-- A propósito SIN apple-mobile-web-app-capable: ese meta tag fuerza el
-       modo standalone en iOS (pantalla completa, sin barra de Safari), y ese
-       modo rompe el login con Google. Se probaron signInWithPopup (falla en
-       standalone) y signInWithRedirect (falla incluso en Safari normal, por
-       las protecciones de rastreo entre sitios de Safari) — ninguno de los
-       dos anda en standalone. Ver CLAUDE.md antes de volver a intentar esto. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NeuroKit">
   <script>
     // Aplica el tema guardado antes del primer render, para evitar el
