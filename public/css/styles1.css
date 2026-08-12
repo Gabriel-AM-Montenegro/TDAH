@@ -1754,6 +1754,15 @@ button.journal-tag-chip:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.breathing-pattern-description {
+  color: var(--text-medium);
+  font-size: 0.95em;
+  line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
 }
 
 .theme-option-btn {
