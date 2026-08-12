@@ -9,6 +9,7 @@ export const SECTION_TITLES = {
     calendario: 'Calendario',
     checklist: 'Checklist Rápido',
     journal: 'Journal',
+    respiracion: 'Respiración',
     habitos: 'Hábitos',
     tareas: 'Tareas Trello',
     notas: 'Notas Blog',

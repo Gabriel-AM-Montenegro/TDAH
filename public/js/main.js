@@ -9,6 +9,7 @@ import { registerListener, cleanupListeners } from './listeners.js';
 import { showTempMessage, showCustomConfirm, mostrarSeccion, showUpdateBanner } from './ui.js';
 import { wireCalendarButtons } from './features/calendar.js';
 import { wireOutlookButtons } from './features/outlook-calendar.js';
+import { initBreathing } from './features/breathing.js';
 import { initWelcomeTour } from './features/welcome-tour.js';
 import { initJournal } from './features/journal.js';
 import { initHabits } from './features/habits.js';
@@ -49,6 +50,9 @@ async function loadAllUserData(currentUserId) {
     initTheme(db, currentUserId);
     initPoints(db, currentUserId);
     initJournal(db, currentUserId);
+    // Antes de Pomodoro: éste lee isBreathingEnabledOnBreak()/el patrón
+    // actual al armar su propio picker/toggle.
+    initBreathing(db, currentUserId);
     initPomodoro(db, currentUserId);
     initChecklist(db, currentUserId);
     initHabits(db, currentUserId);

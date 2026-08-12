@@ -7,6 +7,7 @@ import { registerListener } from '../listeners.js';
 import { showTempMessage, showCustomConfirm, triggerConfetti } from '../ui.js';
 import { isNotificationPermissionGranted } from '../notifications.js';
 import { playSound } from '../sound.js';
+import { isBreathingEnabledOnBreak, onBreathingSettingsChange, renderBreathingPatternPicker, renderBreathingEnabledToggle, createBreathingRunner } from './breathing.js';
 
 // initPomodoro asigna esto una vez que arma su propio startTimer/setFocusLabel.
 // Evita un import circular entre checklist.js y pomodoro.js.
@@ -14,74 +15,6 @@ let focusOnHandler = null;
 
 export function startFocusOn(text) {
     if (focusOnHandler) focusOnHandler(text);
-}
-
-// Guía de respiración durante los descansos (Ítem 1, segunda tanda UX ADHD).
-// 3 patrones fijos a elegir (mismo criterio que el resto de la app: paleta
-// fija, no un editor libre de tiempos). `scale` es el tamaño del círculo en
-// esa fase: 1 = expandido (inhalando/sosteniendo con aire), 0.7 = contraído
-// (exhalando/sosteniendo vacío).
-const BREATHING_PATTERNS = {
-    '478': {
-        label: '4-7-8 (relajación profunda)',
-        phases: [
-            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
-            { label: 'Sostené... 7', duration: 7000, scale: 1 },
-            { label: 'Exhalá... 8', duration: 8000, scale: 0.7 },
-        ],
-    },
-    box: {
-        label: 'Cuadrada (enfoque y calma)',
-        phases: [
-            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
-            { label: 'Sostené... 4', duration: 4000, scale: 1 },
-            { label: 'Exhalá... 4', duration: 4000, scale: 0.7 },
-            { label: 'Sostené... 4', duration: 4000, scale: 0.7 },
-        ],
-    },
-    triangle: {
-        label: 'Triangular (simple y rápida)',
-        phases: [
-            { label: 'Inhalá... 4', duration: 4000, scale: 1 },
-            { label: 'Sostené... 4', duration: 4000, scale: 1 },
-            { label: 'Exhalá... 4', duration: 4000, scale: 0.7 },
-        ],
-    },
-};
-const DEFAULT_BREATHING_PATTERN = '478';
-
-// Geometría del gráfico de línea del patrón de respiración: un punto se mueve
-// sobre segmentos rectos (inhalar sube, sostener queda plano, exhalar baja),
-// igual al diagrama que dibuja gente para explicarse la técnica. El ancho de
-// cada segmento es proporcional a su duración real, así el punto llega a cada
-// vértice justo cuando esa fase termina, usando el mismo dato (`duration`,
-// `scale`) que ya mueve el texto — no hace falta otra fuente de verdad.
-const PATH_WIDTH = 260;
-const PATH_Y_HIGH = 15;
-const PATH_Y_LOW = 55;
-
-function phaseColorVar(label) {
-    if (label.startsWith('Inhalá')) return 'var(--success-dark)';
-    if (label.startsWith('Sostené')) return 'var(--info-dark)';
-    return 'var(--warning-dark)'; // Exhalá
-}
-
-function getBreathingGeometry(patternKey) {
-    const phases = (BREATHING_PATTERNS[patternKey] || BREATHING_PATTERNS[DEFAULT_BREATHING_PATTERN]).phases;
-    const totalDuration = phases.reduce((sum, p) => sum + p.duration, 0);
-    let x = 0;
-    let y = phases[phases.length - 1].scale === 1 ? PATH_Y_HIGH : PATH_Y_LOW;
-    const points = [[x, y]];
-    const segments = [];
-    phases.forEach(phase => {
-        const xEnd = x + (phase.duration / totalDuration) * PATH_WIDTH;
-        const yEnd = phase.scale === 1 ? PATH_Y_HIGH : PATH_Y_LOW;
-        segments.push({ x1: x, y1: y, x2: xEnd, y2: yEnd, color: phaseColorVar(phase.label) });
-        x = xEnd;
-        y = yEnd;
-        points.push([x, y]);
-    });
-    return { phases, points, segments };
 }
 
 export function initPomodoro(db, userId) {
@@ -94,7 +27,6 @@ export function initPomodoro(db, userId) {
     let timeLeft = focusTime * 60;
     let totalTimeForPomodoro = focusTime * 60;
     let isBreakTime = false;
-    let breathingPattern = DEFAULT_BREATHING_PATTERN;
     const timerDisplay = document.getElementById('timer');
     const todayTimerDisplay = document.getElementById('pomodoro-timer-today');
     const startTimerBtn = document.getElementById('start-timer-btn');
@@ -103,103 +35,23 @@ export function initPomodoro(db, userId) {
     const progressCircle = document.querySelector('.pomodoro-progress-ring-progress');
     const progressCircleToday = document.querySelector('.pomodoro-progress-ring-progress-today');
     const focusLabel = document.getElementById('pomodoro-today-focus-label');
-    const breathingGuides = [document.getElementById('breathing-guide'), document.getElementById('breathing-guide-today')].filter(Boolean);
-    let breathingTimeoutId = null;
 
-    const runBreathingPhase = (phaseIndex) => {
-        const { phases, points, segments } = getBreathingGeometry(breathingPattern);
-        const phase = phases[phaseIndex % phases.length];
-        // El punto se mueve por transform (no @keyframes) para que el estado
-        // visual y el texto nunca se desincronicen: si la sección estaba en
-        // display:none (otra pestaña activa) una animación CSS reiniciaría
-        // desde 0%, pero un estilo inline no depende de eso.
-        breathingGuides.forEach(guide => {
-            const label = guide.querySelector('.breathing-label');
-            if (label) label.textContent = phase.label;
-
-            const dot = guide.querySelector('.breathing-dot');
-            if (phaseIndex === 0) {
-                // Redibuja la línea (el patrón pudo cambiar) y devuelve el
-                // punto al inicio del ciclo sin animar ese salto.
-                const segmentsGroup = guide.querySelector('.breathing-segments');
-                if (segmentsGroup) {
-                    segmentsGroup.innerHTML = '';
-                    segments.forEach(seg => {
-                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        line.setAttribute('x1', seg.x1);
-                        line.setAttribute('y1', seg.y1);
-                        line.setAttribute('x2', seg.x2);
-                        line.setAttribute('y2', seg.y2);
-                        line.setAttribute('stroke', seg.color);
-                        line.setAttribute('stroke-width', '4');
-                        line.setAttribute('stroke-linecap', 'round');
-                        segmentsGroup.appendChild(line);
-                    });
-                }
-                if (dot) {
-                    dot.style.transitionDuration = '0ms';
-                    dot.style.transform = `translate(${points[0][0]}px, ${points[0][1]}px)`;
-                    dot.getBoundingClientRect(); // fuerza reflow: el próximo cambio sí debe animar
-                }
-            }
-            if (dot) {
-                const target = points[phaseIndex + 1];
-                dot.style.transitionDuration = `${phase.duration}ms`;
-                dot.style.transform = `translate(${target[0]}px, ${target[1]}px)`;
-            }
-        });
-        breathingTimeoutId = setTimeout(() => {
-            runBreathingPhase((phaseIndex + 1) % phases.length);
-        }, phase.duration);
-    };
-
-    const startBreathingGuide = () => {
-        if (!breathingGuides.length) return;
-        breathingGuides.forEach(guide => { guide.hidden = false; });
-        runBreathingPhase(0);
-    };
-
-    const stopBreathingGuide = () => {
-        clearTimeout(breathingTimeoutId);
-        breathingGuides.forEach(guide => { guide.hidden = true; });
-    };
+    // Guía de respiración en el descanso: la lógica compartida con la
+    // sección Respiración vive en breathing.js, acá solo se arma la
+    // instancia propia del Pomodoro (sus dos círculos) y se la arranca/para
+    // según el toggle "Hacer ejercicios de respiración en la pausa".
+    const breathingRunner = createBreathingRunner([document.getElementById('breathing-guide'), document.getElementById('breathing-guide-today')]);
+    renderBreathingEnabledToggle('breathing-enabled-toggle-input');
+    renderBreathingPatternPicker('breathing-pattern-options-pomodoro');
+    onBreathingSettingsChange(({ enabledOnBreak }) => {
+        const pickerContainer = document.getElementById('breathing-pattern-options-pomodoro');
+        if (pickerContainer) pickerContainer.hidden = !enabledOnBreak;
+    });
 
     // Elementos de configuración
     const focusTimeInput = document.getElementById('focus-time-input');
     const breakTimeInput = document.getElementById('break-time-input');
     const savePomodoroConfigBtn = document.getElementById('save-pomodoro-config-btn');
-    const breathingPatternOptions = document.getElementById('breathing-pattern-options');
-
-    const highlightBreathingPattern = (value) => {
-        if (!breathingPatternOptions) return;
-        breathingPatternOptions.querySelectorAll('.theme-option-btn').forEach(b => {
-            b.classList.toggle('selected', b.dataset.value === value);
-        });
-    };
-
-    if (breathingPatternOptions) {
-        breathingPatternOptions.innerHTML = '';
-        Object.entries(BREATHING_PATTERNS).forEach(([value, pattern]) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'theme-option-btn';
-            btn.dataset.value = value;
-            btn.textContent = pattern.label;
-            btn.onclick = () => {
-                breathingPattern = value;
-                highlightBreathingPattern(value);
-                savePomodoroState(timeLeft, isRunning, isBreakTime);
-                // Si el círculo ya está animando, reiniciar con el patrón
-                // nuevo en vez de esperar a que termine la fase en curso.
-                if (isBreakTime && isRunning) {
-                    clearTimeout(breathingTimeoutId);
-                    runBreathingPhase(0);
-                }
-            };
-            breathingPatternOptions.appendChild(btn);
-        });
-        highlightBreathingPattern(breathingPattern);
-    }
 
     if (!timerDisplay || !progressCircle || !startTimerBtn || !pausePomodoroBtn || !resetTimerBtn) return;
 
@@ -244,7 +96,6 @@ export function initPomodoro(db, userId) {
                 isBreakTime: newBreak,
                 focusTime: focusTime,
                 breakTime: breakTime,
-                breathingPattern: breathingPattern,
                 lastUpdated: new Date().toISOString()
             });
         } catch (error) { console.error("Pomodoro: Error al guardar estado:", error); }
@@ -267,7 +118,7 @@ export function initPomodoro(db, userId) {
                     totalTimeForPomodoro = breakTime * 60;
                     playSound('sound-break');
                     startTimer();
-                    startBreathingGuide();
+                    if (isBreathingEnabledOnBreak()) breathingRunner.start();
                 } else {
                     resetTimer();
                 }
@@ -309,7 +160,7 @@ export function initPomodoro(db, userId) {
         savePomodoroState(timeLeft, false, isBreakTime);
         showTempMessage('Temporizador reiniciado.', 'info');
         if (focusLabel) focusLabel.textContent = '';
-        stopBreathingGuide();
+        breathingRunner.stop();
     };
 
     // Guardar configuración de tiempos
@@ -356,9 +207,6 @@ export function initPomodoro(db, userId) {
                 breakTime = settings.breakTime;
                 if (breakTimeInput) breakTimeInput.value = breakTime;
             }
-            breathingPattern = BREATHING_PATTERNS[settings.breathingPattern] ? settings.breathingPattern : DEFAULT_BREATHING_PATTERN;
-            highlightBreathingPattern(breathingPattern);
-
             isBreakTime = settings.isBreakTime || false;
             totalTimeForPomodoro = isBreakTime ? (breakTime * 60) : (focusTime * 60);
 
@@ -367,7 +215,7 @@ export function initPomodoro(db, userId) {
                 timeLeft = Math.max(0, settings.timeLeft - elapsed);
                 if (timeLeft > 0 && !timer) {
                     startTimer();
-                    if (isBreakTime) startBreathingGuide();
+                    if (isBreakTime && isBreathingEnabledOnBreak()) breathingRunner.start();
                 } else if (timeLeft <= 0) {
                     timeLeft = 0;
                     handleTimerEnd();

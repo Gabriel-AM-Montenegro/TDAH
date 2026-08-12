@@ -75,6 +75,7 @@
           <button id="btn-checklist">✅ Checklist Rápido</button>
           <button id="btn-habitos">🌱 Hábitos</button>
           <button id="btn-tareas">📋 Tareas Trello</button>
+          <button id="btn-calendario">🗓️ Calendario</button>
         </div>
       </details>
 
@@ -82,7 +83,7 @@
         <summary>🧭 Reflexionar</summary>
         <div class="nav-group-buttons">
           <button id="btn-journal">📝 Journal</button>
-          <button id="btn-calendario">🗓️ Calendario</button>
+          <button id="btn-respiracion">🫁 Respiración</button>
         </div>
       </details>
 
@@ -180,9 +181,12 @@
           <button id="save-pomodoro-config-btn" class="save-config-btn">Guardar configuración</button>
 
           <div class="config-row">
-            <label class="config-label">Patrón de respiración en el descanso:</label>
-            <div id="breathing-pattern-options" class="theme-options"></div>
+            <label class="config-label">
+              <input type="checkbox" id="breathing-enabled-toggle-input">
+              Hacer ejercicios de respiración en la pausa
+            </label>
           </div>
+          <div id="breathing-pattern-options-pomodoro" class="theme-options"></div>
         </div>
 
         <!-- Temporizador (abajo) -->
@@ -290,6 +294,30 @@
         <ul id="journalEntriesList">
           <!-- Las entradas del journal se cargarán aquí -->
         </ul>
+      </section>
+
+      <!-- Sección Respiración -->
+      <section id="respiracion" class="seccion">
+        <h2>🫁 Respiración</h2>
+        <p class="subtitle">Practicá cuando quieras, no solo en los descansos del Pomodoro.</p>
+
+        <div id="breathing-phases-explanation" class="motivational-box info"></div>
+
+        <h3>Elegí un patrón</h3>
+        <div id="breathing-pattern-options-standalone" class="theme-options"></div>
+        <p id="breathing-pattern-description" class="subtitle"></p>
+
+        <div id="breathing-guide-standalone" class="breathing-guide" hidden>
+          <svg class="breathing-path" viewBox="0 0 260 70" width="260" height="70">
+            <g class="breathing-segments"></g>
+            <circle class="breathing-dot" cx="0" cy="0" r="7"></circle>
+          </svg>
+          <p class="breathing-label"></p>
+        </div>
+        <div class="pomodoro-buttons">
+          <button type="button" id="breathing-standalone-start-btn">▶ Empezar ejercicio</button>
+          <button type="button" id="breathing-standalone-stop-btn">⏹ Detener</button>
+        </div>
       </section>
 
       <!-- Sección Hábitos Diarios -->
