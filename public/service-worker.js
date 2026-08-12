@@ -3,14 +3,32 @@
 // que cargue instantáneo y ande con mala señal. A propósito SIN lista de
 // archivos a precachear (sería frágil de mantener con tantos módulos JS) —
 // en cambio, cachea de forma incremental cada GET del mismo origen que pasa
-// por acá, con estrategia "stale-while-revalidate": responde con lo cacheado
-// al toque si existe, y actualiza el cache en segundo plano para la próxima.
+// por acá.
+//
+// Estrategia "red primero, cache como respaldo" (con timeout corto para no
+// perder el "ande con mala señal"): antes era stale-while-revalidate (cache
+// al toque, red en segundo plano), pero eso significaba que abrir una
+// pestaña nueva en Safari mostraba contenido viejo hasta la SIGUIENTE vez
+// que se abriera — pasó de verdad con un deploy real (el usuario cerró y
+// reabrió la pestaña y vio el nav de antes de mover Calendario a
+// "Organizar"). Con conexión normal, siempre se ve la versión real.
 //
 // Deliberadamente NO cachea nada fuera del propio origen (Firestore, Trello,
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v5';
+const CACHE_NAME = 'neurokit-shell-v6';
+const NETWORK_TIMEOUT_MS = 3000;
+
+function fetchWithTimeout(request, timeoutMs) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('network timeout')), timeoutMs);
+        fetch(request).then(
+            (response) => { clearTimeout(timer); resolve(response); },
+            (error) => { clearTimeout(timer); reject(error); }
+        );
+    });
+}
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
@@ -40,14 +58,14 @@ self.addEventListener('fetch', (event) => {
 
     event.respondWith(
         caches.open(CACHE_NAME).then(async (cache) => {
-            const cached = await cache.match(request);
-            const networkFetch = fetch(request)
-                .then((response) => {
-                    if (response.ok) cache.put(request, response.clone());
-                    return response;
-                })
-                .catch(() => cached);
-            return cached || networkFetch;
+            try {
+                const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+                if (response.ok) cache.put(request, response.clone());
+                return response;
+            } catch (error) {
+                const cached = await cache.match(request);
+                return cached || fetch(request);
+            }
         })
     );
 });
