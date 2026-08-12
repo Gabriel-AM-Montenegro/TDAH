@@ -52,7 +52,16 @@ export function showCustomConfirm(message) {
 }
 
 export function showUpdateBanner(onUpdate) {
-    if (document.getElementById('app-update-banner')) return;
+    const existing = document.getElementById('app-update-banner');
+    if (existing) {
+        // Puede haber más de un deploy mientras la página sigue abierta —
+        // sin esto, el botón se quedaría apuntando al service worker de la
+        // primera actualización detectada, no al más nuevo, y el click no
+        // haría nada (el worker viejo ya no es el que está "waiting").
+        const existingBtn = existing.querySelector('.app-update-banner-btn');
+        if (existingBtn) existingBtn.onclick = onUpdate;
+        return;
+    }
 
     const banner = document.createElement('div');
     banner.id = 'app-update-banner';
