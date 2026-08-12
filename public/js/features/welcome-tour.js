@@ -37,7 +37,12 @@ export async function initWelcomeTour(db, userId) {
         },
         {
             title: "⏱️ Pomodoro",
-            description: "Trabajá en bloques de foco y descanso para mantener la concentración. Podés ajustar los tiempos, y elegir el patrón de respiración del descanso (4-7-8, Cuadrada o Triangular) desde la configuración de Pomodoro.",
+            description: "Trabajá en bloques de foco y descanso para mantener la concentración. Podés ajustar los tiempos, y activar o desactivar la guía de respiración automática del descanso desde la configuración de Pomodoro.",
+            image: ""
+        },
+        {
+            title: "🫁 Respiración",
+            description: "Practicá un ejercicio de respiración guiada cuando quieras, no solo en los descansos del Pomodoro. Elegí el patrón que más te sirva (4-7-8, Cuadrada o Triangular) — es el mismo patrón que usa Pomodoro, cambiarlo en un lugar lo cambia en el otro.",
             image: ""
         },
         {
