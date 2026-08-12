@@ -50,6 +50,27 @@ export function showCustomConfirm(message) {
     });
 }
 
+export function showUpdateBanner(onUpdate) {
+    if (document.getElementById('app-update-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'app-update-banner';
+    banner.className = 'app-update-banner';
+
+    const text = document.createElement('span');
+    text.textContent = 'Hay una actualización de NeuroKit disponible.';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'app-update-banner-btn';
+    btn.textContent = 'Actualizar ahora';
+    btn.onclick = onUpdate;
+
+    banner.appendChild(text);
+    banner.appendChild(btn);
+    document.body.appendChild(banner);
+}
+
 export function triggerConfetti() {
     if (isReducedMotionEnabled()) return;
     const container = document.getElementById('confetti-container');

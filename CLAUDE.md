@@ -25,6 +25,12 @@ App web (HTML/CSS/JS vanilla, sin build step) para ayudar a adultos con TDAH a o
 
 **Service Worker (`public/service-worker.js`)**: cachea el shell de la app (HTML/CSS/JS/íconos, mismo origen) con estrategia stale-while-revalidate — sin lista de archivos a precachear (frágil de mantener con tantos módulos JS, se cachea todo GET del mismo origen que pasa por la app). A propósito no toca nada fuera del propio origen (Firestore/Trello/Calendar siempre van a la red, nunca cacheados). Registrado desde `main.js` al final del `DOMContentLoaded`. Parte del plan "PWA optimizada sin gastar plata" — el usuario preguntó por app nativa real (Capacitor) pero eligió no invertir todavía; si en algún momento quiere ir por ese camino, requiere Mac+Xcode+cuenta Apple Developer (USD 99/año) y Android Studio+Play Console (USD 25 único).
 
+**Cartel de "hay una actualización disponible" (2026-08-12)**: agregado tras un caso real — el usuario actualizó la app (deploy de Outlook Calendar) y la versión guardada en el escritorio del iPhone no reflejaba el cambio hasta sacar el ícono y volver a agregarlo. Causa: iOS suele dejar la PWA standalone "suspendida" en vez de cerrarla, así que al reabrirla reanuda la misma sesión en memoria en lugar de recargar de cero — el Service Worker actualiza el caché en segundo plano, pero la página ya cargada no se entera sola.
+- `service-worker.js` ya no llama a `skipWaiting()` automáticamente en `install` — un service worker nuevo queda en estado "waiting" hasta que la app le manda `{ type: 'SKIP_WAITING' }` por `postMessage` (nuevo listener de `message`). La primera instalación (sin ningún worker controlando la página todavía) se activa sola, sin necesitar esto.
+- `main.js` (al final del `DOMContentLoaded`): detecta un worker nuevo esperando (`registration.waiting`, o vía el evento `updatefound` → `statechange` a `"installed"` con `navigator.serviceWorker.controller` ya existente) y llama a `showUpdateBanner()` (nuevo en `ui.js`) — un cartel fijo arriba de todo con botón "Actualizar ahora" que manda el mensaje de skip-waiting; al tomar control el worker nuevo (`controllerchange`) se recarga la página una sola vez.
+- También se fuerza `registration.update()` cada vez que `visibilitychange` vuelve a `"visible"` — el chequeo automático del navegador solo pasa al navegar, y una PWA standalone que se reabre desde el escritorio no siempre navega de verdad.
+- `CACHE_NAME` en v5 por este cambio.
+
 Backlog de historias de usuario en Trello: https://trello.com/b/v9GQJQUl (board "TDAH - tareas").
 
 ## Estado al 2026-07-29

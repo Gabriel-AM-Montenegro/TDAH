@@ -10,11 +10,7 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v4';
-
-self.addEventListener('install', () => {
-    self.skipWaiting();
-});
+const CACHE_NAME = 'neurokit-shell-v5';
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
@@ -23,6 +19,16 @@ self.addEventListener('activate', (event) => {
         )
     );
     self.clients.claim();
+});
+
+// A propósito NO se llama a skipWaiting() automáticamente en "install": un
+// service worker actualizado se queda en estado "waiting" hasta que la app
+// (ver main.js) le pide activarse, para poder avisarle antes al usuario con
+// un cartel de "hay una actualización" en vez de cambiar el contenido de
+// golpe debajo suyo. Un primer registro (sin ningún worker controlando la
+// página todavía) se activa solo, sin necesitar este mensaje.
+self.addEventListener('message', (event) => {
+    if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {

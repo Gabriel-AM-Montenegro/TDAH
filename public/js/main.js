@@ -6,7 +6,7 @@ import { collection, doc, onSnapshot, getDocs, writeBatch } from "https://www.gs
 
 import { db, auth, publicDataDocId } from './firebase.js';
 import { registerListener, cleanupListeners } from './listeners.js';
-import { showTempMessage, showCustomConfirm, mostrarSeccion } from './ui.js';
+import { showTempMessage, showCustomConfirm, mostrarSeccion, showUpdateBanner } from './ui.js';
 import { wireCalendarButtons } from './features/calendar.js';
 import { wireOutlookButtons } from './features/outlook-calendar.js';
 import { initWelcomeTour } from './features/welcome-tour.js';
@@ -126,7 +126,44 @@ document.addEventListener('DOMContentLoaded', () => {
     wireMotionToggle();
 
     if ('serviceWorker' in navigator) {
+        const promptToUpdate = (worker) => {
+            showUpdateBanner(() => worker.postMessage({ type: 'SKIP_WAITING' }));
+        };
+
         navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                // Puede haber una actualización que ya estaba esperando de una
+                // visita anterior (ej. la app quedó suspendida en segundo
+                // plano en iOS sin llegar a recargarse).
+                if (registration.waiting) promptToUpdate(registration.waiting);
+
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        // "installed" + ya hay un controller = es una
+                        // actualización, no la primera instalación.
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            promptToUpdate(newWorker);
+                        }
+                    });
+                });
+
+                // El navegador solo revisa actualizaciones al navegar — en
+                // una PWA standalone que queda abierta mucho tiempo (o
+                // suspendida en iOS) eso casi no pasa, así que forzamos el
+                // chequeo cada vez que la app vuelve a primer plano.
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') registration.update();
+                });
+            })
             .catch(error => console.error('Service Worker: Error al registrar:', error));
+
+        let reloadedForUpdate = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (reloadedForUpdate) return;
+            reloadedForUpdate = true;
+            window.location.reload();
+        });
     }
 });
