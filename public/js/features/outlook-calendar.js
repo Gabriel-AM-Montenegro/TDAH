@@ -11,7 +11,7 @@ import { setTodayOutlookEvents } from './today-agenda.js';
 // (Azure AD) para este proyecto — público, no es secreto (mismo criterio
 // que el client ID de Google en calendar.js). Ver CLAUDE.md para los pasos
 // del registro. Reemplazar con el valor real antes de usar esta feature.
-const MICROSOFT_CLIENT_ID = 'REEMPLAZAR_CON_CLIENT_ID_DE_AZURE';
+const MICROSOFT_CLIENT_ID = 'f755a16c-d405-4d44-b658-ce20c1f6a65e';
 const OUTLOOK_API_SCOPES = ['Calendars.Read'];
 
 let msalInstance = null;
