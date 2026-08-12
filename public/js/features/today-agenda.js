@@ -1,13 +1,25 @@
 // =================================================================================
-// AGENDA UNIFICADA DE HOY: combina eventos de Google Calendar y tarjetas de
-// Trello que vencen hoy en una sola lista ordenada por hora, en
-// #today-agenda-list. Mismo patrón que next-step.js: sin initX() propio ni
-// ref de Firestore propia — calendar.js y trello.js empujan su último estado
-// acá desde sus propios onSnapshot/fetch ya activos.
+// AGENDA UNIFICADA DE HOY: combina eventos de Google Calendar, Outlook
+// Calendar y tarjetas de Trello que vencen hoy en una sola lista ordenada
+// por hora, en #today-agenda-list. Mismo patrón que next-step.js: sin
+// initX() propio ni ref de Firestore propia — calendar.js/outlook-
+// calendar.js/trello.js empujan su último estado acá desde sus propios
+// onSnapshot/fetch ya activos.
 // =================================================================================
 import { renderEmptyState, makeClickable } from '../ui.js';
 
+const SOURCE_ICONS = { calendar: '📅', outlook: '📆', trello: '📋' };
+
+// Microsoft Graph devuelve las fechas sin sufijo de zona horaria cuando se
+// pide un timezone explícito (ver outlook-calendar.js, Prefer: outlook.
+// timezone="UTC") — hay que agregarle "Z" a mano, si no Date la interpreta
+// como hora local.
+function parseGraphDateTime(dateTimeStr) {
+    return new Date(dateTimeStr.endsWith('Z') ? dateTimeStr : `${dateTimeStr}Z`);
+}
+
 let latestCalendarEvents = [];
+let latestOutlookEvents = [];
 let latestTrelloCards = [];
 
 export function setTodayCalendarEvents(events) {
@@ -19,10 +31,20 @@ export function setTodayCalendarEvents(events) {
     render();
 }
 
-// Limpia ambas fuentes a la vez (logout) — setTodayCalendarEvents([]) solo
-// no alcanza porque dejaría intactas las tarjetas de Trello ya cargadas.
+export function setTodayOutlookEvents(events) {
+    latestOutlookEvents = events.map(event => ({
+        time: parseGraphDateTime(event.start.dateTime),
+        label: event.subject || '(Sin título)',
+        source: 'outlook',
+    }));
+    render();
+}
+
+// Limpia las tres fuentes a la vez (logout) — setTodayCalendarEvents([])
+// sola no alcanza porque dejaría intactas las otras dos.
 export function resetTodayAgenda() {
     latestCalendarEvents = [];
+    latestOutlookEvents = [];
     latestTrelloCards = [];
     render();
 }
@@ -41,7 +63,7 @@ function render() {
     const container = document.getElementById('today-agenda-list');
     if (!container) return;
 
-    const items = [...latestCalendarEvents, ...latestTrelloCards].sort((a, b) => a.time - b.time);
+    const items = [...latestCalendarEvents, ...latestOutlookEvents, ...latestTrelloCards].sort((a, b) => a.time - b.time);
 
     // Sin ítems (nada agendado, o ninguna fuente conectada): un solo mensaje
     // positivo. Los carteles de "conectá Calendar"/"configurá Trello" quedan
@@ -59,7 +81,7 @@ function render() {
 
         const timeSpan = document.createElement('span');
         timeSpan.className = 'event-time';
-        const icon = item.source === 'calendar' ? '📅' : '📋';
+        const icon = SOURCE_ICONS[item.source] || '📅';
         timeSpan.textContent = `${icon} ${item.time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
 
         const summarySpan = document.createElement('span');

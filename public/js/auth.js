@@ -23,6 +23,7 @@ import {
     loadCalendarEvents
 } from './features/calendar.js';
 import { resetTodayAgenda } from './features/today-agenda.js';
+import { restoreOutlookAccount, resetOutlookState } from './features/outlook-calendar.js';
 
 let isLoggingOut = false;
 
@@ -53,6 +54,7 @@ export function initAuthStateListener(onLogin) {
 
             // Recuperar token de Calendar (si existe)
             restoreCalendarToken();
+            restoreOutlookAccount();
 
             if (!isLoggingOut) {
                 await onLogin(user.uid);
@@ -82,10 +84,11 @@ export function initAuthStateListener(onLogin) {
             if (todayNextStep) todayNextStep.innerHTML = '';
             if (pointsDisplay) pointsDisplay.textContent = '';
 
-            // Resetear estado de Calendar
+            // Resetear estado de Calendar y Outlook
             resetCalendarState();
-            // Limpia también las tarjetas de Trello del merge (resetCalendarState
-            // solo limpia el lado de Calendar; si no, quedan visibles tras salir).
+            resetOutlookState();
+            // Limpia también las tarjetas de Trello del merge (lo de arriba
+            // solo limpia Calendar/Outlook; si no, quedan visibles tras salir).
             resetTodayAgenda();
 
             if (!isLoggingOut) {

@@ -8,6 +8,7 @@ import { db, auth, publicDataDocId } from './firebase.js';
 import { registerListener, cleanupListeners } from './listeners.js';
 import { showTempMessage, showCustomConfirm, mostrarSeccion } from './ui.js';
 import { wireCalendarButtons } from './features/calendar.js';
+import { wireOutlookButtons } from './features/outlook-calendar.js';
 import { initWelcomeTour } from './features/welcome-tour.js';
 import { initJournal } from './features/journal.js';
 import { initHabits } from './features/habits.js';
@@ -118,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     requestNotificationPermission();
 
     wireCalendarButtons();
+    wireOutlookButtons();
     wireSoundToggle();
     wireSoundVolumeControl();
     wireSoundTestButtons();

@@ -32,6 +32,7 @@
   </script>
   <link rel="stylesheet" href="css/styles1.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js" async defer></script>
 </head>
 
 <body>
@@ -223,6 +224,17 @@
         </div>
         <ul id="calendar-events-list" style="display: none;">
           <!-- Los eventos del calendario se cargarán aquí -->
+        </ul>
+
+        <h3>📆 Outlook Calendar</h3>
+        <div id="outlook-status">
+          <p id="outlook-connection-status">Estado: No conectado.</p>
+          <button id="connect-outlook-btn" class="auth-btn">Conectar con Outlook Calendar</button>
+          <button id="disconnect-outlook-btn" class="button-danger" style="display: none;">Desconectar
+            Outlook</button>
+        </div>
+        <ul id="outlook-events-list" style="display: none;">
+          <!-- Los eventos de Outlook se cargarán aquí -->
         </ul>
       </section>
 
