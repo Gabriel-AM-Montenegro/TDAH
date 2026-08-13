@@ -4,6 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
 // El login con Google (popup/redirect) pasa por "authDomain" como puente
 // entre la app y Google — Firebase Hosting expone las rutas reservadas
@@ -37,6 +38,7 @@ export const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
 export let app;
 export let db;
 export let auth;
+export let analytics;
 
 // Modo opt-in para desarrollo: abrir la app con ?emulator=1 conecta Auth y
 // Firestore a los emuladores locales (firebase emulators:start) en vez de
@@ -55,6 +57,12 @@ try {
     } else {
         console.log("Firebase inicializado exitosamente.");
     }
+
+    // Analytics solo en un site real de Firebase Hosting (no en localhost ni
+    // en el emulador) — para no mezclar clics de prueba con el uso real.
+    if (isFirebaseHostingDomain && !useEmulator) {
+        analytics = getAnalytics(app);
+    }
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
     document.addEventListener('DOMContentLoaded', () => {
@@ -62,4 +70,11 @@ try {
             <h1>Error Crítico</h1><p>No se pudo conectar con la base de datos.</p>
             <p><strong>Detalle del error:</strong> ${error.message}</p></div>`;
     });
+}
+
+// No-op si analytics no está inicializado (localhost/emulador) — así el
+// resto del código puede llamarlo siempre sin chequear la condición.
+export function trackEvent(eventName, params) {
+    if (!analytics) return;
+    logEvent(analytics, eventName, params);
 }

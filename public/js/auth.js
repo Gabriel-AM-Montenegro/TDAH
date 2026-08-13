@@ -9,9 +9,10 @@ import {
     signOut,
     signInWithCustomToken,
     createUserWithEmailAndPassword,
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    getAdditionalUserInfo
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { auth, initialAuthToken } from './firebase.js';
+import { auth, initialAuthToken, trackEvent } from './firebase.js';
 import { cleanupListeners } from './listeners.js';
 import { showTempMessage, showCustomConfirm, mostrarSeccion } from './ui.js';
 import {
@@ -124,6 +125,7 @@ export function wireAuthButtons() {
             provider.addScope(CALENDAR_API_SCOPE);
 
             const result = await signInWithPopup(auth, provider);
+            trackEvent(getAdditionalUserInfo(result)?.isNewUser ? 'sign_up' : 'login', { method: 'google' });
 
             // OBTENER EL TOKEN DE ACCESO PARA CALENDAR
             const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -147,7 +149,8 @@ export function wireAuthButtons() {
     if (anonymousBtn) {
         anonymousBtn.onclick = async () => {
             try {
-                await signInAnonymously(auth);
+                const result = await signInAnonymously(auth);
+                trackEvent(getAdditionalUserInfo(result)?.isNewUser ? 'sign_up' : 'login', { method: 'anonymous' });
             } catch (error) {
                 console.error("Error de inicio de sesión anónimo:", error);
                 showTempMessage('No se pudo iniciar sesión. Probá de nuevo.', 'error');
@@ -206,6 +209,7 @@ export function wireAuthButtons() {
             }
             try {
                 await signInWithEmailAndPassword(auth, email, password);
+                trackEvent('login', { method: 'email' });
             } catch (error) {
                 console.error("Error de inicio de sesión con email:", error);
                 showTempMessage(getEmailAuthErrorMessage(error), 'error');
@@ -223,6 +227,7 @@ export function wireAuthButtons() {
             }
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
+                trackEvent('sign_up', { method: 'email' });
                 showTempMessage('Cuenta creada exitosamente.', 'success');
             } catch (error) {
                 console.error("Error de registro con email:", error);
