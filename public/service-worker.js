@@ -17,7 +17,7 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v10';
+const CACHE_NAME = 'neurokit-shell-v11';
 const NETWORK_TIMEOUT_MS = 3000;
 
 function fetchWithTimeout(request, timeoutMs) {

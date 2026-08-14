@@ -20,6 +20,7 @@ App web (HTML/CSS/JS vanilla, sin build step) para ayudar a adultos con TDAH a o
 - `favicon.svg`: el cerebro solo, fondo transparente (se ve bien de chico en la pestaña del navegador).
 - Los 3 archivos de `icons/`: el cerebro centrado sobre el mismo degradado violeta de marca (`#667eea` → `#764ba2`) que ya usa `manifest.json`, con esquinas redondeadas en `icon-192`/`icon-512` (Android/PWA) y esquinas cuadradas en `apple-touch-icon` (iOS las redondea solo).
 - Si en algún momento se consigue una versión de mayor resolución (o un SVG vectorial real, ver conversación sobre `isotipo_cerebro.svg`/`logo_un_cerebro_diferente.svg`/`logo_neuro_kit.svg`), reemplazar directamente estos 4 archivos sin tocar `index.html` ni `manifest.json` (las rutas no cambian).
+- El `<h1>` del header (antes `🧠 NeuroKit`, emoji suelto) ahora usa `<img src="favicon.svg">` (mismo archivo que el favicon, se reutiliza) con `.header-brain-icon { height: 1em }` en `styles1.css` — escala solo con el tamaño de fuente del h1, no hace falta tocarlo si cambia el font-size en media queries.
 
 **URLs de producción (2026-08-11)**: el proyecto tiene 2 "sites" de Hosting, mismo contenido de `public/` en ambos — `firebase deploy --only hosting` publica en los dos a la vez (ver `firebase.json`/`.firebaserc`, targets `principal` y `neurokit`):
 - https://neurokit-app.web.app — URL corta, la que el usuario quiere usar/recordar día a día ("NeuroKit").
