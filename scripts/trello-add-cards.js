@@ -34,12 +34,8 @@ const USER_EMAIL = 'gabriel.montenegro@redb.ee';
 // Título + descripción de las tarjetas a crear en "To Do".
 const CARDS_TO_ADD = [
     {
-        name: 'Conectar Outlook Calendar (además de Google Calendar)',
-        desc: 'Hoy la app solo integra Google Calendar (public/js/features/calendar.js, vía Google Identity Services). Agregar la opción de conectar Outlook/Microsoft Calendar como fuente alternativa u adicional para la agenda de Hoy.',
-    },
-    {
-        name: 'Tour de bienvenida: mencionar los patrones de respiración editables en Pomodoro',
-        desc: 'El tour de bienvenida (public/js/features/welcome-tour.js, paso "⏱️ Pomodoro") no menciona que se puede elegir el patrón de respiración (4-7-8 / Cuadrada / Triangular) desde la configuración de Pomodoro (#breathing-pattern-options). Agregar esa mención al paso correspondiente del tour.',
+        name: 'Notificaciones push reales (reflejadas en Apple Watch)',
+        desc: 'Hoy las notificaciones (public/js/notifications.js) son locales vía Notification(), solo funcionan mientras la pestaña/PWA está abierta. Para que lleguen avisos (ej. "se terminó tu Pomodoro") con la app cerrada -y que esos avisos del iPhone se reflejen en el Apple Watch, como cualquier notificación normal- hace falta Web Push real con Firebase Cloud Messaging: token de dispositivo (getToken con VAPID key, generado a mano en Firebase Console → Project Settings → Cloud Messaging), manejo del evento "push" en service-worker.js, y algo del lado del servidor que dispare el envío en el momento justo (ej. Cloud Functions). Requiere pasar el proyecto de Firebase al plan Blaze (pide tarjeta, uso esperado $0/mes) - el usuario decidió no dar ese paso todavía (2026-08-13), pendiente para cuando quiera.',
     },
 ];
 
