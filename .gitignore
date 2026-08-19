@@ -71,3 +71,6 @@ node_modules/
 # Claves de servicio de Firebase Admin (nunca commitear)
 scripts/service-account.json
 service-account*.json
+
+# Archivos de bloqueo temporales de Word/Office (se crean solo al abrir un .docx)
+~$*
