@@ -17,13 +17,21 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v13';
+const CACHE_NAME = 'neurokit-shell-v14';
 const NETWORK_TIMEOUT_MS = 3000;
 
-function fetchWithTimeout(request, timeoutMs) {
+// `{ cache: 'no-store' }` es clave acá: Firebase Hosting sirve los archivos
+// estáticos con Cache-Control: max-age=3600, así que un fetch() común puede
+// quedar satisfecho con la copia local del navegador sin llegar a preguntarle
+// al servidor — "red primero" no serviría de nada si la "red" en realidad es
+// el cache HTTP del navegador. Forzar 'no-store' hace que cada request pase
+// de verdad por la red (real, encontrado probando el fix de un typo en
+// firebaseConfig: el archivo ya estaba corregido en el servidor pero el
+// navegador lo seguía sirviendo viejo de su propio cache).
+function fetchWithTimeout(url, timeoutMs) {
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('network timeout')), timeoutMs);
-        fetch(request).then(
+        fetch(url, { cache: 'no-store' }).then(
             (response) => { clearTimeout(timer); resolve(response); },
             (error) => { clearTimeout(timer); reject(error); }
         );
@@ -59,7 +67,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.open(CACHE_NAME).then(async (cache) => {
             try {
-                const response = await fetchWithTimeout(request, NETWORK_TIMEOUT_MS);
+                const response = await fetchWithTimeout(request.url, NETWORK_TIMEOUT_MS);
                 if (response.ok) cache.put(request, response.clone());
                 return response;
             } catch (error) {
