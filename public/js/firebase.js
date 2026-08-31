@@ -22,9 +22,9 @@ const firebaseConfig = {
     authDomain: isFirebaseHostingDomain ? location.hostname : "tdah-app-efca9.firebaseapp.com",
     projectId: "tdah-app-efca9",
     storageBucket: "tdah-app-efca9.appspot.com",
-    messagingSenderId: "765424831369",
+    messagingSenderId: "765424031369",
     appId: "1:765424031369:web:838eca686f68f21daa5858",
-    measurementId: "G-QY7X98XZZY"
+    measurementId: "G-QY7X98XZZV"
 };
 
 export const appId = firebaseConfig.appId;
