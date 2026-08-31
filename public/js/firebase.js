@@ -23,16 +23,17 @@ const firebaseConfig = {
     projectId: "tdah-app-efca9",
     storageBucket: "tdah-app-efca9.appspot.com",
     messagingSenderId: "765424831369",
-    appId: "1:765424031369:web:838eca86f68f21daa5858",
+    appId: "1:765424031369:web:838eca686f68f21daa5858",
     measurementId: "G-QY7X98XZZY"
 };
 
 export const appId = firebaseConfig.appId;
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// NO cambiar este valor para que coincida con `appId`: difiere en un dígito
-// (bug preexistente) pero es la ruta de Firestore donde ya vive la data real
-// de producción. Ver CLAUDE.md.
+// Coincide con `appId` a propósito (los dos son el Web App ID real, según la
+// Firebase Management API) — históricamente se creía que debían diferir en
+// un dígito por un bug preexistente, pero en realidad `appId` tenía el typo
+// (le faltaba un "6"), corregido arriba el 2026-08-31. Ver CLAUDE.md.
 export const publicDataDocId = "1:765424031369:web:838eca686f68f21daa5858";
 
 export let app;
