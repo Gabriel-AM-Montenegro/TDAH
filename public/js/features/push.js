@@ -30,25 +30,7 @@ function showPushDebug(message) {
     el.textContent += (el.textContent ? '\n' : '') + message;
 }
 
-export async function initPush(db, userId) {
-    if (!messaging) {
-        showPushDebug('"messaging" no inicializado (ver consola al cargar la app, buscar "getMessaging").');
-        return;
-    }
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        showPushDebug('Este navegador no tiene Notification API o Service Worker.');
-        return;
-    }
-
-    if (Notification.permission === 'default') {
-        showPushDebug('Pidiendo permiso de notificaciones...');
-        await Notification.requestPermission();
-    }
-    if (Notification.permission !== 'granted') {
-        showPushDebug('Permiso de notificaciones: ' + Notification.permission + ' (no concedido).');
-        return;
-    }
-
+async function registerToken(db, userId) {
     try {
         showPushDebug('Permiso OK. Pidiendo token de FCM...');
         const registration = await navigator.serviceWorker.ready;
@@ -71,4 +53,52 @@ export async function initPush(db, userId) {
         // sesión no va a recibir push reales, sigue funcionando todo igual.
         showPushDebug('ERROR: ' + (error?.code || error?.message || String(error)));
     }
+}
+
+// Safari (incluida la PWA standalone de iOS) solo muestra el diálogo nativo
+// de permiso de notificaciones si Notification.requestPermission() se llama
+// DENTRO del handler de un tap/click real del usuario — llamado desde
+// initPush() (disparado por onAuthStateChanged, varios pasos async después
+// de cualquier tap) la promesa se resuelve sola sin mostrar nada, dejando el
+// permiso en "default" para siempre. Por eso hace falta este botón visible.
+function showEnablePushButton(db, userId) {
+    if (document.getElementById('enable-push-btn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'enable-push-btn';
+    btn.type = 'button';
+    btn.textContent = '🔔 Activar notificaciones';
+    btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:99998;background:#4F46E5;color:white;border:none;padding:12px 20px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    btn.onclick = async () => {
+        btn.remove();
+        showPushDebug('Pidiendo permiso de notificaciones (desde el tap)...');
+        const permission = await Notification.requestPermission();
+        showPushDebug('Permiso: ' + permission);
+        if (permission === 'granted') {
+            await registerToken(db, userId);
+        }
+    };
+    document.body.appendChild(btn);
+}
+
+export async function initPush(db, userId) {
+    if (!messaging) {
+        showPushDebug('"messaging" no inicializado (ver consola al cargar la app, buscar "getMessaging").');
+        return;
+    }
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        showPushDebug('Este navegador no tiene Notification API o Service Worker.');
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        await registerToken(db, userId);
+        return;
+    }
+    if (Notification.permission === 'denied') {
+        showPushDebug('Permiso de notificaciones denegado anteriormente (no se puede volver a pedir solo).');
+        return;
+    }
+
+    // 'default': mostrar el botón, no pedir el permiso automáticamente.
+    showEnablePushButton(db, userId);
 }
