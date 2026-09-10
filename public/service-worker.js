@@ -17,7 +17,7 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v18';
+const CACHE_NAME = 'neurokit-shell-v19';
 const NETWORK_TIMEOUT_MS = 3000;
 
 // `{ cache: 'no-store' }` es clave acá: Firebase Hosting sirve los archivos
