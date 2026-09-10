@@ -96,7 +96,11 @@ export function initPomodoro(db, userId) {
                 isBreakTime: newBreak,
                 focusTime: focusTime,
                 breakTime: breakTime,
-                lastUpdated: new Date().toISOString()
+                lastUpdated: new Date().toISOString(),
+                // Arma el aviso de push cada vez que arranca un bloque nuevo
+                // (functions/index.js lo pone en true una vez que manda el
+                // push real, para no mandarlo de nuevo en el próximo chequeo).
+                pushNotified: !newRunning
             });
         } catch (error) { console.error("Pomodoro: Error al guardar estado:", error); }
     };

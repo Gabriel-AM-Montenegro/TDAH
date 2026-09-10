@@ -1,0 +1,41 @@
+// =================================================================================
+// NOTIFICACIONES PUSH REALES: recordatorios de Checklist y "Pomodoro terminado"
+// que llegan aunque la app esté cerrada (las Cloud Functions en functions/
+// son las que efectivamente los mandan; acá solo se registra el dispositivo).
+// =================================================================================
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+import { messaging, publicDataDocId } from '../firebase.js';
+
+// Clave pública VAPID del proyecto (Firebase Console → Project Settings →
+// Cloud Messaging → Web Push certificates). No es un secreto — identifica
+// al proyecto, no autoriza nada por sí sola — mismo criterio que el resto
+// de las claves públicas ya en el código (Google/Microsoft Client ID).
+const VAPID_KEY = 'REEMPLAZAR_CON_VAPID_KEY';
+
+export async function initPush(db, userId) {
+    if (!messaging) return; // localhost/emulador: ver firebase.js
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+    }
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+        if (!token) return;
+
+        const tokenRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pushTokens', token);
+        await setDoc(tokenRef, { createdAt: serverTimestamp(), userAgent: navigator.userAgent }, { merge: true });
+
+        const settingsRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'settings', 'appSettings');
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        await setDoc(settingsRef, { timezone }, { merge: true });
+    } catch (error) {
+        // No es crítico para el resto de la app — solo significa que esta
+        // sesión no va a recibir push reales, sigue funcionando todo igual.
+        console.error('Push: no se pudo registrar el dispositivo:', error);
+    }
+}

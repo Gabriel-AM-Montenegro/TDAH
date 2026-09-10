@@ -23,6 +23,7 @@ import { wireSoundToggle, wireSoundVolumeControl, wireSoundTestButtons } from '.
 import { wireMotionToggle } from './motion.js';
 import { initTheme } from './features/theme.js';
 import { initPoints } from './features/points.js';
+import { initPush } from './features/push.js';
 
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
@@ -56,6 +57,7 @@ async function loadAllUserData(currentUserId) {
     initPomodoro(db, currentUserId);
     initChecklist(db, currentUserId);
     initHabits(db, currentUserId);
+    initPush(db, currentUserId);
     initTrello(db, currentUserId);
     initBlog(db);
     initNutricion(db);

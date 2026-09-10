@@ -5,6 +5,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+import { getMessaging } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
 // El login con Google (popup/redirect) pasa por "authDomain" como puente
 // entre la app y Google — Firebase Hosting expone las rutas reservadas
@@ -40,6 +41,7 @@ export let app;
 export let db;
 export let auth;
 export let analytics;
+export let messaging;
 
 // Modo opt-in para desarrollo: abrir la app con ?emulator=1 conecta Auth y
 // Firestore a los emuladores locales (firebase emulators:start) en vez de
@@ -63,6 +65,11 @@ try {
     // en el emulador) — para no mezclar clics de prueba con el uso real.
     if (isFirebaseHostingDomain && !useEmulator) {
         analytics = getAnalytics(app);
+        // Mismo criterio: push real necesita un dominio real (Cloud Functions
+        // solo corren contra producción, no hay forma de probarlas contra el
+        // emulador de Firestore) — inicializarlo en localhost solo generaría
+        // errores de permiso de notificaciones sin ningún beneficio.
+        messaging = getMessaging(app);
     }
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);

@@ -17,7 +17,7 @@
 // Google Calendar/Identity Services) — esos siempre van a la red, para no
 // servir datos ni tokens viejos.
 // =================================================================================
-const CACHE_NAME = 'neurokit-shell-v15';
+const CACHE_NAME = 'neurokit-shell-v16';
 const NETWORK_TIMEOUT_MS = 3000;
 
 // `{ cache: 'no-store' }` es clave acá: Firebase Hosting sirve los archivos
@@ -55,6 +55,23 @@ self.addEventListener('activate', (event) => {
 // página todavía) se activa solo, sin necesitar este mensaje.
 self.addEventListener('message', (event) => {
     if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// Notificaciones push reales (functions/index.js es quien las manda). El
+// payload lo arma firebase-admin/messaging como Web Push estándar, con un
+// bloque "notification" — no hace falta la librería de compat de Firebase
+// Messaging para leerlo, es solo el evento "push" nativo.
+self.addEventListener('push', (event) => {
+    let payload = {};
+    try { payload = event.data ? event.data.json() : {}; } catch (error) { /* payload no-JSON, se ignora */ }
+    const title = payload.notification?.title || 'NeuroKit';
+    const body = payload.notification?.body || '';
+    event.waitUntil(self.registration.showNotification(title, { body, icon: '/icons/icon-192.png' }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(self.clients.openWindow('/'));
 });
 
 self.addEventListener('fetch', (event) => {
