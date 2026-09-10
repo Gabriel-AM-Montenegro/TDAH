@@ -11,7 +11,7 @@ import { messaging, publicDataDocId } from '../firebase.js';
 // Cloud Messaging → Web Push certificates). No es un secreto — identifica
 // al proyecto, no autoriza nada por sí sola — mismo criterio que el resto
 // de las claves públicas ya en el código (Google/Microsoft Client ID).
-const VAPID_KEY = 'REEMPLAZAR_CON_VAPID_KEY';
+const VAPID_KEY = 'BC8amjDsCr3SOKUxSzLBnVPeWxEnb6MJYVqKid3tHV1odzmDl2wxz_RAmehz73o4sVAzWat9xB07eiYe63ab80Y';
 
 export async function initPush(db, userId) {
     if (!messaging) return; // localhost/emulador: ver firebase.js
