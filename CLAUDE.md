@@ -1,5 +1,7 @@
 # TDAH Helper App
 
+**Página 404 personalizada (2026-09-10)**: `public/404.html`, Firebase Hosting la sirve solo automáticamente para cualquier ruta que no matchee ningún archivo (sin tocar `firebase.json`). Mismo degradado violeta de marca (`#667eea`→`#764ba2`) e isotipo (`/favicon.svg`) que el resto de la app — **rutas absolutas (`/favicon.svg`), no relativas**: esta página se sirve para cualquier URL rota, incluidas rutas con subcarpetas, y una ruta relativa se resuelve mal en ese caso (se comprobó: rompía el ícono al probar `/otra-carpeta/algo-inexistente`). Standalone, no depende de `main.js` ni de Firestore.
+
 App web (HTML/CSS/JS vanilla, sin build step) para ayudar a adultos con TDAH a organizarse: Pomodoro, checklist, journal, hábitos, integración con Google Calendar, Outlook Calendar y Trello. Backend: Firebase (Auth + Firestore), proyecto `tdah-app-efca9`. Deploy: Firebase Hosting, sirviendo desde `public/`.
 
 **Documentación no técnica en `documentacion/` (2026-08-13/14)**: carpeta nueva, fuera de `public/` (no se deploya). Dos archivos:
