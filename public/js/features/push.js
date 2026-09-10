@@ -14,13 +14,22 @@ import { messaging, publicDataDocId } from '../firebase.js';
 const VAPID_KEY = 'BC8amjDsCr3SOKUxSzLBnVPeWxEnb6MJYVqKid3tHV1odzmDl2wxz_RAmehz73o4sVAzWat9xB07eiYe63ab80Y';
 
 export async function initPush(db, userId) {
-    if (!messaging) return; // localhost/emulador: ver firebase.js
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    if (!messaging) {
+        console.warn('Push: "messaging" no está inicializado (localhost/emulador, o getMessaging() no soportado — ver consola al cargar la app).');
+        return;
+    }
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        console.warn('Push: este navegador no tiene Notification API o Service Worker.');
+        return;
+    }
 
     if (Notification.permission === 'default') {
         await Notification.requestPermission();
     }
-    if (Notification.permission !== 'granted') return;
+    if (Notification.permission !== 'granted') {
+        console.warn('Push: permiso de notificaciones no concedido (' + Notification.permission + ').');
+        return;
+    }
 
     try {
         const registration = await navigator.serviceWorker.ready;

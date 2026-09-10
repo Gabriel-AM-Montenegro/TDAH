@@ -65,11 +65,21 @@ try {
     // en el emulador) — para no mezclar clics de prueba con el uso real.
     if (isFirebaseHostingDomain && !useEmulator) {
         analytics = getAnalytics(app);
+
         // Mismo criterio: push real necesita un dominio real (Cloud Functions
         // solo corren contra producción, no hay forma de probarlas contra el
         // emulador de Firestore) — inicializarlo en localhost solo generaría
         // errores de permiso de notificaciones sin ningún beneficio.
-        messaging = getMessaging(app);
+        // Try/catch propio (no el de afuera): getMessaging() puede tirar en
+        // navegadores/WebViews que no soportan Push API (Safari en iOS lo
+        // soporta desde 16.4, pero solo en el contexto standalone de una PWA
+        // agregada a la pantalla de inicio) — si eso pasa, no tiene que
+        // romper Analytics/Auth/Firestore, que ya están funcionando bien.
+        try {
+            messaging = getMessaging(app);
+        } catch (error) {
+            console.error('Push: getMessaging() no soportado en este navegador:', error);
+        }
     }
 } catch (error) {
     console.error("ERROR CRÍTICO DE INICIALIZACIÓN DE FIREBASE:", error);
