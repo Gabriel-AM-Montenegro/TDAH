@@ -13,37 +13,17 @@ import { messaging, publicDataDocId } from '../firebase.js';
 // de las claves públicas ya en el código (Google/Microsoft Client ID).
 const VAPID_KEY = 'BC8amjDsCr3SOKUxSzLBnVPeWxEnb6MJYVqKid3tHV1odzmDl2wxz_RAmehz73o4sVAzWat9xB07eiYe63ab80Y';
 
-// Diagnóstico temporal en pantalla (2026-09-10): sin acceso a la consola real
-// del dispositivo donde estaba fallando, esto muestra el motivo directo en la
-// propia app. Sacar una vez que el registro de push funcione de forma
-// confiable — no es parte del diseño final, es una herramienta de esta
-// investigación puntual.
-function showPushDebug(message) {
-    console.warn('Push:', message);
-    let el = document.getElementById('push-debug-banner');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'push-debug-banner';
-        el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#111;color:#0f0;font:12px monospace;padding:10px;max-height:40vh;overflow:auto;white-space:pre-wrap;';
-        document.body.appendChild(el);
-    }
-    el.textContent += (el.textContent ? '\n' : '') + message;
-}
-
 async function registerToken(db, userId) {
     try {
-        showPushDebug('Permiso OK. Pidiendo token de FCM...');
         const registration = await navigator.serviceWorker.ready;
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
         if (!token) {
-            showPushDebug('getToken() devolvió vacío.');
+            console.warn('Push: getToken() devolvió vacío.');
             return;
         }
-        showPushDebug('Token obtenido: ' + token.slice(0, 20) + '...');
 
         const tokenRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'pushTokens', token);
         await setDoc(tokenRef, { createdAt: serverTimestamp(), userAgent: navigator.userAgent }, { merge: true });
-        showPushDebug('Token guardado en Firestore. Listo.');
 
         const settingsRef = doc(db, 'artifacts', publicDataDocId, 'users', userId, 'settings', 'appSettings');
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -51,7 +31,7 @@ async function registerToken(db, userId) {
     } catch (error) {
         // No es crítico para el resto de la app — solo significa que esta
         // sesión no va a recibir push reales, sigue funcionando todo igual.
-        showPushDebug('ERROR: ' + (error?.code || error?.message || String(error)));
+        console.warn('Push: error al registrar token:', error?.code || error?.message || error);
     }
 }
 
@@ -70,9 +50,7 @@ function showEnablePushButton(db, userId) {
     btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:99998;background:#4F46E5;color:white;border:none;padding:12px 20px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
     btn.onclick = async () => {
         btn.remove();
-        showPushDebug('Pidiendo permiso de notificaciones (desde el tap)...');
         const permission = await Notification.requestPermission();
-        showPushDebug('Permiso: ' + permission);
         if (permission === 'granted') {
             await registerToken(db, userId);
         }
@@ -82,11 +60,11 @@ function showEnablePushButton(db, userId) {
 
 export async function initPush(db, userId) {
     if (!messaging) {
-        showPushDebug('"messaging" no inicializado (ver consola al cargar la app, buscar "getMessaging").');
+        console.warn('Push: "messaging" no inicializado (ver consola al cargar la app, buscar "getMessaging").');
         return;
     }
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        showPushDebug('Este navegador no tiene Notification API o Service Worker.');
+        console.warn('Push: este navegador no tiene Notification API o Service Worker.');
         return;
     }
 
@@ -95,7 +73,7 @@ export async function initPush(db, userId) {
         return;
     }
     if (Notification.permission === 'denied') {
-        showPushDebug('Permiso de notificaciones denegado anteriormente (no se puede volver a pedir solo).');
+        console.warn('Push: permiso de notificaciones denegado anteriormente (no se puede volver a pedir solo).');
         return;
     }
 
