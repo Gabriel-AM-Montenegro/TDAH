@@ -1,27 +1,208 @@
 rules_version = '2';
 service cloud.firestore {
+
+  function isValidJournalEntry(data) {
+    return data.keys().hasOnly(['text', 'timestamp', 'mood', 'tags'])
+      && data.keys().hasAll(['text', 'timestamp', 'mood', 'tags'])
+      && data.text is string && data.text.size() > 0 && data.text.size() <= 20000
+      && data.timestamp is string
+      && (data.mood == null || data.mood in ['great', 'good', 'okay', 'low', 'bad'])
+      && data.tags is list && data.tags.size() <= 30;
+  }
+
+  // Nota: no se valida la forma interna de cada elemento de "subtasks" (id/
+  // text/completed) — las reglas de Firestore no tienen forma de iterar una
+  // lista de largo arbitrario. El límite de tamaño de la lista (abajo) y el
+  // límite de 1MB por documento de Firestore acotan el abuso real; es una
+  // limitación conocida, no un descuido.
+  //
+  // isValidChecklistItemFields: valida TIPO de cada campo presente, sin exigir
+  // que ninguno esté presente. Se usa tal cual para "update" — production
+  // tiene ítems reales de 2025-07 (antes de que existieran isMIT/position)
+  // que solo tienen text/completed/timestamp; exigir hasAll() ahí bloquearía
+  // para siempre poder tildarlos/editarlos. isValidChecklistItemCreate agrega
+  // el hasAll encima, porque un ítem NUEVO sí lo escribe siempre completo
+  // (ver checklist.js/trello.js, ambos addDoc con los 5 campos).
+  function isValidChecklistItemFields(data) {
+    return data.keys().hasOnly(['text', 'completed', 'isMIT', 'timestamp', 'position', 'tagColor', 'reminderTime', 'subtasks', 'trelloCardId', 'lastReminderSentDate'])
+      && (!('text' in data) || (data.text is string && data.text.size() > 0 && data.text.size() <= 1000))
+      && (!('completed' in data) || data.completed is bool)
+      && (!('isMIT' in data) || data.isMIT is bool)
+      && (!('timestamp' in data) || data.timestamp is string)
+      && (!('position' in data) || data.position is number)
+      && (!('tagColor' in data) || data.tagColor == null || data.tagColor in ['red', 'orange', 'green', 'blue', 'purple'])
+      && (!('reminderTime' in data) || data.reminderTime == null || (data.reminderTime is string && data.reminderTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+      && (!('subtasks' in data) || (data.subtasks is list && data.subtasks.size() <= 50))
+      && (!('trelloCardId' in data) || data.trelloCardId == null || data.trelloCardId is string)
+      && (!('lastReminderSentDate' in data) || data.lastReminderSentDate is string);
+  }
+
+  function isValidChecklistItemCreate(data) {
+    return data.keys().hasAll(['text', 'completed', 'isMIT', 'timestamp', 'position'])
+      && isValidChecklistItemFields(data);
+  }
+
+  function isValidPomodoroSettings(data) {
+    return data.keys().hasOnly(['timeLeft', 'isRunning', 'isBreakTime', 'focusTime', 'breakTime', 'lastUpdated', 'pushNotified'])
+      && data.keys().hasAll(['timeLeft', 'isRunning', 'isBreakTime', 'focusTime', 'breakTime', 'lastUpdated', 'pushNotified'])
+      && data.timeLeft is number && data.timeLeft >= 0
+      && data.isRunning is bool
+      && data.isBreakTime is bool
+      && data.focusTime is number && data.focusTime >= 1 && data.focusTime <= 120
+      && data.breakTime is number && data.breakTime >= 1 && data.breakTime <= 60
+      && data.lastUpdated is string
+      && data.pushNotified is bool;
+  }
+
+  function isValidTrelloConfig(data) {
+    return data.keys().hasOnly(['apiKey', 'token', 'boardId'])
+      && data.keys().hasAll(['apiKey', 'token', 'boardId'])
+      && data.apiKey is string && data.apiKey.size() <= 200
+      && data.token is string && data.token.size() <= 200
+      && data.boardId is string && data.boardId.size() <= 200;
+  }
+
+  // Igual criterio que checklistItems: al menos un hábito real en producción
+  // quedó de una versión vieja que usaba "creationDate" en vez de
+  // "timestamp" — isValidHabitFields tolera esa clave legada (no la exige,
+  // no la prohíbe) para no bloquear updates futuros de dailyCompletions
+  // sobre ese documento puntual. isValidHabitCreate exige la forma moderna
+  // completa para hábitos NUEVOS (ver habits.js, addDoc siempre manda los 3).
+  function isValidHabitFields(data) {
+    return data.keys().hasOnly(['name', 'timestamp', 'dailyCompletions', 'creationDate'])
+      && (!('name' in data) || (data.name is string && data.name.size() > 0 && data.name.size() <= 200))
+      && (!('timestamp' in data) || data.timestamp is string)
+      && (!('dailyCompletions' in data) || data.dailyCompletions is map);
+  }
+
+  function isValidHabitCreate(data) {
+    return data.keys().hasAll(['name', 'timestamp', 'dailyCompletions'])
+      && isValidHabitFields(data);
+  }
+
+  function isValidAppSettings(data) {
+    return data.keys().hasOnly(['theme', 'textSize', 'tourCompleted', 'timezone'])
+      && (!('theme' in data) || data.theme in ['light', 'dark', 'soft'])
+      && (!('textSize' in data) || data.textSize in ['normal', 'large'])
+      && (!('tourCompleted' in data) || data.tourCompleted is bool)
+      && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 100));
+  }
+
+  function isValidBreathingSettings(data) {
+    return data.keys().hasOnly(['pattern', 'enabledOnBreak'])
+      && (!('pattern' in data) || data.pattern in ['478', 'box', 'triangle'])
+      && (!('enabledOnBreak' in data) || data.enabledOnBreak is bool);
+  }
+
+  function isValidPoints(data) {
+    return data.keys().hasOnly(['total'])
+      && data.total is number && data.total >= 0;
+  }
+
+  function isValidPushToken(data) {
+    return data.keys().hasOnly(['createdAt', 'userAgent'])
+      && data.keys().hasAll(['createdAt', 'userAgent'])
+      && data.createdAt is timestamp
+      && data.userAgent is string && data.userAgent.size() <= 500;
+  }
+
   match /databases/{database}/documents {
 
-    // Reglas para datos privados de cada usuario (Journal, Checklist, Pomodoro, Trello Config)
-    // Permite leer y escribir SOLO si el usuario está autenticado Y su UID coincide con el userId en la ruta.
-    match /artifacts/{appId}/users/{userId}/{documents=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Datos privados de cada usuario. Antes esto era un solo
+    // "allow read, write: if auth.uid == userId" sobre {documents=**} — sin
+    // ninguna validación de esquema, cualquier usuario autenticado (incluido
+    // anónimo, login anónimo está habilitado) podía escribir CUALQUIER campo,
+    // tipo o tamaño bajo su propio UID. Con Cloud Functions reales corriendo
+    // en Blaze (functions/index.js, collectionGroup scans cada 1 minuto sobre
+    // TODOS los usuarios), eso ya no es solo prolijidad: es superficie de
+    // costo/abuso real (auditoría 2026-09-16, firebase-security-rules-auditor,
+    // score 4/5 — "Storage Abuse" y "Type Safety").
+    //
+    // Reemplazado por una regla explícita por colección, con validación de
+    // tipos y límites de tamaño. Efecto secundario importante: una colección
+    // NUEVA que se agregue a futuro bajo users/{userId} y no esté declarada
+    // acá abajo queda DENEGADA por default (fail-closed) hasta que se agregue
+    // su propia regla — si se agrega una feature nueva que escribe en
+    // Firestore, hay que sumarla acá o los usuarios van a ver "permission
+    // denied" al guardar.
+    match /artifacts/{appId}/users/{userId} {
+
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // journal.js: solo se crean entradas, nunca se editan ni se borran.
+      match /journalEntries/{entryId} {
+        allow read: if isOwner();
+        allow create: if isOwner() && isValidJournalEntry(request.resource.data);
+        allow update, delete: if false;
+      }
+
+      // checklist.js / trello.js (sincroniza tarjetas de Trello como ítems).
+      match /checklistItems/{itemId} {
+        allow read, delete: if isOwner();
+        allow create: if isOwner() && isValidChecklistItemCreate(request.resource.data);
+        allow update: if isOwner() && isValidChecklistItemFields(request.resource.data);
+      }
+
+      // pomodoro.js: savePomodoroState() siempre hace un setDoc SIN merge
+      // (reemplaza el documento entero) con estos 7 campos exactos.
+      match /pomodoroSettings/current {
+        allow read: if isOwner();
+        allow create, update: if isOwner() && isValidPomodoroSettings(request.resource.data);
+      }
+
+      // trello.js: setDoc sin merge, siempre estos 3 campos exactos.
+      match /trelloConfig/settings {
+        allow read: if isOwner();
+        allow create, update: if isOwner() && isValidTrelloConfig(request.resource.data);
+      }
+
+      // habits.js
+      match /habits/{habitId} {
+        allow read, delete: if isOwner();
+        allow create: if isOwner() && isValidHabitCreate(request.resource.data);
+        allow update: if isOwner() && isValidHabitFields(request.resource.data);
+      }
+
+      // Doc compartido entre theme.js (theme, textSize), welcome-tour.js
+      // (tourCompleted) y push.js (timezone) — cada uno escribe con
+      // merge:true, por eso ningún campo es obligatorio acá.
+      match /settings/appSettings {
+        allow read: if isOwner();
+        allow create, update: if isOwner() && isValidAppSettings(request.resource.data);
+      }
+
+      // breathing.js: dos escrituras separadas con merge:true (pattern,
+      // enabledOnBreak), tampoco hay campos obligatorios juntos.
+      match /breathingSettings/current {
+        allow read: if isOwner();
+        allow create, update: if isOwner() && isValidBreathingSettings(request.resource.data);
+      }
+
+      // points.js: siempre { total: increment(amount) }.
+      match /points/current {
+        allow read: if isOwner();
+        allow create, update: if isOwner() && isValidPoints(request.resource.data);
+      }
+
+      // push.js: doc ID es el propio token de FCM.
+      match /pushTokens/{token} {
+        allow read, delete: if isOwner();
+        allow create, update: if isOwner() && isValidPushToken(request.resource.data);
+      }
     }
 
     // Reglas para los artículos del Blog (ahora directamente bajo appId)
     // Permite leer si el usuario está autenticado. La escritura está deshabilitada desde el frontend.
-    match /artifacts/{appId}/blogArticles/{documents=**} { // <--- CAMBIO AQUÍ
+    match /artifacts/{appId}/blogArticles/{documents=**} {
       allow read: if request.auth != null;
       allow write: if false; // Solo tú (o un proceso de backend) deberías escribir aquí
     }
 
-    // Si tienes alguna otra colección pública que no sea blogArticles y no esté bajo /public/data,
-    // necesitarías una regla específica para ella también.
-
-    
-    // NUEVA REGLA: Reglas para datos públicos bajo /public/data (como Nutrición)
+    // Reglas para datos públicos bajo /public/data (como Nutrición)
     // Permite leer si el usuario está autenticado. La escritura está deshabilitada desde el frontend.
-    match /artifacts/{appId}/public/data/{collection}/{documents=**} { // <--- NUEVA REGLA PARA /public/data
+    match /artifacts/{appId}/public/data/{collection}/{documents=**} {
       allow read: if request.auth != null;
       allow write: if false; // Solo tú (o un proceso de backend) deberías escribir aquí
     }
