@@ -30,25 +30,6 @@
         "**/.*",
         "**/node_modules/**"
       ]
-    },
-    {
-      "target": "emociones",
-      "public": "public-emociones",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "headers": [
-        {
-          "source": "/",
-          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-        },
-        {
-          "source": "/index.html",
-          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-        }
-      ]
     }
   ],
   "emulators": {

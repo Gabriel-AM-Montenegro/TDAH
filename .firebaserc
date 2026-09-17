@@ -10,9 +10,6 @@
         ],
         "neurokit": [
           "neurokit-app"
-        ],
-        "emociones": [
-          "herramientas-emocionales-app"
         ]
       }
     }
