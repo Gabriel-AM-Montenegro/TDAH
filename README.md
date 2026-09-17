@@ -24,3 +24,14 @@ Aplicación web diseñada para ayudar a personas adultas diagnosticadas con TDAH
 
    ```bash
    git clone https://github.com/Gabriel-AM-Montenegro/TDAH/
+   ```
+
+## 🔗 Proyectos relacionados
+
+- [dbt-toolkit](https://github.com/Gabriel-AM-Montenegro/dbt-toolkit) (privado) —
+  la app "Herramientas Emocionales" (herramientas de DBT: mindfulness,
+  tolerancia al malestar, regulación emocional, efectividad interpersonal).
+  Vivía acá como `public-emociones/` y se mudó a su propio repo — sigue
+  deployada en el mismo proyecto Firebase (`tdah-app-efca9`), como otro site
+  de Hosting (`herramientas-emocionales-app.web.app`), bajo el mismo paraguas
+  de marca "Un Cerebro Diferente".
