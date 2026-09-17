@@ -1,0 +1,23 @@
+{
+  "name": "Herramientas Emocionales",
+  "short_name": "Emociones",
+  "description": "Guías paso a paso de DBT para bajar la intensidad, aguantar sin empeorar y comunicarte mejor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#764ba2",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
