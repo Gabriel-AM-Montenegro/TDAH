@@ -35,3 +35,8 @@ Aplicación web diseñada para ayudar a personas adultas diagnosticadas con TDAH
   deployada en el mismo proyecto Firebase (`tdah-app-efca9`), como otro site
   de Hosting (`herramientas-emocionales-app.web.app`), bajo el mismo paraguas
   de marca "Un Cerebro Diferente".
+
+## Licencia
+
+CC BY-NC-SA 4.0 — uso y adaptación libres, sin fines comerciales, dando
+crédito a "Un Cerebro Diferente" con link a esta app. Ver [LICENSE.md](LICENSE.md).
