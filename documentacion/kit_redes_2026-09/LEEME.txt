@@ -1,0 +1,39 @@
+KIT DE REDES — UN CEREBRO DIFERENTE
+Generado: 18/09/2026
+
+AVATARES (800x800)
+  avatar-principal-800.png ........ LinkedIn, Instagram, YouTube
+  avatar-blanco-800.png ........... WhatsApp / Telegram, fondos oscuros
+  avatar-alterno-800.png .......... campanas, uso temporal
+
+PORTADAS
+  linkedin-page-portada-1128x191.png ... pagina de empresa
+  linkedin-perfil-portada-1584x396.png . perfil personal
+  youtube-banner-2560x1440.png ......... canal (zona segura 1546x423 centrada)
+
+POSTS CUADRADOS (1080x1080)
+  post-frase-personas-1080.png ..... publico: personas neurodivergentes
+  post-insight-empresas-1080.png ... publico: lideres y RRHH
+  post-cita-oscuro-1080.png ........ cita suelta
+  post-neurokit-feature-1080.png ... anuncio de producto
+
+CARRUSEL INSTAGRAM (1080x1350) — subir en orden 1,2,3,4
+  carrusel-1-portada / carrusel-2 / carrusel-3 / carrusel-4-cierre
+
+STORIES / REELS (1080x1920)
+  story-frase-1080x1920.png
+  story-mito-realidad-1080x1920.png
+
+MINIATURAS YOUTUBE (1280x720)
+  youtube-miniatura-oscura-1280x720.png
+  youtube-miniatura-clara-1280x720.png
+
+LOGOS
+  logo/isotipo.png (246x205, mapa de bits)
+  logo/icono-app-512.png
+
+HANDLES: Instagram @uncerebrodiferente / YouTube @Un.CerebroDiferente
+Sin dominio propio todavia: ninguna pieza muestra una web.
+
+PENDIENTE: el isotipo no existe en vector. Los banners grandes ganan
+nitidez recien cuando se redibuje en SVG/AI.
