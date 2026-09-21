@@ -27,7 +27,7 @@ export async function initWelcomeTour(db, userId) {
     const tourSteps = [
         {
             title: "¡Bienvenido a NeuroKit!",
-            description: "Esta aplicación está diseñada para ayudarte a gestionar tu día a día, mejorar tu concentración y organizar tus tareas de forma efectiva. ¡Vamos a explorar sus funciones principales!",
+            description: "Acá vas a poder organizar tu día, mantener el foco y tener todo en un solo lugar. Te muestro rápido cómo funciona.",
             image: ""
         },
         {
@@ -42,7 +42,7 @@ export async function initWelcomeTour(db, userId) {
         },
         {
             title: "🫁 Respiración",
-            description: "Practicá un ejercicio de respiración guiada cuando quieras, no solo en los descansos del Pomodoro. Elegí el patrón que más te sirva (4-7-8, Cuadrada o Triangular) — es el mismo patrón que usa Pomodoro, cambiarlo en un lugar lo cambia en el otro.",
+            description: "Practicá un ejercicio de respiración guiada cuando quieras, no solo en los descansos del Pomodoro. Elegí el patrón que más te sirva (4-7-8, Cuadrada o Triangular): es el mismo que usa Pomodoro, así que si lo cambiás acá, también cambia allá.",
             image: ""
         },
         {
@@ -52,12 +52,12 @@ export async function initWelcomeTour(db, userId) {
         },
         {
             title: "📝 Journal Personal",
-            description: "Un espacio seguro para escribir pensamientos, emociones y logros. Reflexionar también es productividad.",
+            description: "Escribí lo que pensás, lo que sentís y lo que fuiste logrando. Pensar en tu día también cuenta como avanzar.",
             image: ""
         },
         {
             title: "🌱 Hábitos Diarios",
-            description: "Construí rutinas pequeñas y sostenibles, y visualizá tu progreso día a día.",
+            description: "Empezá con rutinas chicas que puedas mantener, y mirá cómo vas sumando día a día.",
             image: ""
         },
         {
