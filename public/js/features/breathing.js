@@ -16,7 +16,7 @@ import { registerListener } from '../listeners.js';
 export const BREATHING_PATTERNS = {
     '478': {
         label: '4-7-8 (relajación profunda)',
-        description: 'La exhalación larga activa fuerte el sistema nervioso parasimpático — pensada para relajación profunda y ayudar a conciliar el sueño, no para recuperar el foco rápido.',
+        description: 'La exhalación larga activa fuerte el sistema nervioso parasimpático. Está pensada para relajación profunda y para ayudarte a dormir, no para recuperar el foco rápido.',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 7', duration: 7000, scale: 1 },
@@ -25,7 +25,7 @@ export const BREATHING_PATTERNS = {
     },
     box: {
         label: 'Cuadrada (enfoque y calma)',
-        description: 'Ritmo simétrico con dos pausas (con aire y sin aire) — ayuda a recuperar la calma y el foco en un momento de estrés agudo.',
+        description: 'Ritmo simétrico con dos pausas, con aire y sin aire, que ayuda a recuperar la calma y el foco en un momento de estrés agudo.',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 4', duration: 4000, scale: 1 },
@@ -35,7 +35,7 @@ export const BREATHING_PATTERNS = {
     },
     triangle: {
         label: 'Triangular (simple y rápida)',
-        description: 'La más corta y simple de las tres (inhalar, sostener y exhalar en partes iguales) — buena puerta de entrada si nunca probaste respiración guiada.',
+        description: 'La más corta y simple de las tres: inhalar, sostener y exhalar en partes iguales. Buena puerta de entrada si nunca probaste respiración guiada.',
         phases: [
             { label: 'Inhalá... 4', duration: 4000, scale: 1 },
             { label: 'Sostené... 4', duration: 4000, scale: 1 },
