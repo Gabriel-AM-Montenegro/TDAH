@@ -17,6 +17,8 @@ import { initTrello } from './features/trello.js';
 import { initBlog, initNutricion } from './features/content-feed.js';
 import { initPomodoro } from './features/pomodoro.js';
 import { initChecklist } from './features/checklist.js';
+import { initIdeas } from './features/ideas.js';
+import { initTechniques } from './features/techniques.js';
 import { requestNotificationPermission } from './notifications.js';
 import { initAuthStateListener, wireAuthButtons } from './auth.js';
 import { wireSoundToggle, wireSoundVolumeControl, wireSoundTestButtons } from './sound.js';
@@ -56,6 +58,7 @@ async function loadAllUserData(currentUserId) {
     initBreathing(db, currentUserId);
     initPomodoro(db, currentUserId);
     initChecklist(db, currentUserId);
+    initIdeas(db, currentUserId);
     initHabits(db, currentUserId);
     initPush(db, currentUserId);
     initTrello(db, currentUserId);
@@ -126,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     wireCalendarButtons();
     wireOutlookButtons();
+    initTechniques();
     wireSoundToggle();
     wireSoundVolumeControl();
     wireSoundTestButtons();

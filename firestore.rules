@@ -24,7 +24,7 @@ service cloud.firestore {
   // el hasAll encima, porque un ítem NUEVO sí lo escribe siempre completo
   // (ver checklist.js/trello.js, ambos addDoc con los 5 campos).
   function isValidChecklistItemFields(data) {
-    return data.keys().hasOnly(['text', 'completed', 'isMIT', 'timestamp', 'position', 'tagColor', 'reminderTime', 'subtasks', 'trelloCardId', 'lastReminderSentDate'])
+    return data.keys().hasOnly(['text', 'completed', 'isMIT', 'timestamp', 'position', 'tagColor', 'reminderTime', 'subtasks', 'trelloCardId', 'lastReminderSentDate', 'ideaId'])
       && (!('text' in data) || (data.text is string && data.text.size() > 0 && data.text.size() <= 1000))
       && (!('completed' in data) || data.completed is bool)
       && (!('isMIT' in data) || data.isMIT is bool)
@@ -34,7 +34,8 @@ service cloud.firestore {
       && (!('reminderTime' in data) || data.reminderTime == null || (data.reminderTime is string && data.reminderTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
       && (!('subtasks' in data) || (data.subtasks is list && data.subtasks.size() <= 50))
       && (!('trelloCardId' in data) || data.trelloCardId == null || data.trelloCardId is string)
-      && (!('lastReminderSentDate' in data) || data.lastReminderSentDate is string);
+      && (!('lastReminderSentDate' in data) || data.lastReminderSentDate is string)
+      && (!('ideaId' in data) || data.ideaId is string);
   }
 
   function isValidChecklistItemCreate(data) {
@@ -104,6 +105,20 @@ service cloud.firestore {
       && data.keys().hasAll(['createdAt', 'userAgent'])
       && data.createdAt is timestamp
       && data.userAgent is string && data.userAgent.size() <= 500;
+  }
+
+  // ideas.js: status siempre se escribe ('nueva' al crear, 'atacada' al pasar
+  // al Checklist) — no hay un tercer estado en la v1.
+  function isValidIdea(data) {
+    return data.keys().hasOnly(['text', 'timestamp', 'status'])
+      && (!('text' in data) || (data.text is string && data.text.size() > 0 && data.text.size() <= 2000))
+      && (!('timestamp' in data) || data.timestamp is string)
+      && (!('status' in data) || data.status in ['nueva', 'atacada']);
+  }
+
+  function isValidIdeaCreate(data) {
+    return data.keys().hasAll(['text', 'timestamp', 'status'])
+      && isValidIdea(data);
   }
 
   match /databases/{database}/documents {
@@ -190,6 +205,13 @@ service cloud.firestore {
       match /pushTokens/{token} {
         allow read, delete: if isOwner();
         allow create, update: if isOwner() && isValidPushToken(request.resource.data);
+      }
+
+      // ideas.js (Garage de Ideas)
+      match /ideas/{ideaId} {
+        allow read, delete: if isOwner();
+        allow create: if isOwner() && isValidIdeaCreate(request.resource.data);
+        allow update: if isOwner() && isValidIdea(request.resource.data);
       }
     }
 

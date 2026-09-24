@@ -73,6 +73,7 @@
         <div class="nav-group-buttons">
           <button id="btn-pomodoro">⏱️ Pomodoro</button>
           <button id="btn-checklist">✅ Checklist Rápido</button>
+          <button id="btn-garage-ideas">🧰 Garage de Ideas</button>
           <button id="btn-habitos">🌱 Hábitos</button>
           <button id="btn-tareas">📋 Tareas Trello</button>
           <button id="btn-calendario">🗓️ Calendario</button>
@@ -84,6 +85,7 @@
         <div class="nav-group-buttons">
           <button id="btn-journal">📝 Journal</button>
           <button id="btn-respiracion">🫁 Respiración</button>
+          <button id="btn-tecnicas">🧩 Técnicas</button>
         </div>
       </details>
 
@@ -262,6 +264,25 @@
         <p class="help-text">Para tareas pequeñas y recordatorios rápidos del día</p>
       </section>
 
+      <!-- Sección Garage de Ideas -->
+      <section id="garage-ideas" class="seccion">
+        <h2>🧰 Garage de Ideas</h2>
+        <p class="subtitle">Anotá cualquier idea apenas se te ocurra, sin compromiso de hacerla ya. Guardarla acá le
+          saca a tu cabeza el peso de "no te olvides de esto". Así seguís con lo que estabas haciendo, y volvés a la
+          idea cuando quieras, con la cabeza despejada.</p>
+        <div class="input-group">
+          <input type="text" id="idea-input" placeholder="Escribí tu idea..." />
+          <button id="add-idea-btn">➕ Guardar idea</button>
+        </div>
+        <ul id="ideas-list">
+          <!-- Las ideas nuevas se cargarán acá -->
+        </ul>
+        <button type="button" id="ideas-done-toggle" class="ideas-done-toggle" hidden></button>
+        <ul id="ideas-done-list" hidden>
+          <!-- Ideas ya atacadas -->
+        </ul>
+      </section>
+
       <!-- Sección Journal Personal -->
       <section id="journal" class="seccion">
         <h2>📝 Journal Personal</h2>
@@ -316,6 +337,26 @@
         <div class="pomodoro-buttons">
           <button type="button" id="breathing-standalone-start-btn">▶ Empezar ejercicio</button>
           <button type="button" id="breathing-standalone-stop-btn">⏹ Detener</button>
+        </div>
+      </section>
+
+      <!-- Sección Técnicas -->
+      <section id="tecnicas" class="seccion">
+        <h2>🧩 Técnicas</h2>
+        <p class="subtitle">Elegí cómo te sentís con la tarea, y probá algo concreto.</p>
+
+        <div id="tecnicas-picker">
+          <p class="tecnicas-question">¿Cómo te sentís con la tarea que tenés que hacer?</p>
+          <div id="tecnicas-categories" class="tecnicas-categories">
+            <!-- Las categorías se cargan acá -->
+          </div>
+        </div>
+
+        <div id="tecnicas-result" hidden>
+          <button type="button" id="tecnicas-back-btn" class="tecnicas-back-btn">‹ Elegir otra</button>
+          <div id="tecnicas-cards" class="tecnicas-cards">
+            <!-- Las tarjetas de la categoría elegida se cargan acá -->
+          </div>
         </div>
       </section>
 
