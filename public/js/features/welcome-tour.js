@@ -51,6 +51,11 @@ export async function initWelcomeTour(db, userId) {
             image: ""
         },
         {
+            title: "🧰 Garage de Ideas",
+            description: "Anotá cualquier idea apenas se te ocurra, sin compromiso de hacerla ya. Cuando quieras, la pasás al Checklist como tarea real.",
+            image: ""
+        },
+        {
             title: "📝 Journal Personal",
             description: "Escribí lo que pensás, lo que sentís y lo que fuiste logrando. Pensar en tu día también cuenta como avanzar.",
             image: ""
@@ -58,6 +63,11 @@ export async function initWelcomeTour(db, userId) {
         {
             title: "🌱 Hábitos Diarios",
             description: "Empezá con rutinas chicas que puedas mantener, y mirá cómo vas sumando día a día.",
+            image: ""
+        },
+        {
+            title: "🧩 Técnicas",
+            description: "Elegí cómo te sentís con una tarea puntual y la app te ofrece algo concreto para probar: dividirla en pasos, arrancar un bloque de foco, o ver cuál es tu próximo paso.",
             image: ""
         },
         {
