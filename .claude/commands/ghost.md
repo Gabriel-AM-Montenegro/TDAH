@@ -2,6 +2,8 @@
 description: Reescribir un texto para que no "suene a IA"
 ---
 
+Antes de reescribir, si existe `memoria-marketing.md` en la raíz del repo, leelo — tiene la voz real, la oferta, las reglas y qué funcionó hasta ahora. Priorizalo por sobre lo que sigue si hay conflicto.
+
 Reescribí para que no suene a IA: $ARGUMENTS
 
 **Si `$ARGUMENTS` es un texto puntual** (pegado directo): reescribilo y devolvémelo en el chat, no toques archivos.

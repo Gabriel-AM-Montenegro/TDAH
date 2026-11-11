@@ -2,6 +2,8 @@
 description: Condensar algo en un pitch de 30 segundos
 ---
 
+Antes de armar el pitch, si existe `memoria-marketing.md` en la raíz del repo, leelo — tiene la oferta real y qué funcionó hasta ahora. Priorizalo por sobre lo que sigue si hay conflicto.
+
 Condensá esto en un pitch de 30 segundos (para decir en voz alta, no para leer): $ARGUMENTS
 
 1. Primera frase: el problema real, no la solución (nadie se engancha con "hicimos una app").
