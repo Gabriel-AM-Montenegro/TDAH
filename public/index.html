@@ -68,6 +68,9 @@
       <!-- Ahora la idea es que la vista principal sea HOY -->
       <button id="btn-hoy" class="active">📅 Hoy</button>
 
+      <!-- Secciones favoritas del usuario (ver "Mi menú" en Configuración) -->
+      <div id="nav-favorites" class="nav-favorites" hidden></div>
+
       <details class="nav-group" name="nav-accordion">
         <summary>🗂️ Organizar</summary>
         <div class="nav-group-buttons">
@@ -430,6 +433,12 @@
         <div class="config-step">
           <div id="text-size-options" class="theme-options"></div>
           <p class="help-text">Aumenta el tamaño de letra, el interlineado y el espaciado en toda la app.</p>
+        </div>
+
+        <h3>Mi menú</h3>
+        <div class="config-step">
+          <p class="help-text">Elegí hasta 6 secciones para tenerlas siempre a mano, sin abrir los grupos.</p>
+          <div id="nav-favorites-options" class="nav-favorites-options"></div>
         </div>
 
         <h3>Configuración de Trello API</h3>

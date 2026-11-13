@@ -82,11 +82,12 @@ service cloud.firestore {
   }
 
   function isValidAppSettings(data) {
-    return data.keys().hasOnly(['theme', 'textSize', 'tourCompleted', 'timezone'])
+    return data.keys().hasOnly(['theme', 'textSize', 'tourCompleted', 'timezone', 'navFavorites'])
       && (!('theme' in data) || data.theme in ['light', 'dark', 'soft'])
       && (!('textSize' in data) || data.textSize in ['normal', 'large'])
       && (!('tourCompleted' in data) || data.tourCompleted is bool)
-      && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 100));
+      && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 100))
+      && (!('navFavorites' in data) || (data.navFavorites is list && data.navFavorites.size() <= 6));
   }
 
   function isValidBreathingSettings(data) {
@@ -181,8 +182,9 @@ service cloud.firestore {
       }
 
       // Doc compartido entre theme.js (theme, textSize), welcome-tour.js
-      // (tourCompleted) y push.js (timezone) — cada uno escribe con
-      // merge:true, por eso ningún campo es obligatorio acá.
+      // (tourCompleted), push.js (timezone) y nav-favorites.js (navFavorites)
+      // — cada uno escribe con merge:true, por eso ningún campo es
+      // obligatorio acá.
       match /settings/appSettings {
         allow read: if isOwner();
         allow create, update: if isOwner() && isValidAppSettings(request.resource.data);

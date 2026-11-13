@@ -71,6 +71,11 @@ export async function initWelcomeTour(db, userId) {
             image: ""
         },
         {
+            title: "⭐ Mi menú",
+            description: "Elegí hasta 6 secciones favoritas y quedan a la vista junto a Hoy, sin tener que abrir los grupos. Lo configurás en Configuración, en \"Mi menú\".",
+            image: ""
+        },
+        {
             title: "🚀 Cierre del tour",
             description: "Explorá la app y adaptala a vos. No hay una forma correcta de usarla, solo la que te funciona.",
             image: ""

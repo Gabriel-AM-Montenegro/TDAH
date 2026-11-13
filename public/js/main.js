@@ -26,6 +26,7 @@ import { wireMotionToggle } from './motion.js';
 import { initTheme } from './features/theme.js';
 import { initPoints } from './features/points.js';
 import { initPush } from './features/push.js';
+import { initNavFavorites, applyNavFavoritesFromCache } from './features/nav-favorites.js';
 
 async function loadAllUserData(currentUserId) {
     console.log("loadAllUserData: Cargando datos para el usuario:", currentUserId);
@@ -51,6 +52,7 @@ async function loadAllUserData(currentUserId) {
 
     initWelcomeTour(db, currentUserId);
     initTheme(db, currentUserId);
+    initNavFavorites(db, currentUserId);
     initPoints(db, currentUserId);
     initJournal(db, currentUserId);
     // Antes de Pomodoro: éste lee isBreathingEnabledOnBreak()/el patrón
@@ -123,6 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarSeccion(sectionId);
         });
     });
+
+    // Favoritos del menú desde el cache, antes de que resuelva el login:
+    // evita que el menú "salte" cuando llegan los datos de Firestore.
+    applyNavFavoritesFromCache();
 
     // Permisos de notificaciones
     requestNotificationPermission();

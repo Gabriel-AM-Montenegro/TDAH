@@ -24,6 +24,7 @@ import {
     loadCalendarEvents
 } from './features/calendar.js';
 import { resetTodayAgenda } from './features/today-agenda.js';
+import { resetNavFavorites } from './features/nav-favorites.js';
 import { restoreOutlookAccount, resetOutlookState } from './features/outlook-calendar.js';
 
 let isLoggingOut = false;
@@ -91,6 +92,11 @@ export function initAuthStateListener(onLogin) {
             // Limpia también las tarjetas de Trello del merge (lo de arriba
             // solo limpia Calendar/Outlook; si no, quedan visibles tras salir).
             resetTodayAgenda();
+            // Vuelve al menú por defecto, sin favoritos de la cuenta anterior.
+            // Solo en un logout explícito: Firebase puede disparar user=null al
+            // cargar la página aunque haya sesión guardada, y ahí no hay que
+            // borrar el cache de favoritos (se perdería el anti-parpadeo).
+            if (isLoggingOut) resetNavFavorites();
 
             if (!isLoggingOut) {
                 try {

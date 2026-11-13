@@ -266,6 +266,45 @@ header p {
   margin-top: var(--spacing-sm);
 }
 
+/* Mi menú: secciones favoritas sueltas junto a Hoy. Los [hidden] explícitos
+   son necesarios: un display fijado por CSS pisa el atributo hidden. */
+.nav-favorites {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.nav-favorites[hidden],
+.nav-group[hidden] {
+  display: none;
+}
+
+.nav-favorites-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-favorite-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--light-bg);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.nav-favorite-option:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nav-favorite-option input {
+  margin: 0;
+}
+
 .nav-tabs button {
   padding: 12px 24px;
   background: var(--nav-btn-bg);
@@ -1136,6 +1175,10 @@ input[type="checkbox"] {
 
   .nav-tabs button {
     margin: 2px 0;
+  }
+
+  .nav-favorites {
+    flex-direction: column;
   }
 
   .pomodoro-buttons {
